@@ -55,3 +55,6 @@ button { font: inherit; color: inherit; }
   .rq-splash .rq-mark { animation: none; fill: currentColor; stroke-width: 0; }
   .rq-splash .rq-sub { animation: none; opacity: 1; transform: none; }
 }
+
+/* book reader: indeterminate loading bar */
+@keyframes reader-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }

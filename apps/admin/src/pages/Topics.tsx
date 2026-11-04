@@ -7,7 +7,7 @@ import type { Topic } from '../lib/types';
 import { Button, Card, ErrorBox, Field, Icon, Input, PageHeader, Pill, Spinner, Textarea, Toggle } from '../components/ui';
 
 const COLORS: [string, string][] = [['blue', 'bg-topic-blue'], ['violet', 'bg-topic-violet'], ['mint', 'bg-topic-mint'], ['peach', 'bg-topic-peach'], ['pink', 'bg-topic-pink'], ['yellow', 'bg-topic-yellow'], ['sky', 'bg-topic-sky'], ['indigo', 'bg-topic-indigo'], ['lavender', 'bg-topic-lavender'], ['plum', 'bg-topic-plum'], ['rose', 'bg-topic-rose'], ['coral', 'bg-topic-coral'], ['orange', 'bg-topic-orange'], ['sand', 'bg-topic-sand'], ['lime', 'bg-topic-lime'], ['green', 'bg-topic-green'], ['teal', 'bg-topic-teal'], ['olive', 'bg-topic-olive'], ['slate', 'bg-topic-slate'], ['gray', 'bg-topic-gray']];
-const ARTS = ['T01', 'T02', 'T03', 'T04', 'T05', 'T06'];
+const ARTS = Array.from({ length: 27 }, (_, i) => `T${String(i + 1).padStart(2, '0')}`);
 type Edit = Omit<Topic, 'id' | 'slug' | 'position' | 'testsCount' | 'questionsCount'> & { id?: string };
 
 export function TopicsPage() {

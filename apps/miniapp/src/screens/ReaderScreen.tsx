@@ -1,6 +1,6 @@
 import { clsx } from 'clsx';
 import type { Book } from '@rq/shared-types';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../data/api';
 import { useAsync } from '../lib/useAsync';
@@ -31,6 +31,11 @@ export function ReaderScreen() {
   const [current, setCurrent] = useState(1);
   const [zoom, setZoom] = useState<(typeof ZOOMS)[number]>(1);
   const [ratio, setRatio] = useState(1.3);
+  const [loading, setLoading] = useState<Set<number>>(new Set());
+  const onLoading = useCallback((n: number, on: boolean) => setLoading((s) => {
+    if (s.has(n) === on) return s;
+    const next = new Set(s); if (on) next.add(n); else next.delete(n); return next;
+  }), []);
   const scroller = useRef<HTMLDivElement>(null);
   const restored = useRef(false);
 
@@ -64,11 +69,18 @@ export function ReaderScreen() {
             ))}
           </span>
         </div>
+        {loading.size > 0 && (
+          <div role="status" className="mt-2 flex items-center gap-2 text-[12px] font-semibold text-primary">
+            <span aria-hidden className="size-3.5 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+            {t('books.loading')}
+            <span aria-hidden className="ml-1 h-1 flex-1 overflow-hidden rounded-full bg-primary/15"><span className="block h-full w-1/3 animate-[reader-bar_1.1s_ease-in-out_infinite] rounded-full bg-primary" /></span>
+          </div>
+        )}
       </div>
       <div ref={scroller} className="flex-1 overflow-x-auto" style={{ paddingBottom: 'calc(var(--safe-bottom) + 24px)' }}>
         <div className="flex flex-col gap-2 px-2 pt-2" style={{ width: `${zoom * 100}%` }}>
           {Array.from({ length: book.pages }, (_, i) => (
-            <Page key={i + 1} bookId={book.id} n={i + 1} ratio={ratio} onRatio={setRatio} onVisible={setCurrent} />
+            <Page key={i + 1} bookId={book.id} n={i + 1} ratio={ratio} onRatio={setRatio} onVisible={setCurrent} onLoading={onLoading} />
           ))}
         </div>
       </div>
@@ -91,13 +103,23 @@ async function decode(blob: Blob): Promise<{ source: CanvasImageSource; width: n
   return { source: img, width: img.naturalWidth, height: img.naturalHeight, release: () => URL.revokeObjectURL(url) };
 }
 
-function Page({ bookId, n, ratio, onRatio, onVisible }: { bookId: string; n: number; ratio: number; onRatio: (r: number) => void; onVisible: (n: number) => void }) {
+function Page({ bookId, n, ratio, onRatio, onVisible, onLoading }: { bookId: string; n: number; ratio: number; onRatio: (r: number) => void; onVisible: (n: number) => void; onLoading: (n: number, on: boolean) => void }) {
   const { t } = useI18n();
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [near, setNear] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [attempt, setAttempt] = useState(0);
+  const [slow, setSlow] = useState(false);
+
+  // report loading up (header indicator); after 4 s say that the connection is slow
+  useEffect(() => {
+    onLoading(n, status === 'loading');
+    if (status !== 'loading') { setSlow(false); return; }
+    const id = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(id);
+  }, [status, n, onLoading]);
+  useEffect(() => () => onLoading(n, false), [n, onLoading]);
 
   // load when within ~2 screens, release when far away
   useEffect(() => {
@@ -135,7 +157,16 @@ function Page({ bookId, n, ratio, onRatio, onVisible }: { bookId: string; n: num
   return (
     <div ref={box} id={`page-${n}`} className="relative w-full overflow-hidden rounded-[6px] bg-white shadow-card" style={{ aspectRatio: `1 / ${ratio}` }}>
       <canvas ref={canvas} aria-label={`${n}`} className="pointer-events-none block size-full" />
-      {status === 'loading' && <span className="absolute inset-0 grid place-items-center text-[13px] font-bold text-muted">{n}</span>}
+      {status === 'loading' && (
+        <div className="absolute inset-0 flex flex-col gap-3 p-[8%]">
+          {[70, 92, 84, 96, 60, 88, 78].map((w, i) => <span key={i} className="h-2.5 animate-pulse rounded-full bg-track" style={{ width: `${w}%` }} />)}
+          <div className="mt-auto flex flex-col items-center gap-2 pb-[10%] text-center">
+            <span aria-hidden className="size-8 animate-spin rounded-full border-[3px] border-primary/20 border-t-primary" />
+            <span className="text-[13px] font-bold text-ink-2">{t('books.pageLoading', { n })}</span>
+            {slow && <span className="max-w-[240px] text-[12px] text-muted">{t('books.slow')}</span>}
+          </div>
+        </div>
+      )}
       {status === 'error' && (
         <button type="button" onClick={() => setAttempt((a) => a + 1)} className="absolute inset-0 grid place-items-center p-6 text-center text-[13px] font-semibold text-error-ink">{t('books.pageError')}</button>
       )}

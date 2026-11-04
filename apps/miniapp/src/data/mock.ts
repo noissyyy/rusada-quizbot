@@ -60,7 +60,7 @@ export const mockApi: QuizApi = {
     ];
   },
   async getBookPage(_id: string, page: number) {
-    await wait();
+    await wait(1500); // like a real page over mobile internet
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="600" height="800" fill="#fff"/><text x="300" y="400" font-size="48" text-anchor="middle" fill="#6A3DF0">Страница ${page}</text></svg>`;
     return new Blob([svg], { type: 'image/svg+xml' });
   },
