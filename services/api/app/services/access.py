@@ -27,6 +27,8 @@ class AccessSettings(Camel):
     card_number: str = Field(default="", max_length=40)
     card_holder: str = Field(default="", max_length=80)
     note: str = Field(default="", max_length=500)
+    #: «N+ savol» on the subscription page shows at least this (0 = only the real count)
+    questions_claim: int = Field(default=3000, ge=0, le=1_000_000)
     #: @username of the person students write to (without @)
     support_username: str = Field(default="", max_length=64)
 

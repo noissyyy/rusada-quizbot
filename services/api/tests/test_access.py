@@ -30,7 +30,7 @@ async def test_closed_mode_members_staff_and_paywall(client, auth, admin_headers
     stranger = auth(71, username="stranger1")
     a = (await client.get("/api/access", headers=stranger)).json()
     assert a["hasAccess"] is False and a["priceUzs"] == 100000 and a["cardNumber"] == "8600 1234 5678 9012"
-    assert a["questionsCount"] >= 4 and a["booksCount"] == 0  # real numbers from the database
+    assert a["questionsCount"] == 3000 and a["booksCount"] == 0  # admin's figure until the real count is higher
     assert (await client.get("/api/home", headers=stranger)).status_code == 402
     assert (await client.get("/api/me", headers=stranger)).status_code == 200  # paywall still knows who you are
 
@@ -96,6 +96,11 @@ async def test_receipt_approve_reject_and_manual_grant(client, auth, admin_heade
     # revoke → paywall again
     await client.delete(f"/api/admin/subscriptions/{g['userId']}", headers=admin_headers)
     assert (await client.get("/api/home", headers=h)).status_code == 402
+    sales = (await client.get("/api/admin/sales", headers=admin_headers)).json()
+    assert sales["totalCount"] == 1 and sales["totalRevenue"] == 100000 and sales["monthRevenue"] == 100000
+    assert sales["manualGrants"] == 0 and len(sales["months"]) == 6  # the manual grant was revoked above and sales["months"][-1]["revenue"] == 100000
+    assert sales["recent"][0]["username"] == "payer80"
+    assert (await client.get("/api/admin/sales", headers=h)).status_code == 401  # not for students
     stats = (await client.get("/api/admin/access/stats", headers=admin_headers)).json()
     assert stats["pending"] == 0 and stats["activeSubscribers"] == 0
 

@@ -74,7 +74,7 @@ class AccessOut(Camel):
     support_username: str
     pending: PendingOut | None
     rejected_comment: str | None
-    #: real numbers for the subscription page (never a made-up figure)
+    #: for the subscription page: real counts (questions: at least the admin's figure)
     questions_count: int = 0
     books_count: int = 0
 
@@ -89,7 +89,7 @@ async def my_access(user: User = Depends(telegram_user), db: AsyncSession = Depe
     questions = (await db.execute(select(func.count()).select_from(Question).where(Question.status == "published"))).scalar_one()
     books = (await db.execute(select(func.count()).select_from(Book).where(Book.is_active.is_(True)))).scalar_one()
     await db.commit()
-    return AccessOut(questions_count=questions, books_count=books, telegram_id=user.telegram_id, username=user.username, has_access=reason is not None, reason=reason, mode=cfg.mode,
+    return AccessOut(questions_count=max(questions, cfg.questions_claim), books_count=books, telegram_id=user.telegram_id, username=user.username, has_access=reason is not None, reason=reason, mode=cfg.mode,
                      subscription_ends_at=end if end and end > utcnow() else None,
                      price_uzs=cfg.price_uzs, days=cfg.days, card_number=cfg.card_number, card_holder=cfg.card_holder,
                      note=cfg.note, support_username=cfg.support_username,
@@ -351,3 +351,40 @@ async def access_stats(user: User = Depends(admin), db: AsyncSession = Depends(g
     active = (await db.execute(select(func.count(func.distinct(Subscription.user_id))).where(Subscription.ends_at > now))).scalar_one()
     members = (await db.execute(select(func.count()).select_from(Member))).scalar_one()
     return {"pending": pending, "activeSubscribers": active, "members": members}
+
+
+@router.get("/api/admin/sales")
+async def sales(user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    """Money from confirmed card payments (only approved receipts count; manual grants are listed apart)."""
+    now = utcnow()
+    tz = timedelta(hours=5)  # months are counted in Tashkent time
+    local = now + tz
+    month_start = datetime(local.year, local.month, 1, tzinfo=now.tzinfo) - tz
+    approved = PaymentRequest.status == "approved"
+
+    async def totals(*where):
+        r = (await db.execute(select(func.count(), func.coalesce(func.sum(PaymentRequest.amount), 0))
+                              .where(approved, *where))).one()
+        return int(r[0]), int(r[1])
+
+    total_n, total_sum = await totals()
+    month_n, month_sum = await totals(PaymentRequest.decided_at >= month_start)
+    # last 6 months, oldest first
+    months = []
+    y, m = local.year, local.month
+    for _ in range(6):
+        start = datetime(y, m, 1, tzinfo=now.tzinfo) - tz
+        ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
+        end = datetime(ny, nm, 1, tzinfo=now.tzinfo) - tz
+        n, s = await totals(PaymentRequest.decided_at >= start, PaymentRequest.decided_at < end)
+        months.append({"month": f"{y}-{m:02d}", "count": n, "revenue": s})
+        y, m = (y - 1, 12) if m == 1 else (y, m - 1)
+    months.reverse()
+    manual = (await db.execute(select(func.count()).select_from(Subscription).where(Subscription.source == "manual"))).scalar_one()
+    active = (await db.execute(select(func.count(func.distinct(Subscription.user_id))).where(Subscription.ends_at > now))).scalar_one()
+    pending = (await db.execute(select(func.count()).select_from(PaymentRequest).where(PaymentRequest.status == "pending"))).scalar_one()
+    recent = (await db.execute(select(PaymentRequest).where(approved).order_by(PaymentRequest.decided_at.desc()).limit(5))).unique().scalars().all()
+    return {"totalCount": total_n, "totalRevenue": total_sum, "monthCount": month_n, "monthRevenue": month_sum,
+            "activeSubscribers": active, "pending": pending, "manualGrants": manual, "months": months,
+            "recent": [{"name": p.user.display_name, "username": p.user.username, "amount": p.amount,
+                        "at": p.decided_at.isoformat() if p.decided_at else None} for p in recent]}
