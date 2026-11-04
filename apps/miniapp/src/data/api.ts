@@ -29,6 +29,8 @@ export interface QuizApi {
   readAllNotifications(): Promise<void>;
 
   getBooks(): Promise<Book[]>;
+  /** one page of a book as an image (stamped with the reader's ID on the server) */
+  getBookPage(bookId: string, page: number): Promise<Blob>;
   /** open group tests shown to everyone */
   getGroupHub(): Promise<GroupHubItem[]>;
   getGroupAssignment(id: string): Promise<GroupAssignmentView>;

@@ -208,6 +208,8 @@ export interface Book {
   price: string;
   link: string;
   coverUrl: string | null;
+  /** 0 = no PDF, nothing to read in the app */
+  pages: number;
 }
 
 export interface GroupHubItem {

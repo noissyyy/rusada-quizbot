@@ -2,6 +2,14 @@ import type { SVGProps } from 'react';
 
 /** Single-stroke 24px icon set (1.8px stroke, round caps). Add icons here, never inline ad-hoc SVGs in screens. */
 const paths = {
+  /** test sheet: clipboard with a ticked answer and lines */
+  tests: (
+    <>
+      <path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z" />
+      <path d="M8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16" />
+      <path d="m8.5 11.5 1.5 1.5 2.5-2.7M14 11.5h2M8.5 16.5h7.5" />
+    </>
+  ),
   book: (
     <>
       <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z" />

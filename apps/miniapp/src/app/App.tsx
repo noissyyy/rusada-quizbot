@@ -15,6 +15,7 @@ import { ReviewScreen } from '../screens/ReviewScreen';
 import { RatingScreen } from '../screens/RatingScreen';
 import { HistoryScreen, ProfileScreen } from '../screens/ProfileScreen';
 import { BookScreen, BooksScreen } from '../screens/BooksScreens';
+import { ReaderScreen } from '../screens/ReaderScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { ShareResultScreen } from '../screens/ShareResultScreen';
 import { GroupHubScreen, GroupJoinScreen, GroupResultScreen } from '../screens/GroupScreens';
@@ -23,7 +24,7 @@ import { OfflineBanner } from '../components/states/OfflineBanner';
 import { getStartParam, routeForStart } from '../lib/telegram/webapp';
 
 /** Screens where the floating nav is hidden (active test, live, onboarding). */
-const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/];
+const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/, /^\/books\/.+\/read/];
 // full animation; reduced-motion users get a short splash
 const SPLASH_MS = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : SPLASH_ANIMATION_MS;
 
@@ -61,6 +62,7 @@ function Shell() {
         <Route path="/group/:aid/result" element={<GroupResultScreen />} />
         <Route path="/books" element={<BooksScreen />} />
         <Route path="/books/:id" element={<BookScreen />} />
+        <Route path="/books/:id/read" element={<ReaderScreen />} />
         <Route path="/rating" element={<RatingScreen />} />
         <Route path="/profile" element={<ProfileScreen />} />
         <Route path="/profile/history" element={<HistoryScreen />} />

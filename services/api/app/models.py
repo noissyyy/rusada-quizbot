@@ -338,6 +338,9 @@ class Book(Base):
     link: Mapped[str] = mapped_column(String(512), default="")
     cover: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
     cover_type: Mapped[str | None] = mapped_column(String(32))
+    # the PDF is never sent to the app: readers get rendered page images only
+    pdf: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    pages: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     position: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)

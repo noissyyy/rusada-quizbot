@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import Field
 from sqlalchemy import func, select
@@ -12,12 +13,14 @@ from ..db import get_db
 from ..models import Book, User
 from ..schemas import Camel
 from ..security import current_user, require_role
+from ..services import pdf_pages
 
 router = APIRouter(tags=["books"])
 admin = require_role("admin")
 
 COVER_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_COVER = 3 * 1024 * 1024
+MAX_PDF = 80 * 1024 * 1024
 
 
 class BookIn(Camel):
@@ -37,6 +40,7 @@ class BookOut(Camel):
     price: str
     link: str
     cover_url: str | None
+    pages: int = 0  # 0 → no PDF, nothing to read in the app
 
 
 class BookAdminOut(BookOut):
@@ -51,7 +55,7 @@ def _cover_url(b: Book) -> str | None:
 
 def _out(b: Book) -> BookOut:
     return BookOut(id=b.id, title=b.title, author=b.author, description=b.description, price=b.price, link=b.link,
-                   cover_url=_cover_url(b))
+                   cover_url=_cover_url(b), pages=b.pages or 0)
 
 
 def _admin_out(b: Book) -> BookAdminOut:
@@ -74,6 +78,29 @@ async def book_cover(bid: str, db: AsyncSession = Depends(get_db)):
     if b is None or not b.cover or not b.cover_type:
         raise HTTPException(404)
     return Response(b.cover, media_type=b.cover_type, headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
+@router.get("/api/books/{bid}/pages/{n}")
+async def book_page(bid: str, n: int, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """One page as a JPEG stamped with the reader's ID. Never cached by the client, never the PDF itself."""
+    b = await db.get(Book, bid)
+    if b is None or not b.is_active or not b.pages:
+        raise HTTPException(404)
+    if not 1 <= n <= b.pages:
+        raise HTTPException(404, "page_out_of_range")
+    key = f"{b.id}-{int(b.updated_at.timestamp())}"
+
+    async def load() -> bytes:
+        return (await db.execute(select(Book.pdf).where(Book.id == bid))).scalar_one()
+
+    pdf: bytes | None = None
+    if not (pdf_pages.CACHE_DIR / key / f"{n - 1}.jpg").exists() and key not in pdf_pages._docs:
+        pdf = await load()  # 3–10 MB: only when the page is not rendered yet and the book is not open
+    jpg = await run_in_threadpool(pdf_pages.page_image, key, n - 1, lambda: pdf)
+    label = f"Rusada · ID {user.telegram_id}" + (f" · @{user.username}" if user.username else "")
+    stamped = await run_in_threadpool(pdf_pages.watermark, jpg, label)
+    return Response(stamped, media_type="image/jpeg",
+                    headers={"Cache-Control": "no-store", "Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"})
 
 
 # ---------------- admin ----------------
@@ -118,6 +145,39 @@ async def upload_cover(bid: str, file: UploadFile = File(...), user: User = Depe
     if len(data) > MAX_COVER:
         raise HTTPException(422, "Обложка больше 3 МБ — уменьшите картинку")
     b.cover, b.cover_type = data, file.content_type
+    await db.commit()
+    await db.refresh(b)
+    return _admin_out(b)
+
+
+@router.post("/api/admin/books/{bid}/pdf", response_model=BookAdminOut)
+async def upload_pdf(bid: str, file: UploadFile = File(...), user: User = Depends(admin),
+                     db: AsyncSession = Depends(get_db)):
+    """Attach the book's PDF for in-app reading. Without a cover, page 1 becomes the cover."""
+    b = await db.get(Book, bid)
+    if b is None:
+        raise HTTPException(404)
+    data = await file.read(MAX_PDF + 1)
+    if len(data) > MAX_PDF:
+        raise HTTPException(422, "PDF больше 80 МБ")
+    try:
+        pages = await run_in_threadpool(pdf_pages.page_count, data)
+    except ValueError:
+        raise HTTPException(422, "Это не PDF или файл повреждён") from None
+    b.pdf, b.pages = data, pages
+    if not b.cover_type:
+        b.cover, b.cover_type = await run_in_threadpool(pdf_pages.cover_from_pdf, data), "image/jpeg"
+    await db.commit()
+    await db.refresh(b)
+    return _admin_out(b)
+
+
+@router.delete("/api/admin/books/{bid}/pdf", response_model=BookAdminOut)
+async def delete_pdf(bid: str, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    b = await db.get(Book, bid)
+    if b is None:
+        raise HTTPException(404)
+    b.pdf, b.pages = None, 0
     await db.commit()
     await db.refresh(b)
     return _admin_out(b)

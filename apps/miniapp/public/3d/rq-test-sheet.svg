@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#EDEAF7"/>
+    </linearGradient>
+    <linearGradient id="paperEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D9D4EE"/><stop offset="1" stop-color="#BDB5DD"/>
+    </linearGradient>
+    <linearGradient id="clip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8D6BFF"/><stop offset="1" stop-color="#5B33E0"/>
+    </linearGradient>
+    <linearGradient id="ok" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5BE0A4"/><stop offset="1" stop-color="#16A86C"/>
+    </linearGradient>
+    <linearGradient id="bubble" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F3F1FB"/><stop offset="1" stop-color="#DCD7EF"/>
+    </linearGradient>
+    <linearGradient id="pencil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD66B"/><stop offset="1" stop-color="#F5A70B"/>
+    </linearGradient>
+    <linearGradient id="watch" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4E0F2"/>
+    </linearGradient>
+    <radialGradient id="shine" cx=".3" cy=".25" r=".7">
+      <stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#3A1060" flood-opacity=".32"/>
+    </filter>
+  </defs>
+
+  <!-- sheet (slightly tilted) -->
+  <g transform="rotate(-8 120 125)" filter="url(#soft)">
+    <rect x="52" y="40" width="132" height="168" rx="20" fill="url(#paperEdge)"/>
+    <rect x="52" y="34" width="132" height="168" rx="20" fill="url(#paper)"/>
+    <!-- clip -->
+    <rect x="92" y="24" width="52" height="22" rx="11" fill="url(#clip)"/>
+    <rect x="100" y="28" width="22" height="6" rx="3" fill="#fff" opacity=".45"/>
+    <!-- rows: bubble + line -->
+    <g>
+      <circle cx="80" cy="76" r="11" fill="url(#bubble)"/><text x="80" y="80.5" font-family="Arial, sans-serif" font-weight="700" font-size="12" text-anchor="middle" fill="#8B84A8">A</text>
+      <rect x="98" y="71" width="64" height="10" rx="5" fill="#E6E2F4"/>
+      <circle cx="80" cy="108" r="12" fill="url(#ok)"/>
+      <path d="M74 108.5l4.2 4.2 8-8.6" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="98" y="103" width="54" height="10" rx="5" fill="#BFEBD5"/>
+      <circle cx="80" cy="140" r="11" fill="url(#bubble)"/><text x="80" y="144.5" font-family="Arial, sans-serif" font-weight="700" font-size="12" text-anchor="middle" fill="#8B84A8">C</text>
+      <rect x="98" y="135" width="60" height="10" rx="5" fill="#E6E2F4"/>
+      <circle cx="80" cy="172" r="11" fill="url(#bubble)"/><text x="80" y="176.5" font-family="Arial, sans-serif" font-weight="700" font-size="12" text-anchor="middle" fill="#8B84A8">D</text>
+      <rect x="98" y="167" width="46" height="10" rx="5" fill="#E6E2F4"/>
+    </g>
+    <rect x="52" y="34" width="132" height="168" rx="20" fill="url(#shine)" opacity=".5"/>
+  </g>
+
+  <!-- pencil -->
+  <g transform="rotate(38 178 150)" filter="url(#soft)">
+    <rect x="168" y="70" width="20" height="96" rx="6" fill="url(#pencil)"/>
+    <rect x="168" y="70" width="7" height="96" rx="3.5" fill="#fff" opacity=".35"/>
+    <rect x="168" y="62" width="20" height="14" rx="5" fill="#FF8FB1"/>
+    <rect x="168" y="74" width="20" height="6" fill="#C9C4DA"/>
+    <path d="M168 166h20l-10 22z" fill="#F7DDB7"/>
+    <path d="M174.5 180h7l-3.5 8z" fill="#3B3355"/>
+  </g>
+
+  <!-- small stopwatch -->
+  <g filter="url(#soft)">
+    <rect x="52" y="168" width="12" height="9" rx="3" fill="#FF6B7D" transform="rotate(-10 58 172)"/>
+    <circle cx="50" cy="196" r="26" fill="url(#watch)"/>
+    <circle cx="50" cy="196" r="19" fill="none" stroke="#D5CFEA" stroke-width="3"/>
+    <path d="M50 196V183" stroke="#6A3DF0" stroke-width="4" stroke-linecap="round"/>
+    <path d="M50 196l9 5" stroke="#FF6B7D" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="50" cy="196" r="3.4" fill="#3B3355"/>
+    <circle cx="43" cy="186" r="8" fill="#fff" opacity=".5"/>
+  </g>
+
+  <!-- sparkles -->
+  <path d="M206 44c.9 7.4 4.6 11.1 12 12-7.4.9-11.1 4.6-12 12-.9-7.4-4.6-11.1-12-12 7.4-.9 11.1-4.6 12-12z" fill="#FFE27A"/>
+  <circle cx="36" cy="62" r="5" fill="#fff" opacity=".85"/>
+</svg>
