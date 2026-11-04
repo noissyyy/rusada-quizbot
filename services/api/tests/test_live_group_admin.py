@@ -236,40 +236,49 @@ async def test_notifications_and_settings(client, auth, admin_headers):
     assert sess["feedbackMs"] == 2000 and sess["feedbackExplainMs"] == 4000
 
 
-async def test_delete_only_untaken_tests_and_unused_questions(client, auth, admin_headers):
+async def test_delete_is_real_and_past_results_survive(client, auth, admin_headers):
     topics = (await client.get("/api/admin/topics", headers=admin_headers)).json()
     tid = topics[0]["id"]
     q = (await client.post("/api/admin/questions", json={"topicId": tid, "text": "Удаляемый вопрос", "points": 100,
          "options": [{"text": "a", "isCorrect": True}, {"text": "b"}, {"text": "c"}, {"text": "d"}]}, headers=admin_headers)).json()
-    t = (await client.post("/api/admin/tests", json={"title": "Черновик", "topicId": tid, "questionIds": [q["id"]]},
+    q2 = (await client.post("/api/admin/questions", json={"topicId": tid, "text": "Второй вопрос", "points": 100,
+          "options": [{"text": "a", "isCorrect": True}, {"text": "b"}, {"text": "c"}, {"text": "d"}]}, headers=admin_headers)).json()
+    t = (await client.post("/api/admin/tests", json={"title": "Пройденный", "topicId": tid, "questionIds": [q["id"], q2["id"]]},
                            headers=admin_headers)).json()
+    await client.post("/api/admin/tests/bulk", json={"ids": [t["id"]], "action": "publish"}, headers=admin_headers)
+    # a student takes it
+    h = auth(61)
+    s = (await client.post("/api/sessions", json={"quizId": t["id"]}, headers=h)).json()
+    first = s["questions"][0]
+    await client.post(f"/api/sessions/{s['sessionId']}/answers", json={"questionId": first["id"], "optionId": first["options"][0]["id"]}, headers=h)
+    await client.post(f"/api/sessions/{s['sessionId']}/finish", json={}, headers=h)
+
+    # a question can be deleted even if it is in a test: it leaves the test, the time shrinks
+    r = await client.post("/api/admin/questions/bulk", json={"ids": [q2["id"]], "action": "delete"}, headers=admin_headers)
+    assert r.status_code == 204
+    assert (await client.get(f"/api/admin/tests/{t['id']}", headers=admin_headers)).json()["durationSec"] == 120
+
+    # a taken test is deleted for good, with its questions
     row = next(x for x in (await client.get("/api/admin/tests", headers=admin_headers)).json() if x["id"] == t["id"])
     assert row["deletable"] is True
-    # the question is in a test → refused
-    r = await client.post("/api/admin/questions/bulk", json={"ids": [q["id"]], "action": "delete"}, headers=admin_headers)
-    assert r.status_code == 409
-    # deleting the test deletes its questions too
     d = await client.delete(f"/api/admin/tests/{t['id']}", headers=admin_headers)
     assert d.status_code == 200 and d.json() == {"questionsDeleted": 1, "questionsKept": 0}
     assert (await client.get(f"/api/admin/questions/{q['id']}", headers=admin_headers)).status_code == 404
+    assert all(x["id"] != t["id"] for x in (await client.get("/api/admin/tests", headers=admin_headers)).json())
 
-    # a test somebody took cannot be deleted
-    seeded = (await client.get("/api/admin/tests", headers=admin_headers)).json()[-1]
-    s = (await client.post("/api/sessions", json={"quizId": seeded["id"]}, headers=auth(61))).json()
-    assert s["sessionId"]
-    row = next(x for x in (await client.get("/api/admin/tests", headers=admin_headers)).json() if x["id"] == seeded["id"])
-    assert row["deletable"] is False
-    r = await client.delete(f"/api/admin/tests/{seeded['id']}", headers=admin_headers)
-    assert r.status_code == 409 and "архив" in r.json()["detail"]
+    # …and the student's result and review are still there
+    res = (await client.get(f"/api/sessions/{s['sessionId']}/result", headers=h)).json()
+    assert res["quizTitle"] == "Пройденный" and res["points"] == 100
+    prof = (await client.get("/api/profile", headers=h)).json()
+    assert any(x["id"] == s["sessionId"] for x in prof["history"])
 
-    # bulk delete: a question shared with a kept test survives; taken tests are reported
+    # bulk delete: a question shared with a kept test survives
     shared = (await client.post("/api/admin/questions", json={"topicId": tid, "text": "Общий вопрос",
               "options": [{"text": "a", "isCorrect": True}, {"text": "b"}, {"text": "c"}, {"text": "d"}]}, headers=admin_headers)).json()
     a = (await client.post("/api/admin/tests", json={"title": "A", "topicId": tid, "questionIds": [shared["id"]]}, headers=admin_headers)).json()
     keep = (await client.post("/api/admin/tests", json={"title": "Keep", "topicId": tid, "questionIds": [shared["id"]]}, headers=admin_headers)).json()
-    r = (await client.post("/api/admin/tests/bulk", json={"ids": [a["id"], seeded["id"]], "action": "delete"},
-                           headers=admin_headers)).json()
-    assert r["done"] == 1 and r["questionsKept"] == 1 and r["failed"][0]["title"] == seeded["title"]
+    r = (await client.post("/api/admin/tests/bulk", json={"ids": [a["id"]], "action": "delete"}, headers=admin_headers)).json()
+    assert r["done"] == 1 and r["questionsKept"] == 1 and r["failed"] == []
     assert (await client.get(f"/api/admin/questions/{shared['id']}", headers=admin_headers)).status_code == 200
     assert keep["id"] in [x["id"] for x in (await client.get("/api/admin/tests", headers=admin_headers)).json()]
 
@@ -319,15 +328,15 @@ async def test_delete_topic_takes_its_tests_and_questions(client, auth, admin_he
     topics = (await client.get("/api/admin/topics", headers=admin_headers)).json()
     assert all(t["id"] != tp["id"] for t in topics)
 
-    # the seeded section has a test a student already started: it is archived, the section only hidden
+    # the seeded section has a test a student already started: deleted anyway, the result stays
     quiz_id = await _quiz_id()
-    await client.post("/api/sessions", json={"quizId": quiz_id}, headers=auth(31))
+    started = (await client.post("/api/sessions", json={"quizId": quiz_id}, headers=auth(31))).json()
+    await client.post(f"/api/sessions/{started['sessionId']}/finish", json={}, headers=auth(31))
     seeded = topics[0]["id"]
     r = (await client.delete(f"/api/admin/topics/{seeded}", headers=admin_headers)).json()
-    assert r["removed"] is False and r["testsArchived"] == 1
-    t = next(t for t in (await client.get("/api/admin/topics", headers=admin_headers)).json() if t["id"] == seeded)
-    assert t["isActive"] is False and t["testsCount"] == 0
-    assert all(x["id"] != seeded for x in (await client.get("/api/topics", headers=auth(31))).json())
+    assert r["removed"] is True and r["testsDeleted"] >= 1
+    assert all(t["id"] != seeded for t in (await client.get("/api/admin/topics", headers=admin_headers)).json())
+    assert (await client.get(f"/api/sessions/{started['sessionId']}/result", headers=auth(31))).status_code == 200
 
 
 async def test_public_group_test_is_open_to_everyone(client, auth, admin_headers):

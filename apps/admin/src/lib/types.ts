@@ -20,7 +20,7 @@ export interface QuizFull {
   updatedByName: string | null;
 }
 export interface QuizRow {
-  id: string; title: string; topicTitle: string; questionsCount: number; durationSec: number; liveQuestionSec: number;
+  id: string; title: string; topicId: string; topicTitle: string; questionsCount: number; durationSec: number; liveQuestionSec: number;
   modes: ('individual' | 'live' | 'group')[]; attempts: number; status: Status; isLive: boolean; deletable: boolean; updatedAt: string;
 }
 export interface AppSettings {
