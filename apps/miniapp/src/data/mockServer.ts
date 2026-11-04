@@ -12,7 +12,7 @@ interface QuestionFull { id: string; text: string; points: number; options: [str
 interface QuizFull { id: string; title: string; topicSlug: string; durationSec: number; questions: QuestionFull[] }
 
 export const topics: TopicSummary[] = [
-  { id: 't1', slug: 'morphology', title: 'Морфология', color: 'blue', illustration: '/3d/rq-3d-T01.webp', testsCount: 12, questionsCount: 180, progress: 45, difficulties: ['easy', 'medium', 'hard'] },
+  { id: 't1', slug: 'morphology', title: 'Морфология', color: 'blue', illustration: '/3d/rq-3d-T01.webp', testsCount: 12, questionsCount: 180, progress: 45, difficulties: ['easy', 'medium', 'hard'], description: 'Части речи и их формы: от существительного до наречия', subtopics: [{ id: 'st-noun', title: 'Существительное' }, { id: 'st-adj', title: 'Прилагательное' }, { id: 'st-verb', title: 'Глагол' }, { id: 'st-adv', title: 'Наречие' }] },
   { id: 't2', slug: 'orthography', title: 'Орфография', color: 'violet', illustration: '/3d/rq-3d-T02.webp', testsCount: 15, questionsCount: 240, progress: 20, difficulties: ['medium', 'hard'] },
   { id: 't3', slug: 'syntax', title: 'Синтаксис', color: 'mint', illustration: '/3d/rq-3d-T03.webp', testsCount: 9, questionsCount: 135, progress: 70, difficulties: ['medium'] },
   { id: 't4', slug: 'punctuation', title: 'Пунктуация', color: 'peach', illustration: '/3d/rq-3d-T04.webp', testsCount: 10, questionsCount: 150, progress: 0, difficulties: ['medium', 'hard'] },
@@ -33,10 +33,10 @@ const quizzes: Record<string, QuizFull> = { 'q-noun': nounQuiz, 'q-quick': { ...
 
 const base = { topicTitle: 'Морфология', topicColor: 'blue', illustration: '/3d/rq-3d-T01.webp' } as const;
 export const morphTests: TopicTest[] = [
-  { ...base, id: 'q-noun', title: 'Имя существительное', questionsCount: 4, durationMinutes: 2, difficulty: 'easy', description: 'Род, число и падеж существительных, мягкий знак после шипящих.', maxPoints: 500, status: { kind: 'in_progress', answered: 2 } },
-  { ...base, id: 'q-adj', title: 'Имя прилагательное', questionsCount: 15, durationMinutes: 6, difficulty: 'medium', description: 'Разряды прилагательных, краткая и полная форма, степени сравнения и правописание суффиксов.', maxPoints: 1500, status: { kind: 'done', bestPercent: 80 } },
-  { ...base, id: 'q-verb', title: 'Глагол: вид и время', questionsCount: 20, durationMinutes: 9, difficulty: 'hard', description: 'Совершенный и несовершенный вид, времена и спряжение глаголов.', maxPoints: 2400, status: { kind: 'new' } },
-  { ...base, id: 'q-adv', title: 'Наречие', questionsCount: 12, durationMinutes: 5, difficulty: 'medium', description: 'Разряды наречий и их правописание.', maxPoints: 1200, status: { kind: 'new' } },
+  { ...base, subtopicIds: ['st-noun'], id: 'q-noun', title: 'Имя существительное', questionsCount: 4, durationMinutes: 2, difficulty: 'easy', description: 'Род, число и падеж существительных, мягкий знак после шипящих.', maxPoints: 500, status: { kind: 'in_progress', answered: 2 } },
+  { ...base, subtopicIds: ['st-adj'], id: 'q-adj', title: 'Имя прилагательное', questionsCount: 15, durationMinutes: 6, difficulty: 'medium', description: 'Разряды прилагательных, краткая и полная форма, степени сравнения и правописание суффиксов.', maxPoints: 1500, status: { kind: 'done', bestPercent: 80 } },
+  { ...base, subtopicIds: ['st-verb'], id: 'q-verb', title: 'Глагол: вид и время', questionsCount: 20, durationMinutes: 9, difficulty: 'hard', description: 'Совершенный и несовершенный вид, времена и спряжение глаголов.', maxPoints: 2400, status: { kind: 'new' } },
+  { ...base, subtopicIds: ['st-adv'], id: 'q-adv', title: 'Наречие', questionsCount: 12, durationMinutes: 5, difficulty: 'medium', description: 'Разряды наречий и их правописание.', maxPoints: 1200, status: { kind: 'new' } },
 ];
 
 interface Session { quiz: QuizFull; answers: Map<string, AnswerResult>; assignmentId?: string; finished?: SessionResult }

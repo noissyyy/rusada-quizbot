@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..models import (Attempt, LiveParticipant, LiveSession, Notification, NotificationRead, Quiz, Topic, User,
                       utcnow)
@@ -56,12 +57,15 @@ async def statuses(db: AsyncSession, user: User, quiz_ids: list[str]) -> dict[st
 
 def topic_test(quiz: Quiz, st: TestStatus | None) -> TopicTest:
     qs = live_questions(quiz)
+    subs = list(dict.fromkeys(i.question.subtopic_id for i in qs if i.question.subtopic_id))
     return TopicTest(**summary(quiz).model_dump(), description=quiz.description,
-                     max_points=sum(i.question.points for i in qs), status=st or TestStatus(kind="new"))
+                     max_points=sum(i.question.points for i in qs), status=st or TestStatus(kind="new"),
+                     subtopic_ids=subs)
 
 
 async def topics(db: AsyncSession, user: User) -> list[TopicSummary]:
-    tps = (await db.execute(select(Topic).where(Topic.is_active.is_(True)).order_by(Topic.position))).scalars().all()
+    tps = (await db.execute(select(Topic).options(selectinload(Topic.subtopics))
+                            .where(Topic.is_active.is_(True)).order_by(Topic.position))).scalars().all()
     quizzes = await published_quizzes(db)
     sts = await statuses(db, user, [q.id for q in quizzes])
     out = []
@@ -69,9 +73,12 @@ async def topics(db: AsyncSession, user: User) -> list[TopicSummary]:
         mine = [q for q in quizzes if q.topic_id == t.id]
         done = sum(1 for q in mine if sts.get(q.id) and sts[q.id].kind == "done")
         diffs = [d for d in ("easy", "medium", "hard") if any(q.difficulty == d for q in mine)]
+        used = {i.question.subtopic_id for q in mine for i in live_questions(q)}
         out.append(TopicSummary(id=t.id, slug=t.slug, title=t.title, color=t.color, illustration=t.illustration,
                                 tests_count=len(mine), questions_count=sum(len(live_questions(q)) for q in mine),
-                                progress=round(100 * done / len(mine)) if mine else 0, difficulties=diffs))  # type: ignore[arg-type]
+                                progress=round(100 * done / len(mine)) if mine else 0, difficulties=diffs,  # type: ignore[arg-type]
+                                description=t.description,
+                                subtopics=[{"id": st.id, "title": st.title} for st in t.subtopics if st.id in used]))
     return out
 
 
