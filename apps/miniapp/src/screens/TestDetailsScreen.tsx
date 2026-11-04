@@ -14,7 +14,7 @@ export function TestDetailsScreen() {
 
   return (
     <div className="fixed inset-0 z-50">
-      <button type="button" aria-label={t('result.close')} onClick={close} className="absolute inset-0 bg-ink/45" />
+      <button type="button" aria-label={t('result.close')} onClick={close} className="absolute inset-0 bg-night/45" />
       {state.status === 'success' && (
         <section role="dialog" aria-modal="true" aria-labelledby="test-title"
           className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[480px] flex-col gap-4 rounded-t-hero bg-surface px-5 pt-3 shadow-raised"

@@ -8,8 +8,10 @@ import { mockApi } from './data/mock';
 import { createHttpApi } from './data/http';
 import { I18nProvider } from './lib/i18n';
 import { bootstrapTelegram, getWebApp } from './lib/telegram/webapp';
+import { initTheme } from './lib/theme';
 
 bootstrapTelegram();
+initTheme(); // after Telegram is ready: also sets Telegram's header/background colours
 // VITE_API_URL set → real backend; unset → in-memory demo data (design review only)
 const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
 setApi(apiUrl !== undefined ? createHttpApi(apiUrl) : mockApi);

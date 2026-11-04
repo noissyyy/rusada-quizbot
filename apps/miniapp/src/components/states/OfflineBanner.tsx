@@ -14,7 +14,7 @@ export function OfflineBanner() {
   }, []);
   if (online) return null;
   return (
-    <div role="alert" className="fixed inset-x-0 top-0 z-[60] mx-auto max-w-[480px] bg-ink px-4 py-2 text-center text-caption font-bold text-white" style={{ paddingTop: 'calc(var(--safe-top) + 8px)' }}>
+    <div role="alert" className="fixed inset-x-0 top-0 z-[60] mx-auto max-w-[480px] bg-night px-4 py-2 text-center text-caption font-bold text-white" style={{ paddingTop: 'calc(var(--safe-top) + 8px)' }}>
       {t('offline.title')} · {t('offline.text')}
     </div>
   );

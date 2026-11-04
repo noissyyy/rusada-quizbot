@@ -50,7 +50,7 @@ export function LiveHubScreen() {
         {list.status === 'success' && list.data.length === 0 && <p className="rounded-[20px] bg-surface p-4 text-caption text-ink-2 shadow-card">{t('live.none')}</p>}
         {list.status === 'success' && list.data.map((l) => (
           <button key={l.id} type="button" onClick={() => void join(l.code)} className="flex items-center gap-3 rounded-[20px] bg-surface p-4 text-left shadow-card">
-            <span className="grid size-12 shrink-0 place-items-center rounded-control bg-ink text-white"><Icon name="broadcast" size={24} /></span>
+            <span className="grid size-12 shrink-0 place-items-center rounded-control bg-night text-white"><Icon name="broadcast" size={24} /></span>
             <span className="min-w-0 flex-1"><span className="block truncate text-[15px] font-bold">{l.title}</span><span className="text-caption text-muted">{l.hostName ? `${t('live.host', { n: l.hostName })} · ` : ''}{t('live.people', { n: l.participants })}</span></span>
             <Icon name="chevronRight" size={18} className="text-muted" />
           </button>

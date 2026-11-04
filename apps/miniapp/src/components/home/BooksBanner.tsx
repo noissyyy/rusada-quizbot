@@ -11,7 +11,7 @@ export function BooksBanner() {
       <div className="relative z-10 flex max-w-[56%] flex-col gap-1.5">
         <span className="font-display text-[20px] font-bold leading-6 tracking-tight">{t('books.bannerTitle')}</span>
         <span className="text-[13px] leading-[18px] text-white/80">{t('books.bannerText')}</span>
-        <span className="mt-1.5 inline-flex h-9 items-center gap-1 self-start whitespace-nowrap rounded-full bg-white px-3 text-[13px] font-bold text-ink">
+        <span className="mt-1.5 inline-flex h-9 items-center gap-1 self-start whitespace-nowrap rounded-full bg-white px-3 text-[13px] font-bold text-night">
           {t('books.open')}<Icon name="chevronRight" size={16} />
         </span>
       </div>

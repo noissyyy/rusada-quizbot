@@ -19,6 +19,7 @@
   --color-canvas: #F6F5FA;
   --color-surface: #FFFFFF;
   --color-ink: #1A1530;
+  --color-night: #1A1530;        /* stays dark in both themes (overlays, toasts, chips on white) */
   --color-ink-2: #4A4560;
   --color-muted: #6E6A80;
   --color-line: #E9E6F2;

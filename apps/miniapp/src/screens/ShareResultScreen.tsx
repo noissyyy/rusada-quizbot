@@ -100,7 +100,7 @@ export function ShareResultScreen() {
           <button type="button" onClick={copyLink} className="flex h-[52px] items-center justify-center gap-2 rounded-control bg-surface text-[15px] font-bold shadow-card"><Icon name="link" size={20} />{t('share.link')}</button>
         </div>
       </div>
-      {toast && <div role="status" className="fixed inset-x-0 bottom-8 mx-auto w-fit rounded-full bg-ink px-4 py-2.5 text-caption font-bold text-white">{toast}</div>}
+      {toast && <div role="status" className="fixed inset-x-0 bottom-8 mx-auto w-fit rounded-full bg-night px-4 py-2.5 text-caption font-bold text-white">{toast}</div>}
     </main>
   );
 }

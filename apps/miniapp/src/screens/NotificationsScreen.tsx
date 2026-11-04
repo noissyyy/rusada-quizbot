@@ -12,7 +12,7 @@ import { ErrorView } from '../components/states/StateViews';
 import { formatDay } from './ProfileScreen';
 
 const look: Record<AppNotification['kind'], { icon: IconName; cls: string }> = {
-  live: { icon: 'broadcast', cls: 'bg-ink text-white' },
+  live: { icon: 'broadcast', cls: 'bg-night text-white' },
   group: { icon: 'users', cls: 'bg-mode-group text-white' },
   rating: { icon: 'trophy', cls: 'bg-warning-50 text-warning-ink' },
   new_tests: { icon: 'sparkle', cls: 'bg-primary-50 text-primary' },

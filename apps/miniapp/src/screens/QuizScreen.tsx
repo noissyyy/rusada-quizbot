@@ -212,7 +212,7 @@ export function QuizScreen() {
 
       {exitOpen && (
         <div className="fixed inset-0 z-50">
-          <button type="button" aria-label={t('quiz.exit.stay')} onClick={() => setExitOpen(false)} className="absolute inset-0 bg-ink/45" />
+          <button type="button" aria-label={t('quiz.exit.stay')} onClick={() => setExitOpen(false)} className="absolute inset-0 bg-night/45" />
           <section role="alertdialog" aria-labelledby="exit-title" className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[480px] flex-col gap-3.5 rounded-t-hero bg-surface px-5 pt-3" style={{ paddingBottom: 'calc(var(--safe-bottom) + 30px)' }}>
             <span aria-hidden className="mx-auto h-[5px] w-10 rounded-full bg-line" />
             <span className="grid size-14 place-items-center rounded-[20px] bg-warning-50 text-warning-ink"><Icon name="clock" size={28} /></span>

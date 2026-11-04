@@ -34,8 +34,8 @@ export const gradient: Record<GradientTone, { bg: string; shadow: string; text: 
   gray: { bg: 'linear-gradient(135deg, #A9A9BC 0%, #7C7C93 55%, #5A5A70 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
 };
 
-export const toneText = (tone: GradientTone) => (gradient[tone].text === 'light' ? 'text-white' : 'text-ink');
-export const toneMuted = (tone: GradientTone) => (gradient[tone].text === 'light' ? 'text-white/85' : 'text-ink/75');
+export const toneText = (tone: GradientTone) => (gradient[tone].text === 'light' ? 'text-white' : 'text-night');
+export const toneMuted = (tone: GradientTone) => (gradient[tone].text === 'light' ? 'text-white/85' : 'text-night/75');
 // isolation: the decor sits at z-index -1, above the background but under every child
 export const toneStyle = (tone: GradientTone) => ({ background: gradient[tone].bg, boxShadow: gradient[tone].shadow, isolation: 'isolate' as const });
 
@@ -47,7 +47,7 @@ const Star = ({ className, size }: { className: string; size: number }) => (
 
 /** Waves + sparkles. Put inside a `relative overflow-hidden` element, before the content. */
 export function GradientDecor({ sparkles = true, dark = false }: { sparkles?: boolean; dark?: boolean }) {
-  const ink = dark ? 'text-ink/25' : 'text-white/90';
+  const ink = dark ? 'text-night/25' : 'text-white/90';
   return (
     <>
       <span aria-hidden className="pointer-events-none absolute -z-10 -left-[42%] top-[45%] aspect-square w-[100%] rounded-full bg-white/10" />
