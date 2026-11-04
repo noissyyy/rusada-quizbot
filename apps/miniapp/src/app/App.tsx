@@ -4,7 +4,7 @@ import { BottomNav } from '../components/BottomNav';
 import { useI18n } from '../lib/i18n';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LanguageScreen } from '../screens/LanguageScreen';
-import { SplashScreen } from '../screens/SplashScreen';
+import { SPLASH_ANIMATION_MS, SplashScreen } from '../screens/SplashScreen';
 import { TestsScreen } from '../screens/TestsScreen';
 import { TopicScreen } from '../screens/TopicScreen';
 import { TestDetailsScreen } from '../screens/TestDetailsScreen';
@@ -23,7 +23,8 @@ import { getStartParam, routeForStart } from '../lib/telegram/webapp';
 
 /** Screens where the floating nav is hidden (active test, live, onboarding). */
 const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/];
-const SPLASH_MS = 900;
+// full animation; reduced-motion users get a short splash
+const SPLASH_MS = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : SPLASH_ANIMATION_MS;
 
 /** Opens the screen a deep link points to (group test, live, test), once per launch. */
 function StartParamRedirect() {

@@ -7,7 +7,7 @@ import { useAsync } from '../lib/useAsync';
 import { useI18n } from '../lib/i18n';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
 import { ScreenHeader, circleBtn } from '../components/ScreenHeader';
-import { Avatar, Badge, Icon, Skeleton } from '../components/ui';
+import { Avatar, Badge, GradientDecor, Icon, Skeleton, toneStyle } from '../components/ui';
 import { ErrorView, LoadingView } from '../components/states/StateViews';
 
 const BOT = (import.meta.env.VITE_BOT_USERNAME as string | undefined) ?? 'Rusada_QuizBot';
@@ -30,9 +30,10 @@ export function LiveHubScreen() {
   return (
     <main className={page} style={pad}>
       <ScreenHeader back="/" title={t('live.title')} right={<Live />} />
-      <section className="relative overflow-hidden rounded-hero bg-ink p-5 text-white">
+      <section style={toneStyle('ink')} className="relative overflow-hidden rounded-hero p-5 text-white">
+        <GradientDecor />
         <img src="/3d/rq-3d-L02.webp" alt="" className="absolute -right-2 top-1 size-[120px] object-contain" />
-        <h1 className="max-w-[64%] font-display text-[22px] font-bold leading-7">{t('live.enterCode')}</h1>
+        <h1 className="relative max-w-[64%] font-display text-[22px] font-bold leading-7">{t('live.enterCode')}</h1>
         <p className="mt-1 max-w-[64%] text-caption text-white/70">{t('live.codeHint')}</p>
         <form className="mt-4 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (code.length === 4) void join(code); }}>
           <input inputMode="numeric" autoComplete="one-time-code" maxLength={4} value={code} aria-label={t('live.code')} aria-invalid={err}
@@ -117,7 +118,8 @@ function Lobby({ s, onUpdate }: { s: LiveState; onUpdate: (s: LiveState) => void
         <Link to="/live" aria-label={t('common.back')} className={circleBtn}><Icon name="chevronRight" size={22} className="rotate-180" /></Link>
         <span className="text-[17px] font-bold">{t('live.title')}</span><Live />
       </header>
-      <section className="relative flex flex-col gap-1.5 overflow-hidden rounded-hero bg-ink p-5 text-white">
+      <section style={toneStyle('ink')} className="relative flex flex-col gap-1.5 overflow-hidden rounded-hero p-5 text-white">
+        <GradientDecor />
         <img src="/3d/rq-3d-L02.webp" alt="" className="absolute -right-1.5 top-1.5 size-[132px] object-contain" />
         {s.hostName && <span className="text-[12px] font-semibold text-white/72">{t('live.host', { n: s.hostName })}</span>}
         <h1 className="max-w-[64%] font-display text-[24px] font-bold leading-7 tracking-tight">{s.title}</h1>

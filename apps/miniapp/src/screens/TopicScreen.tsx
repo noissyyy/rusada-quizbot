@@ -7,8 +7,7 @@ import { useAsync } from '../lib/useAsync';
 import { useI18n } from '../lib/i18n';
 import { Screen } from '../components/Screen';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { Badge, ProgressBar, Skeleton } from '../components/ui';
-import { topicBg } from '../components/home/TestRow';
+import { Badge, GradientDecor, ProgressBar, Skeleton, gradient, toneMuted, toneStyle, toneText } from '../components/ui';
 
 export function TopicScreen() {
   const { slug = '' } = useParams();
@@ -23,12 +22,13 @@ export function TopicScreen() {
   return (
     <Screen className="flex flex-col gap-[18px]">
       <ScreenHeader back="/tests" title={topic.title} />
-      <section className={`relative flex min-h-[180px] flex-col justify-end gap-2.5 overflow-hidden rounded-hero p-5 ${topicBg[topic.color]}`}>
+      <section style={toneStyle(topic.color)} className={clsx('relative flex min-h-[180px] flex-col justify-end gap-2.5 overflow-hidden rounded-hero p-5', toneText(topic.color))}>
+        <GradientDecor dark={gradient[topic.color].text === 'dark'} />
         <img src={topic.illustration} alt="" className="absolute -right-1.5 -top-1 size-[150px] object-contain" />
-        {topic.description && <p className="relative max-w-[58%] text-[13px] leading-[18px] text-ink-2">{topic.description}</p>}
-        <span className="relative text-[12px] font-semibold text-ink-2">{t('topic.stats', { t: topic.testsCount, q: topic.questionsCount })}</span>
+        {topic.description && <p className={clsx('relative max-w-[58%] text-[13px] leading-[18px]', toneMuted(topic.color))}>{topic.description}</p>}
+        <span className={clsx('relative text-[12px] font-semibold', toneMuted(topic.color))}>{t('topic.stats', { t: topic.testsCount, q: topic.questionsCount })}</span>
         <span className="relative flex items-center gap-2.5">
-          <ProgressBar value={topic.progress} label={topic.title} trackClassName="bg-white/75" className="!h-2" />
+          <ProgressBar value={topic.progress} label={topic.title} trackClassName="bg-white/35" fillClassName={gradient[topic.color].text === 'dark' ? 'bg-ink' : 'bg-white'} className="!h-2" />
           <span className="font-display text-[24px] font-extrabold tracking-tight">{topic.progress}%</span>
         </span>
       </section>
