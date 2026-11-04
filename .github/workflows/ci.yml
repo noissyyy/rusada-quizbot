@@ -1,0 +1,45 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_DB: rq_test, POSTGRES_USER: rq, POSTGRES_PASSWORD: rq }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U rq" --health-interval 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13", cache: pip }
+      - run: pip install -r services/api/requirements-dev.txt -r services/telegram-bot/requirements.txt
+      - name: API tests (real PostgreSQL)
+        working-directory: services/api
+        env: { DATABASE_URL: "postgresql+asyncpg://rq:rq@localhost:5432/rq_test" }
+        run: pytest -q
+      - name: Migration applies on an empty database
+        working-directory: services/api
+        env: { DATABASE_URL: "postgresql+asyncpg://rq:rq@localhost:5432/rq_test" }
+        run: |
+          psql "postgresql://rq:rq@localhost:5432/rq_test" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+          alembic upgrade head
+          alembic check
+      - name: Bot tests
+        working-directory: services/telegram-bot
+        run: PYTHONPATH=. pytest -q tests

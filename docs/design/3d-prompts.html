@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="uz"><head><meta charset="utf-8"><title>Russian Quiz — 3D rasmlar uchun promptlar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+@page { size: A4; margin: 16mm 14mm 18mm; }
+* { box-sizing: border-box; }
+body { font-family: 'Onest', sans-serif; color: #172B4D; font-size: 10.5pt; line-height: 1.5; margin: 0; }
+h1 { font-size: 26pt; line-height: 1.1; margin: 0 0 8px; letter-spacing: -.01em; }
+h2 { font-size: 15pt; margin: 26px 0 10px; padding-top: 4px; }
+h3 { font-size: 12pt; margin: 0; }
+p { margin: 0 0 8px; }
+.muted { color: #5E6C84; }
+.eyebrow { font-size: 8.5pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #2678F5; }
+.cover { border-radius: 18px; background: linear-gradient(135deg, #3B8BFF, #1553B8); color: #fff; padding: 28px; margin-bottom: 18px; }
+.cover .eyebrow { color: #FFD84D; }
+.cover p { color: rgba(255,255,255,.85); font-size: 11pt; }
+.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.steps li { counter-increment: s; position: relative; padding-left: 34px; }
+.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%; background: #E6F0FF; color: #2678F5; font-weight: 700; font-size: 9.5pt; display: grid; place-items: center; }
+.box { border: 1px solid #E3E8F0; border-radius: 14px; padding: 14px 16px; margin: 10px 0; break-inside: avoid; }
+.box.blue { background: #F2F7FF; border-color: #CFE0FD; }
+.box.warn { background: #FFF7DD; border-color: #F3DE97; }
+pre { font-family: 'JetBrains Mono', monospace; font-size: 8.6pt; line-height: 1.5; white-space: pre-wrap; word-break: break-word; background: #F3F5F9; border-radius: 10px; padding: 10px 12px; margin: 6px 0 0; }
+.asset { border: 1px solid #E3E8F0; border-radius: 14px; padding: 12px 14px; margin: 0 0 10px; break-inside: avoid; }
+.asset .hd { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.id { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 9pt; background: #172B4D; color: #fff; border-radius: 6px; padding: 2px 7px; }
+.pr { font-size: 8pt; font-weight: 700; border-radius: 99px; padding: 2px 8px; margin-left: auto; }
+.p1 { background: #2678F5; color: #fff; } .p2 { background: #E6F0FF; color: #2678F5; } .p3 { background: #EEF1F5; color: #5E6C84; }
+.meta { font-size: 9pt; color: #5E6C84; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+td, th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #E3E8F0; vertical-align: top; }
+th { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .06em; color: #5E6C84; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.break { break-before: page; }
+.ok { color: #16A34A; font-weight: 700; } .no { color: #EF4444; font-weight: 700; }
+</style></head><body>
+
+<div class="cover">
+  <div class="eyebrow">Russian Quiz · 3D rasmlar · v1</div>
+  <h1>3D rasmlar uchun promptlar</h1>
+  <p>Ichida 19 ta rasm bor. Har birining kodi, ilovadagi joyi, rangi va inglizcha prompti berilgan: nusxa olib, AI generatorga qo‘yasiz. Barcha rasmlar bitta «oila»dek ko‘rinishi kerak: bir xil material, yorug‘lik va kamera burchagi.</p>
+</div>
+
+<h2>Qanday ishlash kerak</h2>
+<ol class="steps">
+  <li><b>Faqat T01 dan boshlang.</b> 5–10 ta variant yasang, eng yaxshisini tanlab menga yuboring. Uslubni shu rasmda birga tasdiqlaymiz.</li>
+  <li><b>Tasdiqlangan T01 uslub namunasi bo‘ladi.</b> Qolgan hamma rasmni shu rasmga tayanib yasaysiz (pastdagi «Bir xillik» bo‘limiga qarang).</li>
+  <li>Har bir promptning boshiga <b>MASTER STYLE</b> matnini qo‘ying, oxiriga esa rasmning o‘z promptini.</li>
+  <li>Avval <b>P1</b> (11 ta) rasmlarni yasang, keyin P2 va P3.</li>
+  <li>Fonni olib tashlang va pastdagi «Topshirish» talablari bo‘yicha saqlang.</li>
+</ol>
+
+<h2>MASTER STYLE — har promptning boshiga</h2>
+<div class="box blue">
+<pre>3D render of a single isolated object, cute friendly rounded shapes, soft matte clay-like plastic material with subtle glossy highlights, smooth bevelled edges, pastel color palette, soft diffused studio lighting from the top-left, gentle ambient occlusion, soft contact shadow directly below the object, three-quarter view from slightly above (about 30 degrees), object centered with generous empty space around it, plain pure white background, clean minimal premium mobile app illustration style, high detail, sharp focus, no text, no letters, no numbers, no logos, no watermark</pre>
+</div>
+<div class="box">
+  <h3>Negative prompt (agar generator «negative» maydonini qo‘llasa)</h3>
+<pre>text, letters, words, cyrillic, latin, numbers, logo, watermark, signature, photorealistic photo, human hands, busy background, gradient background, multiple objects scattered, harsh shadows, dark mood, noise, blurry, cropped object, cut off edges</pre>
+</div>
+
+<h2 class="break">Bir xillik — eng muhim qoida</h2>
+<div class="two">
+  <div class="box">
+    <h3>Midjourney</h3>
+    <p class="muted" style="margin-top:4px">Har promptning oxiriga quyidagini qo‘shing:</p>
+<pre>--ar 1:1 --style raw --stylize 150
+--sref [tasdiqlangan T01 havolasi]
+--sw 200</pre>
+    <p class="muted" style="margin-top:6px">Bu yerda <b>--sref</b> uslubni T01 dan oladi. Rang yoki obyekt T01 dan ko‘chib o‘tsa, <b>--sw</b> ni 100 ga tushiring.</p>
+  </div>
+  <div class="box">
+    <h3>ChatGPT / boshqa rasm modellari</h3>
+    <p class="muted" style="margin-top:4px">T01 rasmini biriktiring va promptdan oldin shuni yozing:</p>
+<pre>Use the attached image ONLY as a style reference: same material, lighting, camera angle, level of detail and soft shadow. Create a NEW object described below. Transparent background if possible.</pre>
+  </div>
+</div>
+<div class="box warn">
+  <b>Nima uchun harf yo‘q?</b> AI generatorlar kirill harflarini deyarli har doim buzadi: «Я» o‘rniga «Ꞩ» chiqadi va hokazo. Shuning uchun obyektlarda yozuv bo‘lmaydi. Kerak bo‘lsa, harfni men kodda, rasm ustiga qo‘yaman.
+</div>
+
+<h2>Topshirish talablari</h2>
+<table>
+  <tr><th>Parametr</th><th>Talab</th></tr>
+  <tr><td>Format</td><td><b>PNG, shaffof fon</b>. Generator shaffof fon bera olmasa, oq fonda yasab, keyin fonni olib tashlang: Photoshop, Figma plagini yoki remove.bg.</td></tr>
+  <tr><td>O‘lcham</td><td>Kamida <b>1024×1024</b>, iloji bo‘lsa 2048×2048. Kvadrat.</td></tr>
+  <tr><td>Kompozitsiya</td><td>Obyekt markazda, kenglikning taxminan 80% ini egallaydi. <b>Chetlari kesilmagan bo‘lsin</b>: kartadan «chiqib turish» effektini men kodda qilaman.</td></tr>
+  <tr><td>Soya</td><td>Obyekt ostidagi yumshoq soya qolsin. Fonni olib tashlaganda u ham o‘chib ketsa, mayli.</td></tr>
+  <tr><td>Fayl nomi</td><td><code>rq-3d-[kod].png</code>, masalan <code>rq-3d-T01.png</code></td></tr>
+  <tr><td>Yuborish</td><td>Shu chatga tashlang. WebP’ga o‘tkazish, siqish va 1x/2x/3x o‘lchamlarini o‘zim qilaman.</td></tr>
+</table>
+
+<h2>Qabul qilish ro‘yxati</h2>
+<div class="two">
+  <div class="box"><span class="ok">✓ Qabul</span>
+    <ul style="margin:6px 0 0;padding-left:18px"><li>Material T01 bilan bir xil</li><li>Yorug‘lik chap-tepadan tushadi</li><li>Kamera biroz tepadan qaraydi</li><li>Rang shu rasm uchun belgilangan rangga mos</li><li>Bitta obyekt, yozuvsiz</li></ul></div>
+  <div class="box"><span class="no">✕ Rad etiladi</span>
+    <ul style="margin:6px 0 0;padding-left:18px"><li>Yozuv yoki harfga o‘xshash belgilar bor</li><li>Fotorealizm (haqiqiy fotoga o‘xshaydi)</li><li>Burchak boshqa (yondan yoki to‘g‘ri tepadan)</li><li>Obyekt kesilgan</li><li>Rang juda to‘q yoki «neon»</li></ul></div>
+</div>
+
+<div class="break"></div>
+<h2>P1 — Mavzular (6 ta)</h2>
+<p class="muted">Mavzu kartasining pastki o‘ng burchagida turadi. Har mavzuning o‘z rangi bor: rasm o‘sha rangda, lekin pastel va yumshoq bo‘lsin.</p>
+
+<div class="asset"><div class="hd"><span class="id">T01</span><h3>Морфология — ochiq kitob</h3><span class="pr p1">P1 · BIRINCHI</span></div>
+<div class="meta"><span class="sw" style="background:#2678F5"></span>Ko‘k #2678F5 · Joyi: mavzu kartasi, mavzu sahifasi</div>
+<pre>An open hardcover book standing slightly upright with pages gently fanned, cover in soft cornflower blue (#2678F5) with lighter pastel blue tints, cream-white pages with abstract rounded line shapes instead of text, a few small floating rounded blue cubes next to the book</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">T02</span><h3>Орфография — qalam</h3><span class="pr p1">P1</span></div>
+<div class="meta"><span class="sw" style="background:#7C5CFA"></span>Binafsha #7C5CFA</div>
+<pre>A chunky rounded pencil tilted diagonally, body in soft lavender violet (#7C5CFA), pink eraser on top with a silver band, natural wood sharpened tip, drawing a short smooth curvy line on a small floating white paper sheet</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">T03</span><h3>Синтаксис — bog‘langan bloklar</h3><span class="pr p1">P1</span></div>
+<div class="meta"><span class="sw" style="background:#16A37A"></span>Yalpiz #16A37A</div>
+<pre>Three rounded puzzle pieces in soft mint green (#16A37A) and lighter mint tints, two of them connected and the third floating slightly above about to click into place, symbolizing building a sentence</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">T04</span><h3>Пунктуация — vergul va nuqta</h3><span class="pr p1">P1</span></div>
+<div class="meta"><span class="sw" style="background:#F07A3A"></span>Shaftoli #F07A3A</div>
+<pre>A large glossy inflated comma shape and a round dot shape next to it, both in soft peach orange (#F07A3A) with warm pastel highlights, like soft balloon toys, standing on the ground</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">T05</span><h3>Лексика — gap pufakchalari</h3><span class="pr p1">P1</span></div>
+<div class="meta"><span class="sw" style="background:#E2508C"></span>Pushti #E2508C</div>
+<pre>Two overlapping rounded speech bubbles, the front one in soft pink (#E2508C) with three white dots inside, the back one in pale pastel pink, slightly tilted, puffy inflated look</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">T06</span><h3>Фонетика — mikrofon</h3><span class="pr p1">P1</span></div>
+<div class="meta"><span class="sw" style="background:#D99A06"></span>Sariq #D99A06</div>
+<pre>A cute retro studio microphone on a short stand, body in warm soft yellow (#F5B90B) with cream accents, three curved sound wave arcs floating beside it in pastel yellow</pre></div>
+
+<h2>P1 — Rejimlar (3 ta)</h2>
+<p class="muted">Bu rasmlar <b>rangli karta ustida</b> turadi (ko‘k, pushti, yashil) va kartaning tepasidan chiqib turadi. Shuning uchun obyekt <b>och va yorqin</b> bo‘lsin: oq, krem va sariq qismlar ko‘p bo‘lsin, aks holda karta fonida yo‘qolib ketadi.</p>
+
+<div class="asset"><div class="hd"><span class="id">M01</span><h3>Индивидуальный тест — nishon</h3><span class="pr p1">P1</span></div>
+<div class="meta">Ko‘k karta ustida · obyektda oq va sariq ko‘p</div>
+<pre>A round archery target with white and soft blue (#2678F5) rings, a single golden-yellow arrow hitting the exact center, slight tilt toward the viewer</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">M02</span><h3>Прямой эфир — sekundomer</h3><span class="pr p1">P1</span></div>
+<div class="meta">Pushti-qizil karta ustida</div>
+<pre>A white rounded stopwatch with a soft pink (#E23D67) button on top and a small glossy golden lightning bolt in front of the dial, energetic dynamic feeling, dial has simple tick marks only, no numbers</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">M03</span><h3>Тест в группе — uchta figura</h3><span class="pr p1">P1</span></div>
+<div class="meta">Yashil karta ustida</div>
+<pre>Three cute minimal rounded character figures (like soft pawn-shaped toys with round heads and no faces) standing close together, the middle one taller and golden yellow, the side ones white and pale mint, friendly team feeling</pre></div>
+
+<h2>P1 — Bosh banner va natija</h2>
+
+<div class="asset"><div class="hd"><span class="id">H01</span><h3>Bosh banner — kitoblar va qalpoq</h3><span class="pr p1">P1</span></div>
+<div class="meta">Ko‘k gradiyent banner ustida, o‘ngda · obyekt kattaroq va boy bo‘lsin</div>
+<pre>A neat stack of three hardcover books in mint green, lavender violet and peach orange, a dark navy graduation cap resting on top with a golden tassel, a small glossy golden star floating above, the objects should feel cheerful and rewarding</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">R01</span><h3>Natija: yaxshi — kubok</h3><span class="pr p1">P1</span></div>
+<div class="meta">Oq fondagi natija ekrani, markazda</div>
+<pre>A shiny golden trophy cup with two rounded handles on a short navy blue base, a small white star embossed on the cup, a few tiny golden sparkles floating around it, celebratory mood</pre></div>
+
+<div class="break"></div>
+<h2>P2 — Qo‘shimcha holatlar</h2>
+
+<div class="asset"><div class="hd"><span class="id">R02</span><h3>Natija: o‘rtacha — medal</h3><span class="pr p2">P2</span></div>
+<pre>A round silver-blue medal hanging from a soft blue (#2678F5) ribbon, simple embossed star in the middle, encouraging mood</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">R03</span><h3>Natija: past — nihol</h3><span class="pr p2">P2</span></div>
+<pre>A small rounded terracotta pot with a fresh green sprout with two leaves growing out of it, hopeful encouraging mood, soft mint and peach colors</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">L01</span><h3>Рейтинг — shohsupa</h3><span class="pr p2">P2</span></div>
+<pre>A three-step winners podium made of rounded blocks, center tallest block in golden yellow, left in soft silver blue, right in soft peach bronze, no numbers on the blocks</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">L02</span><h3>Efir kutish xonasi — raketa</h3><span class="pr p2">P2</span></div>
+<pre>A cute rounded white rocket with soft pink (#E23D67) fins and a round window, standing upright ready for launch, a small puff of soft cloud at its base, anticipation mood</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">E01</span><h3>Bo‘sh holat: qidiruvda hech narsa yo‘q — lupa</h3><span class="pr p2">P2</span></div>
+<pre>A rounded magnifying glass with a soft blue (#2678F5) handle and a glossy glass lens, slightly tilted, a small bright sparkle reflection on the lens</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">E02</span><h3>Bo‘sh holat: tarix yo‘q — ochiq quti</h3><span class="pr p2">P2</span></div>
+<pre>An open empty cardboard-like box in soft pastel blue with flaps open, slightly tilted, clean and calm mood</pre></div>
+
+<div class="asset"><div class="hd"><span class="id">E03</span><h3>Xato yoki internet yo‘q — uzilgan kabel</h3><span class="pr p2">P2</span></div>
+<pre>A soft rounded power plug and socket disconnected from each other with a small gap between them, cable in soft blue-grey, calm not alarming mood</pre></div>
+
+<h2>P3 — Javob natijasi belgilari (ixtiyoriy)</h2>
+<p class="muted">Hozir bu belgilar oddiy vektor ikonka (prototipda ko‘rgansiz) va yaxshi ishlayapti. 3D versiyasi faqat «bezak» uchun.</p>
+<div class="asset"><div class="hd"><span class="id">F01–F03</span><h3>Galochka, xoch, qum soati</h3><span class="pr p3">P3</span></div>
+<pre>F01: A puffy rounded green (#16A34A) check mark badge, glossy, celebratory
+F02: A puffy rounded soft red (#EF4444) cross mark badge, glossy, not aggressive
+F03: A cute rounded hourglass with golden sand and soft orange (#F59E0B) frame</pre></div>
+
+<h2>Keyinroq: logo (alohida ish)</h2>
+<div class="box">Bot avatari va Mini App ikonkasi uchun haqiqiy logo kerak. Uni AI bilan emas, Figma’da vektor holida chizgan ma'qul: kichik o‘lchamda ham aniq ko‘rinishi kerak. Hozirgi «Rq» belgisi vaqtinchalik.</div>
+
+</body></html>

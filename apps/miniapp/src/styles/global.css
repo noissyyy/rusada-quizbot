@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/*
+ * Helvetica Now Display slot. When licensed woff2 files are added to
+ * public/fonts/, uncomment — no other code changes needed.
+ *
+ * @font-face { font-family: 'Helvetica Now Display'; font-weight: 700 800;
+ *   src: url('/fonts/HelveticaNowDisplay-Bold.woff2') format('woff2'); font-display: swap; }
+ */
+
+/*
+ * Telegram safe areas. Telegram (Bot API 8.0+) sets --tg-safe-area-inset-* and
+ * --tg-content-safe-area-inset-*; we fall back to env() for plain browsers.
+ */
+:root {
+  --safe-top: max(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px), env(safe-area-inset-top, 0px));
+  --safe-bottom: max(var(--tg-safe-area-inset-bottom, 0px) + var(--tg-content-safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+  --nav-height: 68px;
+  color-scheme: light;
+}
+
+/* Base rules MUST live in @layer base, otherwise unlayered CSS overrides Tailwind utilities. */
+@layer base {
+html, body, #root { min-height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+button { font: inherit; color: inherit; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

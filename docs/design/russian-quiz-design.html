@@ -1,0 +1,1190 @@
+<title>Russian Quiz dizayni</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: chap tomonda o'qiladigan izoh, o'ngda "jonli" telefon — dizayner uchun spec + prototip bir sahifada */
+:root {
+  /* Sahifaning o'z ranglari (yorug'/qorong'i tema) */
+  --bg: #F3F5F9;
+  --panel: #FFFFFF;
+  --fg: #172B4D;
+  --fg-2: #5E6C84;
+  --line: #E3E8F0;
+  --accent: #2678F5;
+  --accent-soft: #E6F0FF;
+  --code-bg: #EEF2F8;
+  --note-bg: #FFF7DD;
+  --note-fg: #6B4E00;
+
+  --font-display: 'Unbounded', 'Onest', system-ui, sans-serif;
+  --font-body: 'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* Mahsulot tokenlari — ilova faqat yorug' temada, shuning uchun bular o'zgarmaydi */
+  --p-primary: #2678F5; --p-primary-600: #1C66DB; --p-primary-50: #EAF2FF;
+  --p-canvas: #F5F6F8; --p-surface: #FFFFFF; --p-soft: #EEF0F4;
+  --p-ink: #172B4D; --p-muted: #7B8794; --p-line: #E8EBF0; --p-track: #EEF1F5;
+  --p-sun: #FFD84D;
+  --p-success: #16A34A; --p-success-50: #E8F7EE;
+  --p-error: #EF4444; --p-error-50: #FDECEC;
+  --p-warning: #F59E0B; --p-warning-50: #FEF4E2;
+  --p-blue-bg: #E6F0FF; --p-violet-bg: #EFEAFE; --p-mint-bg: #E3F7EF;
+  --p-peach-bg: #FFEEE3; --p-pink-bg: #FDE8F1; --p-yellow-bg: #FFF5D9;
+  --p-r-sm: 12px; --p-r-ctl: 16px; --p-r-card: 24px; --p-r-hero: 32px;
+  --p-shadow: 0 1px 2px rgba(23,43,77,.04), 0 6px 18px rgba(23,43,77,.06);
+  --p-shadow-up: 0 2px 6px rgba(23,43,77,.06), 0 14px 36px rgba(23,43,77,.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1522; --panel: #171F2F; --fg: #E7ECF5; --fg-2: #9AA8BF; --line: #263247;
+    --accent: #5C9BFF; --accent-soft: #1A2B4A; --code-bg: #1E2839; --note-bg: #332A0E; --note-fg: #F3D27A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1522; --panel: #171F2F; --fg: #E7ECF5; --fg-2: #9AA8BF; --line: #263247;
+  --accent: #5C9BFF; --accent-soft: #1A2B4A; --code-bg: #1E2839; --note-bg: #332A0E; --note-fg: #F3D27A;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1140px; margin: 0 auto; padding-block: 32px 80px; display: flex; flex-direction: column; gap: 72px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-family: var(--font-display); font-size: clamp(30px, 5vw, 48px); line-height: 1.1; letter-spacing: -.01em; }
+h2 { font-family: var(--font-display); font-size: clamp(22px, 3vw, 30px); line-height: 1.2; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.lead { font-size: 18px; color: var(--fg-2); max-width: 66ch; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.sec { display: flex; flex-direction: column; gap: 20px; }
+.sec-head { display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+.sec-head p { color: var(--fg-2); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; min-width: 0; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+code, .mono { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 6px; border-radius: 6px; }
+.note { background: var(--note-bg); color: var(--note-fg); border-radius: 14px; padding: 14px 16px; font-size: 15px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--accent-soft); color: var(--accent); }
+.tag.ok { background: #DDF5E6; color: #0E7A3C; }
+.tag.mock { background: #FFF0D6; color: #8A5A00; }
+.tag.todo { background: var(--code-bg); color: var(--fg-2); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.ok { background:#163826; color:#7EE2A6 } :root:not([data-theme="light"]) .tag.mock { background:#3A2C0D; color:#F3C871 } }
+:root[data-theme="dark"] .tag.ok { background:#163826; color:#7EE2A6 } :root[data-theme="dark"] .tag.mock { background:#3A2C0D; color:#F3C871 }
+
+/* Top nav */
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a { text-decoration: none; color: var(--fg); background: var(--panel); border: 1px solid var(--line); padding: 7px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; }
+.toc a:hover { border-color: var(--accent); color: var(--accent); }
+.status-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Reference cards */
+.ref { display: flex; flex-direction: column; gap: 10px; }
+.ref h3 { display: flex; gap: 10px; align-items: baseline; }
+.ref .num { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+.ref ul { margin: 0; padding-left: 18px; color: var(--fg-2); font-size: 15px; display: flex; flex-direction: column; gap: 4px; }
+.ref .take { color: var(--fg); }
+.ref .skip { font-size: 14px; color: var(--fg-2); border-top: 1px dashed var(--line); padding-top: 8px; }
+
+/* Prototype */
+.proto { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 32px; align-items: start; }
+@media (max-width: 860px) { .proto { grid-template-columns: minmax(0,1fr); } }
+.proto-side { display: flex; flex-direction: column; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+@media (max-width: 860px) { .proto-side { position: static; } }
+.screen-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.screen-picker button, .state-picker button {
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--line);
+  background: var(--panel); color: var(--fg); border-radius: 999px; padding: 7px 14px;
+}
+.screen-picker button[aria-pressed="true"], .state-picker button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.screen-picker button:focus-visible, .state-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ux-notes h3 { margin-bottom: 8px; }
+.ux-notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; color: var(--fg-2); font-size: 15px; }
+.ux-notes li b { color: var(--fg); }
+.state-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.state-picker:empty { display: none; }
+
+/* Phone frame */
+.phone-stage { display: flex; justify-content: center; }
+.phone {
+  position: relative; width: 100%; max-width: 390px; height: 800px; border-radius: 52px; padding: 10px;
+  background: #0E1626; box-shadow: 0 30px 60px rgba(14,22,38,.25), inset 0 0 0 2px #2A3550;
+}
+.phone-inner {
+  position: relative; width: 100%; height: 100%; border-radius: 42px; overflow: hidden;
+  background: var(--p-canvas); color: var(--p-ink); font-family: var(--font-body); font-size: 15px; line-height: 1.4;
+  isolation: isolate;
+}
+@media (max-width: 440px) { .phone { padding: 6px; border-radius: 40px; height: 760px; } .phone-inner { border-radius: 34px; } }
+.statusbar { position: absolute; inset: 0 0 auto; height: 44px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 28px; font-size: 14px; font-weight: 700; background: linear-gradient(var(--p-canvas) 60%, transparent); pointer-events: none; }
+.statusbar .isl { width: 96px; height: 26px; border-radius: 20px; background: #0E1626; }
+.statusbar .icons { display: flex; gap: 5px; align-items: center; }
+.scr { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 52px 18px 120px; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+.scr.nonav { padding-bottom: 130px; }
+.scr > * + * { margin-top: 20px; }
+
+/* ---------- Product components (prefix p-) ---------- */
+.p-row { display: flex; align-items: center; gap: 12px; }
+.p-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.p-h1 { font-size: 26px; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; }
+.p-h2 { font-size: 19px; font-weight: 750; font-weight: 700; }
+.p-cap { font-size: 13px; color: var(--p-muted); }
+.p-micro { font-size: 11px; font-weight: 600; color: var(--p-muted); }
+.p-link { font-size: 14px; font-weight: 600; color: var(--p-primary); background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; }
+.p-icon-btn { width: 44px; height: 44px; border-radius: 999px; background: var(--p-surface); box-shadow: var(--p-shadow); border: 0; display: grid; place-items: center; color: var(--p-ink); cursor: pointer; position: relative; flex-shrink: 0; }
+.p-icon-btn .dot { position: absolute; top: 10px; right: 11px; width: 8px; height: 8px; border-radius: 50%; background: var(--p-error); box-shadow: 0 0 0 2px #fff; }
+.p-avatar { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: var(--p-primary); background: var(--p-primary-50); flex-shrink: 0; box-shadow: 0 0 0 3px #fff; font-size: 16px; }
+.p-btn { height: 54px; border-radius: var(--p-r-ctl); border: 0; font: inherit; font-size: 16px; font-weight: 700; padding: 0 22px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform .15s, background .15s, opacity .15s; }
+.p-btn:active { transform: scale(.97); }
+.p-btn.primary { background: var(--p-primary); color: #fff; box-shadow: 0 8px 20px rgba(38,120,245,.32); }
+.p-btn.sun { background: var(--p-sun); color: var(--p-ink); height: 46px; font-size: 15px; box-shadow: 0 6px 14px rgba(0,0,0,.12); }
+.p-btn.soft { background: var(--p-primary-50); color: var(--p-primary); }
+.p-btn.white { background: var(--p-surface); color: var(--p-ink); box-shadow: var(--p-shadow); }
+.p-btn.block { width: 100%; }
+.p-btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.p-chip { height: 36px; padding: 0 14px; border-radius: 999px; background: var(--p-surface); border: 1px solid var(--p-line); font: inherit; font-size: 14px; font-weight: 600; color: var(--p-ink); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }
+.p-chip.on { background: var(--p-primary); border-color: var(--p-primary); color: #fff; }
+.p-hscroll { display: flex; gap: 8px; overflow-x: auto; margin-inline: -18px; padding-inline: 18px; scrollbar-width: none; }
+.p-hscroll::-webkit-scrollbar { display: none; }
+.p-card { background: var(--p-surface); border-radius: var(--p-r-card); box-shadow: var(--p-shadow); padding: 16px; }
+.p-bar { height: 6px; border-radius: 99px; background: var(--p-track); overflow: hidden; flex: 1; }
+.p-bar > i { display: block; height: 100%; border-radius: 99px; background: var(--p-primary); }
+.p-badge { height: 22px; padding: 0 8px; border-radius: 99px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+.p-badge.live { background: var(--p-error); color: #fff; }
+.p-badge.live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: pulse 1.2s infinite; }
+.p-badge.easy { background: var(--p-success-50); color: var(--p-success); }
+.p-badge.mid { background: var(--p-warning-50); color: #B66F00; }
+.p-badge.hard { background: var(--p-error-50); color: var(--p-error); }
+.p-badge.done { background: var(--p-primary-50); color: var(--p-primary); }
+@keyframes pulse { 50% { opacity: .35; } }
+
+/* Hero (ref 4: ko'k banner + sariq CTA) */
+.p-hero { position: relative; border-radius: var(--p-r-hero); padding: 22px; color: #fff; overflow: hidden; background: radial-gradient(120% 120% at 100% 0%, #4C97FF 0%, #2678F5 45%, #1553B8 100%); box-shadow: 0 16px 32px rgba(38,120,245,.28); min-height: 196px; }
+.p-hero::after { content: ""; position: absolute; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,.08); right: -60px; bottom: -110px; }
+.p-hero .txt { position: relative; z-index: 2; width: 68%; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.p-hero h2 { font-size: 22px; font-weight: 800; line-height: 1.12; }
+.p-hero p { font-size: 13px; opacity: .85; }
+.p-hero .art { position: absolute; right: -26px; bottom: -10px; z-index: 1; }
+.p-hero .pill { white-space: nowrap; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,.18); }
+
+/* Mode cards (ref 5: rangli karta, obyekt chetidan chiqadi) */
+.p-modes { display: flex; flex-direction: column; gap: 14px; padding-top: 6px; }
+.p-mode { position: relative; border-radius: var(--p-r-card); padding: 16px 18px; min-height: 92px; color: #fff; display: flex; flex-direction: column; justify-content: center; gap: 2px; cursor: pointer; border: 0; text-align: left; font: inherit; width: 100%; }
+.p-mode b { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.p-mode span { font-size: 13px; opacity: .9; max-width: 62%; }
+.p-mode .art { position: absolute; right: 6px; top: -14px; }
+.p-mode.m1 { background: linear-gradient(135deg, #3B8BFF, #1F63D6); }
+.p-mode.m2 { background: linear-gradient(135deg, #FF6A88, #E23D67); }
+.p-mode.m3 { background: linear-gradient(135deg, #2CC59A, #12936F); }
+.p-mode .p-badge.live { background: #fff; color: #E23D67; }
+.p-mode .p-badge.live::before { background: #E23D67; }
+
+/* Topic cards (ref 3: katta sarlavha, katta raqam, 3D burchakdan chiqadi) */
+.p-topics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.p-topic { position: relative; overflow: hidden; border-radius: var(--p-r-card); padding: 16px; height: 176px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 2px solid transparent; font: inherit; color: var(--p-ink); cursor: pointer; }
+.p-topic .t { font-size: 16px; font-weight: 700; line-height: 1.2; position: relative; z-index: 2; }
+.p-topic .meta { font-size: 11px; font-weight: 500; color: rgba(23,43,77,.6); margin-top: 2px; display: block; }
+.p-topic .pct { position: relative; z-index: 2; }
+.p-topic .pct small { display: block; font-size: 11px; font-weight: 600; color: rgba(23,43,77,.6); }
+.p-topic .pct strong { font-size: 30px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.p-topic .art { position: absolute; right: -16px; bottom: -16px; z-index: 1; }
+.c-blue { background: var(--p-blue-bg); } .c-violet { background: var(--p-violet-bg); } .c-mint { background: var(--p-mint-bg); }
+.c-peach { background: var(--p-peach-bg); } .c-pink { background: var(--p-pink-bg); } .c-yellow { background: var(--p-yellow-bg); }
+
+/* Big typographic tabs (ref 1) */
+.p-bigtabs { display: flex; gap: 16px; overflow-x: auto; margin-inline: -18px; padding-inline: 18px; scrollbar-width: none; }
+.p-bigtabs::-webkit-scrollbar { display: none; }
+.p-bigtabs button { font: inherit; font-size: 24px; font-weight: 800; letter-spacing: -.02em; border: 0; background: none; padding: 0; color: #C9D0DA; white-space: nowrap; cursor: pointer; }
+.p-bigtabs button.on { color: var(--p-ink); }
+
+.p-search { height: 50px; border-radius: var(--p-r-ctl); background: var(--p-surface); box-shadow: var(--p-shadow); display: flex; align-items: center; gap: 10px; padding: 0 16px; color: var(--p-muted); font-size: 15px; }
+
+/* Bottom nav (ref 1: suzuvchi pill, faol bo'lim yozuv bilan) */
+.p-nav { position: absolute; left: 18px; right: 18px; bottom: 22px; z-index: 20; background: rgba(255,255,255,.96); border-radius: 999px; box-shadow: var(--p-shadow-up); padding: 8px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); }
+.p-nav button { height: 50px; min-width: 50px; border-radius: 999px; border: 0; background: none; color: var(--p-muted); display: flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0 14px; transition: background .2s, color .2s; }
+.p-nav button.on { background: var(--p-primary-50); color: var(--p-primary); padding: 0 18px; }
+.p-nav button:not(.on) span { display: none; }
+
+/* Continue card */
+.p-cont { display: flex; align-items: center; gap: 12px; }
+.p-cont .ic { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; background: var(--p-blue-bg); color: var(--p-primary); flex-shrink: 0; }
+.p-play { width: 44px; height: 44px; border-radius: 50%; background: var(--p-primary); color: #fff; display: grid; place-items: center; flex-shrink: 0; box-shadow: 0 6px 14px rgba(38,120,245,.35); border: 0; cursor: pointer; }
+
+/* Test list */
+.p-topic-head { position: relative; border-radius: var(--p-r-hero); padding: 20px; overflow: hidden; min-height: 170px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+.p-topic-head .art { position: absolute; right: -10px; top: -6px; }
+.p-test { display: flex; flex-direction: column; gap: 10px; cursor: pointer; text-align: left; border: 0; font: inherit; color: inherit; width: 100%; }
+.p-test .facts { display: flex; gap: 14px; font-size: 12px; color: var(--p-muted); font-weight: 500; flex-wrap: wrap; }
+.p-test .facts span { display: inline-flex; gap: 4px; align-items: center; }
+
+/* Sheet */
+.p-dim { position: absolute; inset: 0; background: rgba(14,22,38,.4); z-index: 40; animation: fade .2s; }
+.p-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 41; background: var(--p-surface); border-radius: 32px 32px 0 0; padding: 12px 20px 28px; box-shadow: 0 -10px 40px rgba(14,22,38,.18); animation: up .28s cubic-bezier(.22,1,.36,1); display: flex; flex-direction: column; gap: 14px; }
+.p-sheet .grab { width: 40px; height: 5px; border-radius: 9px; background: var(--p-line); margin: 0 auto 4px; }
+@keyframes up { from { transform: translateY(100%); } }
+@keyframes fade { from { opacity: 0; } }
+.p-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.p-fact { background: var(--p-canvas); border-radius: 16px; padding: 10px; text-align: center; }
+.p-fact b { display: block; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.p-fact span { font-size: 11px; color: var(--p-muted); font-weight: 600; }
+.p-rules { margin: 0; padding-left: 18px; font-size: 13px; color: #44546F; display: flex; flex-direction: column; gap: 4px; }
+
+/* Quiz */
+.p-qtop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.p-qcount { font-size: 14px; font-weight: 700; text-align: center; }
+.p-qcount small { display: block; font-size: 11px; color: var(--p-muted); font-weight: 600; }
+.p-segs { display: flex; gap: 4px; }
+.p-segs i { flex: 1; height: 6px; border-radius: 9px; background: var(--p-track); }
+.p-segs i.ok { background: var(--p-success); } .p-segs i.bad { background: var(--p-error); } .p-segs i.to { background: var(--p-warning); } .p-segs i.cur { background: var(--p-primary); }
+.p-timer { width: 50px; height: 50px; position: relative; flex-shrink: 0; }
+.p-timer svg { transform: rotate(-90deg); }
+.p-timer b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.p-timer.low b { color: var(--p-warning); }
+.p-timer.low { animation: beat 1s infinite; }
+@keyframes beat { 50% { transform: scale(1.06); } }
+.p-qcard { background: var(--p-surface); border-radius: var(--p-r-card); padding: 20px; box-shadow: var(--p-shadow); }
+.p-qcard .q { font-size: 20px; font-weight: 700; line-height: 1.3; margin-top: 10px; }
+.p-opts { display: flex; flex-direction: column; gap: 10px; }
+.p-opt { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 14px 10px 10px; border-radius: 18px; background: var(--p-surface); border: 2px solid transparent; box-shadow: var(--p-shadow); font: inherit; font-size: 16px; font-weight: 600; color: var(--p-ink); text-align: left; cursor: pointer; width: 100%; transition: border-color .15s, background .15s, opacity .2s; }
+.p-opt .l { width: 38px; height: 38px; border-radius: 12px; background: var(--p-track); display: grid; place-items: center; font-weight: 800; color: #44546F; flex-shrink: 0; transition: background .15s; }
+.p-opt .mark { margin-left: auto; display: grid; place-items: center; }
+.p-opt.sel { border-color: var(--p-primary); background: var(--p-primary-50); }
+.p-opt.sel .l { background: var(--p-primary); color: #fff; }
+.p-opt.ok { border-color: var(--p-success); background: var(--p-success-50); }
+.p-opt.ok .l { background: var(--p-success); color: #fff; }
+.p-opt.bad { border-color: var(--p-error); background: var(--p-error-50); }
+.p-opt.bad .l { background: var(--p-error); color: #fff; }
+.p-opt.dim { opacity: .5; }
+.p-opt:disabled { cursor: default; }
+.p-dock { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; padding: 14px 18px 26px; background: linear-gradient(transparent, var(--p-canvas) 30%); }
+.p-fb-head { display: flex; align-items: center; gap: 12px; }
+.p-fb-ic { width: 52px; height: 52px; border-radius: 18px; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
+.p-fb-ic.ok { background: var(--p-success); } .p-fb-ic.bad { background: var(--p-error); } .p-fb-ic.to { background: var(--p-warning); }
+.p-fb-title { font-size: 20px; font-weight: 800; }
+.p-pts { margin-left: auto; font-size: 15px; font-weight: 800; padding: 6px 12px; border-radius: 99px; }
+.p-pts.ok { background: var(--p-success-50); color: var(--p-success); } .p-pts.none { background: var(--p-track); color: var(--p-muted); }
+.p-expl { background: var(--p-canvas); border-radius: 16px; padding: 12px 14px; font-size: 14px; color: #44546F; }
+.p-expl b { color: var(--p-ink); }
+.p-auto { height: 4px; border-radius: 9px; background: var(--p-track); overflow: hidden; }
+.p-auto i { display: block; height: 100%; background: var(--p-primary); transform-origin: left; }
+
+/* Results */
+.p-res-hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.p-score { font-size: 44px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+.p-score small { font-size: 20px; color: var(--p-muted); font-weight: 700; }
+.p-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.p-stat { background: var(--p-surface); border-radius: 20px; padding: 14px; box-shadow: var(--p-shadow); display: flex; align-items: center; gap: 10px; }
+.p-stat .dot { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
+.p-stat b { display: block; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.p-stat span { font-size: 12px; color: var(--p-muted); font-weight: 600; }
+.p-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Review */
+.p-rev { display: flex; flex-direction: column; gap: 8px; }
+.p-rev .ans { font-size: 14px; display: flex; gap: 8px; align-items: flex-start; }
+.p-rev .ans i { font-style: normal; font-weight: 700; flex-shrink: 0; width: 18px; text-align: center; }
+
+/* Leaderboard */
+.p-seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--p-soft); border-radius: 16px; padding: 4px; }
+.p-seg button { height: 38px; border-radius: 12px; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 700; color: var(--p-muted); cursor: pointer; }
+.p-seg button.on { background: var(--p-surface); color: var(--p-ink); box-shadow: var(--p-shadow); }
+.p-podium { display: grid; grid-template-columns: 1fr 1.1fr 1fr; align-items: end; gap: 8px; text-align: center; }
+.p-pod { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.p-pod .col { width: 100%; border-radius: 18px 18px 8px 8px; display: grid; place-items: start center; padding-top: 10px; font-size: 22px; font-weight: 800; color: #fff; }
+.p-pod .nm { font-size: 13px; font-weight: 700; }
+.p-pod .sc { font-size: 12px; color: var(--p-muted); font-weight: 600; }
+.p-lb-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 18px; background: var(--p-surface); box-shadow: var(--p-shadow); }
+.p-lb-row .rk { width: 24px; text-align: center; font-weight: 800; color: var(--p-muted); font-variant-numeric: tabular-nums; }
+.p-lb-row .p-avatar { width: 38px; height: 38px; font-size: 13px; box-shadow: none; }
+.p-lb-row .sc { margin-left: auto; font-weight: 800; font-variant-numeric: tabular-nums; }
+.p-lb-row.me { background: var(--p-primary); color: #fff; }
+.p-lb-row.me .rk { color: rgba(255,255,255,.8); }
+.p-lb-row.me .p-avatar { background: #fff; }
+
+/* Profile */
+.p-prof { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.p-prof .p-avatar { width: 84px; height: 84px; font-size: 28px; }
+.p-list { background: var(--p-surface); border-radius: var(--p-r-card); box-shadow: var(--p-shadow); overflow: hidden; }
+.p-li { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--p-line); font-size: 15px; font-weight: 600; }
+.p-li:last-child { border-bottom: 0; }
+.p-li .ic { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
+.p-li .end { margin-left: auto; color: var(--p-muted); font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.p-switch { width: 46px; height: 28px; border-radius: 99px; background: var(--p-success); position: relative; flex-shrink: 0; }
+.p-switch::after { content: ""; position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+
+/* Live */
+.p-live-hero { border-radius: var(--p-r-hero); padding: 20px; color: #fff; background: linear-gradient(140deg, #FF6A88, #E23D67 60%, #B8264F); position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+.p-live-hero .art { position: absolute; right: -6px; top: 6px; }
+.p-code { font-family: var(--font-mono); font-size: 22px; font-weight: 600; letter-spacing: .12em; }
+.p-people { display: flex; flex-wrap: wrap; gap: 8px; }
+.p-person { display: flex; align-items: center; gap: 8px; background: var(--p-surface); border-radius: 99px; padding: 4px 12px 4px 4px; box-shadow: var(--p-shadow); font-size: 13px; font-weight: 600; }
+.p-person .p-avatar { width: 30px; height: 30px; font-size: 11px; box-shadow: none; }
+.p-wait { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 18px; }
+.p-spinner { width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--p-primary-50); border-top-color: var(--p-primary); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Spec section bits */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.sw { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--panel); }
+.sw .chip { height: 72px; }
+.sw .lbl { padding: 10px 12px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.sw .lbl b { font-size: 14px; }
+.sw .lbl .mono { background: none; padding: 0; color: var(--fg-2); font-size: 12px; }
+.typescale { display: flex; flex-direction: column; gap: 4px; }
+.typescale .r { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 16px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.typescale .r:last-child { border-bottom: 0; }
+.typescale .r .k { font-size: 13px; color: var(--fg-2); }
+.typescale .r .v { font-family: 'Onest', sans-serif; color: var(--fg); min-width: 0; overflow-wrap: anywhere; }
+.radii { display: flex; flex-wrap: wrap; gap: 16px; }
+.radii div { width: 110px; height: 80px; background: var(--accent-soft); border: 2px solid var(--accent); display: grid; place-items: center; font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; line-height: 1.3; }
+.comp-stage { background: #F5F6F8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; color: var(--p-ink); font-family: var(--font-body); }
+.comp-label { font-size: 12px; font-weight: 700; color: var(--fg-2); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+.flow { display: flex; flex-direction: column; gap: 0; counter-reset: s; margin: 0; padding: 0; list-style: none; }
+.flow li { position: relative; padding: 0 0 14px 40px; font-size: 15px; color: var(--fg-2); counter-increment: s; }
+.flow li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 700; display: grid; place-items: center; }
+.flow li::after { content: ""; position: absolute; left: 12px; top: 28px; bottom: 2px; width: 2px; background: var(--line); }
+.flow li:last-child::after { display: none; }
+.flow li b { color: var(--fg); }
+table.assets { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+table.assets th, table.assets td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.assets th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-2); }
+.tbl { overflow-x: auto; }
+dl.gloss { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 12px 24px; margin: 0; }
+dl.gloss dt { font-weight: 700; }
+dl.gloss dd { margin: 0; color: var(--fg-2); }
+@media (max-width: 560px) { dl.gloss { grid-template-columns: minmax(0,1fr); gap: 2px; } dl.gloss dd { margin-bottom: 12px; } .typescale .r { grid-template-columns: minmax(0,1fr); gap: 2px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+</style>
+
+<div class="wrap">
+
+  <header class="sec" id="top">
+    <span class="eyebrow">Russian Quiz · Telegram Mini App · Dizayn v2</span>
+    <h1>Ilova qanday ko‘rinadi va nima uchun aynan shunday</h1>
+    <p class="lead">Bu sahifa dizaynerga moslab yozilgan. Unda siz bergan 5 ta referensdan nimani olganim, ranglar va shriftlar qoidasi, tugma va kartalarning barcha holatlari keltirilgan. Eng muhimi — ilovaning bosib ko‘rsa bo‘ladigan prototipi bor. Telefon ichidagi hamma narsani bosib ko‘ring: test, taymer va javob tekshiruvi haqiqatan ishlaydi.</p>
+    <div class="status-row">
+      <span class="tag ok">Tayyor: dizayn yo‘nalishi + prototip</span>
+      <span class="tag mock">Vaqtinchalik: 3D rasmlar (siz yasaysiz)</span>
+      <span class="tag todo">Keyin: kod, backend, Telegram</span>
+    </div>
+    <nav class="toc" aria-label="Bo‘limlar">
+      <a href="#refs">Referenslar</a>
+      <a href="#proto">Prototip</a>
+      <a href="#tokens">Ranglar va shrift</a>
+      <a href="#components">Komponentlar</a>
+      <a href="#ux">UX qoidalari</a>
+      <a href="#assets">3D rasmlar</a>
+      <a href="#glossary">Lug‘at</a>
+    </nav>
+  </header>
+
+  <section class="sec" id="refs">
+    <div class="sec-head">
+      <span class="eyebrow">1 · Referenslar</span>
+      <h2>5 ta rasmdan nimani oldik, nimani olmadik</h2>
+      <p>Referenslar boshqa sohadan: oziq-ovqat, taksi, bank, sport do‘koni. Ulardan ranglarni ko‘chirmadik, faqat <b>usullarni</b> oldik: kartalar qanday tuzilgani, menyu qanday ishlashi, 3D obyekt qayerda turishi. Rang va mazmun Russian Quiz’ning o‘ziniki.</p>
+    </div>
+    <div class="grid g3">
+      <article class="panel ref">
+        <h3><span class="num">R1</span> Oziq-ovqat ilovasi</h3>
+        <ul>
+          <li class="take"><b>Suzuvchi pastki menyu.</b> Faol bo‘limda ikonka va yozuv bor, qolganlarida faqat ikonka.</li>
+          <li class="take"><b>Katta harfli tablar</b> («Popular» qora, qolganlari xira). «Темы» ekranida qiyinlik filtri shu usulda.</li>
+          <li class="take">Kategoriya kartasi: 3D rasm kartaning chetidan biroz chiqib turadi.</li>
+        </ul>
+        <p class="skip">Olinmadi: yashil rang, mahsulot fotosuratlari.</p>
+      </article>
+      <article class="panel ref">
+        <h3><span class="num">R2</span> Gojek komponentlari</h3>
+        <ul>
+          <li class="take"><b>Chip filtrlar</b>: faoli to‘q rangli, qolganlari oq va ingichka chiziqli.</li>
+          <li class="take">Burchaklari yumaloq oq kartalar, katta va yumshoq CTA tugmalar.</li>
+          <li class="take">Pastdan chiqadigan oyna (bottom sheet). Javobdan keyingi natija shu oynada chiqadi.</li>
+        </ul>
+        <p class="skip">Olinmadi: yashil brend, ovqat fotosuratlari.</p>
+      </article>
+      <article class="panel ref">
+        <h3><span class="num">R3</span> Yandex Pay kartalari</h3>
+        <ul>
+          <li class="take"><b>Mavzu kartasining asosi shu.</b> Yuqorida nom, pastda katta raqam («45%»), 3D obyekt pastki o‘ng burchakdan chiqib turadi.</li>
+          <li class="take">Tanlangan holatda karta fonga bo‘yaladi va atrofida chegara chizig‘i paydo bo‘ladi.</li>
+        </ul>
+        <p class="skip">Olinmadi: kulrang-binafsha fon. Bizda har mavzuning o‘z pastel rangi bor.</p>
+      </article>
+      <article class="panel ref">
+        <h3><span class="num">R4</span> Sport do‘koni (ko‘k)</h3>
+        <ul>
+          <li class="take"><b>Ko‘k banner va sariq tugma.</b> Ko‘k fonda eng ko‘zga tashlanadigan rang sariq. «Начать тест» shu rangda.</li>
+          <li class="take">Avatar va «С возвращением» qatori, o‘ngda bildirishnoma tugmasi.</li>
+          <li class="take">Pastda turadigan katta ko‘k tugma («View your cart»). Testdagi «Ответить» tugmasi shu usulda.</li>
+        </ul>
+        <p class="skip">Olinmadi: yurak (sevimli) belgisi, narx yorliqlari.</p>
+      </article>
+      <article class="panel ref">
+        <h3><span class="num">R5</span> Bank kategoriyalari</h3>
+        <ul>
+          <li class="take"><b>Rejim kartalari shu usulda.</b> Karta to‘liq rangli, 3D obyekt kartaning yuqori chetidan tashqariga chiqadi. Hajm hissini aynan shu beradi.</li>
+          <li class="take">Har bir yo‘nalishning o‘z rangi: shaxsiy test ko‘k, jonli efir qizil-pushti, guruh yashil.</li>
+        </ul>
+        <p class="skip">Olinmadi: qora karta, brend logolari.</p>
+      </article>
+      <article class="panel ref">
+        <h3><span class="num">=</span> Natijada</h3>
+        <ul>
+          <li class="take">Fon och kulrang, kartalar oq, asosiy rang ko‘k, sariq faqat bitta asosiy tugmada.</li>
+          <li class="take">Mavzular uchun 6 ta pastel rang va ularga mos 3D obyektlar.</li>
+          <li class="take">Burchaklar sizning birinchi tokenlaringizdan kattaroq: kartalarda 24px, bannerda 32px. Hamma referenslarda shunday.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section class="sec" id="proto">
+    <div class="sec-head">
+      <span class="eyebrow">2 · Jonli prototip</span>
+      <h2>Bosib ko‘ring</h2>
+      <p>Ekranni yuqoridagi tugmalardan tanlang yoki telefon ichida bosib yuring. O‘ng tomonda shu ekran uchun UX izohi chiqadi: nima uchun shunday qilingani.</p>
+    </div>
+    <div class="proto">
+      <div class="phone-stage">
+        <div class="phone" aria-label="Ilova prototipi">
+          <div class="phone-inner" id="app"></div>
+        </div>
+      </div>
+      <aside class="proto-side">
+        <div class="screen-picker" id="picker" role="group" aria-label="Ekranni tanlash"></div>
+        <div class="panel ux-notes" id="notes" aria-live="polite"></div>
+        <p class="note">Prototipdagi 3D rasmlar men chizgan <b>vaqtinchalik</b> vektor rasmlar. Haqiqiylarini PDF’dagi promptlar asosida siz yasaysiz, men ularni joyiga qo‘yaman. Ism-familiyalar va raqamlar namuna sifatida qo‘yilgan.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="sec" id="tokens">
+    <div class="sec-head">
+      <span class="eyebrow">3 · Dizayn tokenlari</span>
+      <h2>Ranglar, shrift, burchaklar</h2>
+      <p><b>Token</b> — rang yoki o‘lchamga berilgan nom. Masalan, «Primary = ko‘k #2678F5». Dasturchi hech qayerda rangni qo‘lda yozmaydi, faqat nomini ishlatadi. Rangni bir joyda almashtirsangiz, butun ilova o‘zgaradi. Figma’dagi Variables aynan shu narsa.</p>
+    </div>
+    <div class="panel">
+      <h3 style="margin-bottom:14px">Asosiy ranglar</h3>
+      <div class="swatches" id="sw-main"></div>
+      <h3 style="margin:24px 0 14px">Mavzu ranglari (pastel)</h3>
+      <div class="swatches" id="sw-topic"></div>
+    </div>
+    <div class="grid g2">
+      <div class="panel">
+        <h3 style="margin-bottom:8px">Shrift: Onest</h3>
+        <p style="color:var(--fg-2);font-size:15px;margin-bottom:8px">Kirill harflari uchun chizilgan zamonaviy shrift. Bepul (Google Fonts) va ilova ichiga joylanadi.</p>
+        <div class="typescale">
+          <div class="r"><span class="k">Display · 26/800</span><span class="v" style="font-size:26px;font-weight:800">Привет, Алексей!</span></div>
+          <div class="r"><span class="k">Savol · 20/700</span><span class="v" style="font-size:20px;font-weight:700">Какое слово — наречие?</span></div>
+          <div class="r"><span class="k">Sarlavha · 19/700</span><span class="v" style="font-size:19px;font-weight:700">Популярные темы</span></div>
+          <div class="r"><span class="k">Matn · 15/500</span><span class="v" style="font-size:15px;font-weight:500">Проходи тесты в своём темпе</span></div>
+          <div class="r"><span class="k">Izoh · 13/500</span><span class="v" style="font-size:13px;color:var(--fg-2)">15 вопросов · ~6 мин</span></div>
+          <div class="r"><span class="k">Katta raqam · 30/800</span><span class="v" style="font-size:30px;font-weight:800;font-variant-numeric:tabular-nums">45%</span></div>
+        </div>
+      </div>
+      <div class="panel" style="display:flex;flex-direction:column;gap:18px">
+        <div>
+          <h3 style="margin-bottom:12px">Burchak radiuslari</h3>
+          <div class="radii">
+            <div style="border-radius:12px">12px<br>chip, ikonka</div>
+            <div style="border-radius:16px">16px<br>tugma, input</div>
+            <div style="border-radius:24px">24px<br>karta</div>
+            <div style="border-radius:32px">32px<br>banner, sheet</div>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin-bottom:6px">Bo‘shliqlar: 8 lik tizim</h3>
+          <p style="color:var(--fg-2);font-size:15px">Hamma oraliqlar 4 ga bo‘linadi: 4, 8, 12, 16, 20, 24, 32. Ekran chetidan 18px, kartalar orasi 12px, bo‘limlar orasi 20–24px. Shunda hamma narsa bir xil «nafas oladi».</p>
+        </div>
+        <div>
+          <h3 style="margin-bottom:6px">Soya</h3>
+          <p style="color:var(--fg-2);font-size:15px">Juda yumshoq, biroz ko‘kish soya. Karta fondan ajralib turadi, lekin «suzib» ketmaydi. Kuchliroq soya faqat suzuvchi menyu va pastdan chiqadigan oynada.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="components">
+    <div class="sec-head">
+      <span class="eyebrow">4 · Komponentlar</span>
+      <h2>Qismlar va ularning holatlari</h2>
+      <p><b>Komponent</b> — bir marta chizilib, hamma joyda qayta ishlatiladigan qism (Figma’dagi Component). <b>Holat (state)</b> — shu qismning turli ko‘rinishlari: oddiy, tanlangan, to‘g‘ri, xato va hokazo. Har bir holat oldindan chizilgan bo‘lishi shart, aks holda dasturchi o‘zi to‘qib chiqaradi.</p>
+    </div>
+    <div class="grid g2">
+      <div class="panel">
+        <h3>Javob varianti: 5 ta holat</h3>
+        <p style="color:var(--fg-2);font-size:14px;margin:4px 0 12px">Ilovadagi eng muhim komponent.</p>
+        <div class="comp-stage" id="opt-states"></div>
+      </div>
+      <div class="panel">
+        <h3>Tugmalar, chiplar, taymer</h3>
+        <div class="comp-stage" id="misc-states" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="ux">
+    <div class="sec-head">
+      <span class="eyebrow">5 · UX qoidalari</span>
+      <h2>Uchta rejim, uch xil foydalanuvchi yo‘li</h2>
+      <p>Tashqi ko‘rinishi bir xil, lekin xatti-harakati farq qiladi. Eng katta farq: <b>to‘g‘ri javob qachon ko‘rsatiladi</b>.</p>
+    </div>
+    <div class="grid g3">
+      <div class="panel">
+        <h3 style="margin-bottom:12px">Индивидуальный</h3>
+        <ol class="flow">
+          <li>Mavzu → test → <b>«Начать»</b></li>
+          <li>Har bir savolning o‘z taymeri bor (admin belgilaydi)</li>
+          <li>Javobni tanlaydi → <b>«Ответить»</b></li>
+          <li><b>Natija darhol chiqadi:</b> yashil yoki qizil, ball, izoh</li>
+          <li>3–5 soniyadan keyin keyingi savolga o‘zi o‘tadi</li>
+          <li>Oxirida natijalar va «Разбор ошибок»</li>
+        </ol>
+      </div>
+      <div class="panel">
+        <h3 style="margin-bottom:12px">Прямой эфир</h3>
+        <ol class="flow">
+          <li>Havola yoki kod orqali <b>kutish xonasiga</b> kiradi</li>
+          <li>Boshlovchi «Старт» bosadi va hammaga bir vaqtda savol chiqadi</li>
+          <li>Javob beradi → <b>javob qulflanadi</b>, o‘zgartirib bo‘lmaydi</li>
+          <li><b>To‘g‘ri javob ko‘rsatilmaydi</b>, «Ждём остальных…» chiqadi</li>
+          <li>Umumiy vaqt tugaganda hammaga bir vaqtda ochiladi</li>
+          <li>Jonli reyting, keyin keyingi savol</li>
+        </ol>
+      </div>
+      <div class="panel">
+        <h3 style="margin-bottom:12px">Тест в группе</h3>
+        <ol class="flow">
+          <li>Bot Telegram guruhga test havolasini tashlaydi</li>
+          <li>Havolani bosgan odam Mini App’da <b>shu guruh sessiyasiga</b> tushadi</li>
+          <li><b>Mustaqil variant:</b> har kim o‘zi ishlaydi, xuddi shaxsiy testdek</li>
+          <li><b>Sinxron variant:</b> boshlovchi bilan, xuddi jonli efirdek</li>
+          <li>Reyting faqat shu guruh ichida</li>
+        </ol>
+      </div>
+    </div>
+    <div class="grid g2">
+      <div class="panel">
+        <h3 style="margin-bottom:10px">Testdan tasodifan chiqib ketmaslik</h3>
+        <ul style="margin:0;padding-left:18px;color:var(--fg-2);display:flex;flex-direction:column;gap:6px;font-size:15px">
+          <li>Test vaqtida pastki menyu <b>yashiriladi</b>.</li>
+          <li>✕ bosilsa, avval so‘raladi: «Выйти из теста? Таймер продолжит идти».</li>
+          <li>Telegram’ni pastga surib yopish o‘chirilgan.</li>
+          <li>Ilova yopilib qolsa ham, test serverda saqlanadi va qaytib kirganda shu savoldan davom etadi.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3 style="margin-bottom:10px">Taymer hisobini server yuritadi</h3>
+        <ul style="margin:0;padding-left:18px;color:var(--fg-2);display:flex;flex-direction:column;gap:6px;font-size:15px">
+          <li>Ekrandagi soat — shunchaki ko‘rsatkich. Vaqtni <b>server</b> hisoblaydi, shuning uchun telefon soatini o‘zgartirib aldab bo‘lmaydi.</li>
+          <li>Oxirgi 5 soniyada taymer to‘q sariq rangga kiradi va «uradi». Bu foydalanuvchini shoshilishga undaydi.</li>
+          <li>To‘g‘ri javob telefonga faqat javob berilgandan keyin keladi. Uni kod ichidan qidirib topib bo‘lmaydi.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="assets">
+    <div class="sec-head">
+      <span class="eyebrow">6 · 3D rasmlar</span>
+      <h2>Siz yasaydigan rasmlar ro‘yxati</h2>
+      <p>To‘liq promptlar chatda yuborilgan PDF’da. Ishni <b>P1</b> dan boshlang: shu 11 ta rasm bo‘lsa, asosiy ekranlar tayyor ko‘rinadi.</p>
+    </div>
+    <div class="panel tbl">
+      <table class="assets" id="asset-table">
+        <thead><tr><th>Kod</th><th>Nima</th><th>Qayerda</th><th>Rang</th><th>Navbat</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="glossary">
+    <div class="sec-head">
+      <span class="eyebrow">7 · Lug‘at</span>
+      <h2>Dasturchilar tilida, oddiy so‘z bilan</h2>
+    </div>
+    <div class="panel">
+      <dl class="gloss">
+        <dt>Mini App</dt><dd>Telegram ichida ochiladigan sayt. Foydalanuvchi uni oddiy ilovadek his qiladi, hech narsa yuklab olish shart emas.</dd>
+        <dt>UI / UX</dt><dd>UI — ekran qanday ko‘rinadi. UX — foydalanuvchi o‘zini qanday his qiladi va maqsadiga qanchalik oson yetadi.</dd>
+        <dt>Token</dt><dd>Rang yoki o‘lchamning nomi (Primary, Radius-card). Figma Variables bilan bir narsa.</dd>
+        <dt>Komponent / Variant</dt><dd>Qayta ishlatiladigan qism va uning turlari (Button → Primary, Soft, Sun).</dd>
+        <dt>Holat (state)</dt><dd>Komponentning vaziyatga qarab ko‘rinishi: oddiy, tanlangan, o‘chirilgan, xato.</dd>
+        <dt>Bottom sheet</dt><dd>Ekran pastidan chiqadigan oyna. Natija va test tafsilotlari shunda ochiladi.</dd>
+        <dt>Safe area</dt><dd>Ekranning «xavfsiz» qismi: iPhone’dagi «bo‘yinbog‘» (notch) va pastki chiziq ostiga tugma qo‘yilmaydi.</dd>
+        <dt>Mock</dt><dd>Hozircha soxta ma'lumot. Backend tayyor bo‘lgach, haqiqiysi bilan almashtiriladi.</dd>
+        <dt>Backend / server</dt><dd>Ko‘rinmaydigan qism: savollar, javoblar, ballar va vaqt hisobini shu saqlaydi.</dd>
+        <dt>Deep link</dt><dd>Ilovaning aniq bir joyini ochadigan havola. Masalan, guruhdagi havola to‘g‘ri shu testni ochadi.</dd>
+        <dt>Prototip</dt><dd>Bosib ko‘rsa bo‘ladigan model. Yuqoridagi telefon shu.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Keyingi qadam</span>
+      <h2>Sizdan nima kerak</h2>
+    </div>
+    <div class="grid g3">
+      <div class="panel"><h3>1. Prototipni tasdiqlang</h3><p style="color:var(--fg-2);margin-top:6px">Nima yoqmadi, aniq yozing: «mavzu kartalari juda katta» yoki «sariq tugma kerak emas». Tasdiqdan keyin shu dizaynni haqiqiy kodga ko‘chiraman.</p></div>
+      <div class="panel"><h3>2. P1 rasmlarini yasang</h3><p style="color:var(--fg-2);margin-top:6px">11 ta rasm, PDF’dagi promptlar bo‘yicha. Avval bitta rasm (T01) yasab, menga ko‘rsating. Uslub to‘g‘ri chiqqanini tekshirib olgach, qolganlariga o‘tamiz.</p></div>
+      <div class="panel"><h3>3. Logo</h3><p style="color:var(--fg-2);margin-top:6px">Hozirgi «Rq» belgisi vaqtinchalik. Bot avatari va Mini App ikonkasi uchun haqiqiy logo kerak. Bu alohida ish.</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------- palette ---------- */
+const PAL = {
+  blue: { bg: '#E6F0FF', fg: '#2678F5', deep: '#1553B8' },
+  violet: { bg: '#EFEAFE', fg: '#7C5CFA', deep: '#5B3FD6' },
+  mint: { bg: '#E3F7EF', fg: '#16A37A', deep: '#0E7A5B' },
+  peach: { bg: '#FFEEE3', fg: '#F07A3A', deep: '#C9561A' },
+  pink: { bg: '#FDE8F1', fg: '#E2508C', deep: '#B8326A' },
+  yellow: { bg: '#FFF5D9', fg: '#D99A06', deep: '#A87400' },
+};
+
+/* ---------- placeholder vector illustrations ---------- */
+let uid = 0;
+function illo(kind, color, size) {
+  const c = PAL[color] || PAL.blue; const id = 'i' + (++uid);
+  const main = `url(#${id}m)`, light = `url(#${id}l)`, shine = `url(#${id}s)`;
+  const defs = `<defs>
+    <linearGradient id="${id}m" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="${c.fg}" stop-opacity=".78"/><stop offset="1" stop-color="${c.deep}"/></linearGradient>
+    <linearGradient id="${id}l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="${c.bg}"/></linearGradient>
+    <radialGradient id="${id}s" cx=".3" cy=".25" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>`;
+  const shadow = `<ellipse cx="60" cy="106" rx="32" ry="5" fill="${c.deep}" opacity=".16"/>`;
+  const art = {
+    morphology: `<path d="M16 34c14-6 30-6 44 4v58c-14-9-30-9-44-3z" fill="${main}"/><path d="M104 34c-14-6-30-6-44 4v58c14-9 30-9 44-3z" fill="${main}"/><path d="M20 30c13-5 27-4 40 5v55c-13-8-27-9-40-4z" fill="${light}"/><path d="M100 30c-13-5-27-4-40 5v55c13-8 27-9 40-4z" fill="${light}"/><path d="M29 46h20M29 55h22M29 64h16M71 46h20M69 55h22M75 64h16" stroke="${c.fg}" stroke-opacity=".45" stroke-width="3.5" stroke-linecap="round"/>`,
+    orthography: `<g transform="rotate(-38 60 60)"><rect x="48" y="14" width="24" height="66" rx="5" fill="${main}"/><rect x="48" y="14" width="10" height="66" rx="5" fill="${shine}"/><rect x="48" y="12" width="24" height="12" rx="5" fill="#F9A8C9"/><rect x="48" y="22" width="24" height="5" fill="#E4E8EF"/><path d="M48 80h24l-12 22z" fill="#F6D7A7"/><path d="M55.5 94h9L60 102z" fill="${c.deep}"/></g>`,
+    syntax: `<rect x="14" y="26" width="46" height="30" rx="10" fill="${main}"/><rect x="60" y="64" width="46" height="30" rx="10" fill="${main}"/><rect x="14" y="26" width="46" height="30" rx="10" fill="${shine}"/><path d="M48 56v8a8 8 0 0 0 8 8h4" stroke="${c.deep}" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="66" y="22" width="36" height="24" rx="8" fill="${light}"/><path d="M24 41h26M70 79h26" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`,
+    punctuation: `<circle cx="46" cy="50" r="24" fill="${main}"/><path d="M60 64c0 18-10 30-26 34 8-8 11-16 10-24z" fill="${main}"/><circle cx="46" cy="50" r="24" fill="${shine}"/><circle cx="90" cy="82" r="12" fill="${main}"/><circle cx="92" cy="40" r="7" fill="${light}"/>`,
+    lexicon: `<path d="M14 30a12 12 0 0 1 12-12h44a12 12 0 0 1 12 12v24a12 12 0 0 1-12 12H40l-14 12v-12a12 12 0 0 1-12-12z" fill="${main}"/><path d="M14 30a12 12 0 0 1 12-12h44a12 12 0 0 1 12 12v24a12 12 0 0 1-12 12H40l-14 12v-12a12 12 0 0 1-12-12z" fill="${shine}"/><circle cx="34" cy="42" r="4" fill="#fff"/><circle cx="48" cy="42" r="4" fill="#fff"/><circle cx="62" cy="42" r="4" fill="#fff"/><path d="M54 62a10 10 0 0 1 10-10h32a10 10 0 0 1 10 10v16a10 10 0 0 1-10 10v10l-12-10H64a10 10 0 0 1-10-10z" fill="${light}"/>`,
+    phonetics: `<circle cx="60" cy="56" r="40" fill="${main}"/><circle cx="60" cy="56" r="40" fill="${shine}"/>${[[34,14],[46,24],[58,34],[70,22],[82,12]].map(([x,h]) => `<rect x="${x-4}" y="${56-h}" width="8" height="${h*2}" rx="4" fill="#fff"/>`).join('')}`,
+    target: `<circle cx="56" cy="58" r="40" fill="#fff"/><circle cx="56" cy="58" r="30" fill="${main}"/><circle cx="56" cy="58" r="20" fill="#fff"/><circle cx="56" cy="58" r="10" fill="${main}"/><path d="M58 56 96 20" stroke="#FFD84D" stroke-width="6" stroke-linecap="round"/><path d="M90 14l12 2-2 12z" fill="#F5A70B"/>`,
+    stopwatch: `<rect x="52" y="8" width="16" height="12" rx="4" fill="#fff"/><circle cx="60" cy="62" r="40" fill="#fff"/><circle cx="60" cy="62" r="32" fill="${light}"/><path d="M60 62V40" stroke="${c.deep}" stroke-width="6" stroke-linecap="round"/><path d="M66 70 56 82l3-12h-8l12-16-3 12z" fill="#FFD84D"/>`,
+    group: `<circle cx="34" cy="46" r="15" fill="#fff"/><path d="M12 92c0-14 10-24 22-24s22 10 22 24z" fill="#fff"/><circle cx="86" cy="46" r="15" fill="${light}"/><path d="M64 92c0-14 10-24 22-24s22 10 22 24z" fill="${light}"/><circle cx="60" cy="38" r="17" fill="#FFD84D"/><path d="M34 98c0-16 12-28 26-28s26 12 26 28z" fill="#FFD84D"/>`,
+    trophy: `<path d="M34 18h52v26a26 26 0 0 1-52 0z" fill="url(#${id}g)"/><path d="M34 26H20c0 14 8 22 18 22M86 26h14c0 14-8 22-18 22" stroke="#F5A70B" stroke-width="6" fill="none"/><rect x="52" y="68" width="16" height="16" fill="#F5A70B"/><rect x="36" y="84" width="48" height="14" rx="6" fill="${c.deep}"/><path d="M60 28l4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1z" fill="#fff" opacity=".9"/>`,
+    books: `<rect x="18" y="80" width="88" height="20" rx="7" fill="#F07A3A"/><rect x="26" y="62" width="78" height="20" rx="7" fill="#7C5CFA"/><rect x="20" y="44" width="82" height="20" rx="7" fill="#16A37A"/><rect x="20" y="44" width="82" height="6" rx="3" fill="#fff" opacity=".3"/><path d="M38 30 62 20l24 10-24 10z" fill="#172B4D"/><path d="M48 34v8c8 5 20 5 28 0v-8l-14 6z" fill="#2A3D63"/><path d="M84 31v12" stroke="#FFD84D" stroke-width="3"/><path d="M98 6l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="#FFD84D"/>`,
+    rocket: `<path d="M60 10c18 14 24 36 18 62H42c-6-26 0-48 18-62z" fill="#fff"/><circle cx="60" cy="44" r="10" fill="${main}"/><path d="M42 72 28 86l16-2zM78 72l14 14-16-2z" fill="${main}"/><path d="M50 74h20l-4 16h-12z" fill="#FFD84D"/><path d="M54 90h12l-6 12z" fill="#F5A70B"/>`,
+  }[kind] || '';
+  const extra = kind === 'trophy' ? `<defs><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE07A"/><stop offset="1" stop-color="#F5A70B"/></linearGradient></defs>` : '';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 120 120" aria-hidden="true">${defs}${extra}${shadow}${art}</svg>`;
+}
+
+/* ---------- icons ---------- */
+const IC = {
+  home: '<path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.5C5 9 6.5 10.5 8.3 10.8M16 6h2.5c.5 3-1 4.5-2.8 4.8M12 13v3.5M8.5 20h7M9.5 20l.6-3.5h3.8l.6 3.5"/>',
+  user: '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.8-3.6 3.8-5.8 7.5-5.8s6.7 2.2 7.5 5.8"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  back: '<path d="m14 6-6 6 6 6"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  play: '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4.2l2.8 1.8"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  x: '<path d="M7 7l10 10M17 7 7 17"/>',
+  hourglass: '<path d="M7 4h10M7 20h10M8 4c0 5 8 5 8 8s-8 3-8 8M16 4c0 5-8 5-8 8s8 3 8 8"/>',
+  share: '<path d="M12 15V4M8 8l4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+  repeat: '<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>',
+  q: '<circle cx="12" cy="12" r="8"/><path d="M9.8 9.5a2.3 2.3 0 1 1 3.2 2.1c-.6.3-1 .8-1 1.4v.5M12 16.5h.01"/>',
+  chev: '<path d="m10 6 6 6-6 6"/>',
+  globe: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13.5 0 16M12 4c-2.5 2.5-2.5 13.5 0 16"/>',
+  vib: '<rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 9v6M20 9v6"/>',
+};
+const ic = (n, s = 22, w = 1.9) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
+
+/* ---------- sample data (namuna) ---------- */
+const TOPICS = [
+  { slug: 'morph', t: 'Морфология', c: 'blue', k: 'morphology', tests: 12, q: 180, p: 45 },
+  { slug: 'orth', t: 'Орфография', c: 'violet', k: 'orthography', tests: 15, q: 240, p: 20 },
+  { slug: 'synt', t: 'Синтаксис', c: 'mint', k: 'syntax', tests: 9, q: 135, p: 70 },
+  { slug: 'punc', t: 'Пунктуация', c: 'peach', k: 'punctuation', tests: 10, q: 150, p: 0 },
+  { slug: 'lex', t: 'Лексика', c: 'pink', k: 'lexicon', tests: 8, q: 120, p: 10 },
+  { slug: 'phon', t: 'Фонетика', c: 'yellow', k: 'phonetics', tests: 6, q: 90, p: 0 },
+];
+const TESTS = [
+  { t: 'Имя существительное', d: 'easy', n: 4, min: 2, pts: 400, st: 'В процессе · 2/4' },
+  { t: 'Имя прилагательное', d: 'mid', n: 15, min: 6, pts: 1500, st: 'Пройден · 80%' },
+  { t: 'Глагол: виды и время', d: 'hard', n: 20, min: 9, pts: 2400, st: 'Не начат' },
+  { t: 'Наречие', d: 'mid', n: 12, min: 5, pts: 1200, st: 'Не начат' },
+];
+const DIFF = { easy: ['easy', 'Лёгкий'], mid: ['mid', 'Средний'], hard: ['hard', 'Сложный'] };
+const QUESTIONS = [
+  { q: 'Какое из слов является наречием?', o: ['Быстрый', 'Быстро', 'Быстрота', 'Ускорить'], a: 1, t: 15, pts: 100, ex: '<b>Быстро</b> отвечает на вопрос «как?» и не изменяется — это признаки наречия.' },
+  { q: 'Укажите имя существительное женского рода.', o: ['Тюль', 'Кофе', 'Мозоль', 'Шампунь'], a: 2, t: 15, pts: 100, ex: '<b>Мозоль</b> — женского рода: «больная мозоль». Тюль, кофе и шампунь — мужского.' },
+  { q: 'В каком слове пишется Ь после шипящей?', o: ['Луч…', 'Ноч…', 'Врач…', 'Шалаш…'], a: 1, t: 12, pts: 150, ex: 'У существительных женского рода 3-го склонения после шипящих пишется Ь: <b>ночь</b>.' },
+  { q: 'Какое слово — глагол совершенного вида?', o: ['Читать', 'Решать', 'Написать', 'Писать'], a: 2, t: 10, pts: 150, ex: '<b>Написать</b> отвечает на вопрос «что сделать?» — это совершенный вид.' },
+];
+const LB = {
+  ind: [['Мадина Р.', 4820], ['Тимур А.', 4610], ['Ольга С.', 4390], ['Джасур К.', 3950], ['Анна В.', 3720], ['Алексей И.', 3120, 1]],
+  live: [['Тимур А.', 1250], ['Ольга С.', 1100], ['Мадина Р.', 980], ['Алексей И.', 900, 1], ['Анна В.', 760]],
+  grp: [['Ольга С.', 2100], ['Алексей И.', 1980, 1], ['Джасур К.', 1700], ['Мадина Р.', 1500]],
+};
+const initials = (n) => n.split(/\s+/).map((p) => p[0]).join('').replace('.', '').slice(0, 2).toUpperCase();
+
+/* ---------- state ---------- */
+const S = {
+  screen: 'home', topic: TOPICS[0], sheet: null, diff: 0, lb: 'ind', liveState: 'lobby',
+  quiz: null, timerId: null,
+};
+const app = $('#app');
+
+/* ---------- shared chrome ---------- */
+const statusBar = `<div class="statusbar"><span>9:41</span><span class="isl"></span><span class="icons"><svg width="18" height="11" viewBox="0 0 18 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="6" rx="1" fill="currentColor"/><rect x="10" y="2.5" width="3" height="8.5" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="11" rx="1" fill="currentColor"/></svg><svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/></svg></span></div>`;
+const NAV = [['home', 'Главная', 'home'], ['topics', 'Темы', 'grid'], ['rating', 'Рейтинг', 'trophy'], ['profile', 'Профиль', 'user']];
+const navTab = { home: 'home', topics: 'topics', tests: 'topics', rating: 'rating', profile: 'profile' };
+function nav() {
+  const cur = navTab[S.screen];
+  return `<nav class="p-nav" aria-label="Меню">${NAV.map(([id, l, i]) => `<button data-go="${id}" class="${cur === id ? 'on' : ''}" aria-label="${l}">${ic(i, 22, cur === id ? 2.2 : 1.9)}<span>${l}</span></button>`).join('')}</nav>`;
+}
+
+/* ---------- screens ---------- */
+const V = {};
+V.home = () => `<div class="scr">
+  <div class="p-between">
+    <div class="p-row"><div class="p-avatar">АИ</div><div><div class="p-micro">С возвращением 👋</div><div class="p-h2">Алексей Иванов</div></div></div>
+    <button class="p-icon-btn" aria-label="Уведомления">${ic('bell')}<span class="dot"></span></button>
+  </div>
+  <section class="p-hero">
+    <div class="txt">
+      <span class="pill">Новое каждую неделю</span>
+      <h2>Проверь свой русский язык</h2>
+      <p>Грамматика, орфография и лексика</p>
+      <button class="p-btn sun" data-go="topics" style="margin-top:8px">${ic('play', 16)} Начать тест</button>
+    </div>
+    <div class="art">${illo('books', 'blue', 150)}</div>
+  </section>
+  <div class="p-card p-cont">
+    <div class="ic">${ic('clock', 24)}</div>
+    <div style="flex:1;min-width:0">
+      <div class="p-micro" style="text-transform:uppercase;letter-spacing:.05em">Продолжить · Морфология</div>
+      <div style="font-weight:700;margin:2px 0 8px">Имя существительное</div>
+      <div class="p-row" style="gap:8px"><div class="p-bar"><i style="width:50%"></i></div><span class="p-micro" style="color:var(--p-ink)">2/4</span></div>
+    </div>
+    <button class="p-play" data-act="start" aria-label="Продолжить">${ic('play', 16)}</button>
+  </div>
+  <div>
+    <div class="p-between" style="margin-bottom:12px"><div class="p-h2">Режимы</div></div>
+    <div class="p-modes">
+      <button class="p-mode m1" data-act="start"><b>Индивидуальный</b><span>Проходи тесты в своём темпе</span><div class="art">${illo('target', 'blue', 96)}</div></button>
+      <button class="p-mode m2" data-go="live"><b>Прямой эфир <span class="p-badge live">LIVE</span></b><span>2 эфира идут сейчас</span><div class="art">${illo('stopwatch', 'pink', 96)}</div></button>
+      <button class="p-mode m3" data-go="live" data-live="group"><b>Тест в группе</b><span>Соревнуйся с друзьями</span><div class="art">${illo('group', 'mint', 96)}</div></button>
+    </div>
+  </div>
+  <div>
+    <div class="p-between" style="margin-bottom:12px"><div class="p-h2">Популярные темы</div><button class="p-link" data-go="topics">Все</button></div>
+    <div class="p-topics">${TOPICS.slice(0, 4).map(topicCard).join('')}</div>
+  </div>
+</div>${nav()}`;
+
+function topicCard(t) {
+  return `<button class="p-topic c-${t.c}" data-topic="${t.slug}">
+    <div class="t">${t.t}<span class="meta">${t.tests} тестов · ${t.q} вопр.</span></div>
+    <div class="pct"><small>Прогресс</small><strong>${t.p}%</strong></div>
+    <div class="art">${illo(t.k, t.c, 104)}</div>
+  </button>`;
+}
+
+V.topics = () => `<div class="scr">
+  <div class="p-h1">Темы</div>
+  <div class="p-search">${ic('search', 20)} Найти тему или тест</div>
+  <div class="p-bigtabs" role="tablist">${['Все', 'Лёгкие', 'Средние', 'Сложные'].map((l, i) => `<button role="tab" aria-selected="${S.diff === i}" data-diff="${i}" class="${S.diff === i ? 'on' : ''}">${l}</button>`).join('')}</div>
+  <div class="p-topics">${TOPICS.map(topicCard).join('')}</div>
+</div>${nav()}`;
+
+V.tests = () => {
+  const t = S.topic;
+  return `<div class="scr">
+  <div class="p-between"><button class="p-icon-btn" data-go="topics" aria-label="Назад">${ic('back')}</button><div class="p-h2">${t.t}</div><button class="p-icon-btn" aria-label="Поделиться">${ic('share', 20)}</button></div>
+  <section class="p-topic-head c-${t.c}">
+    <div class="art">${illo(t.k, t.c, 130)}</div>
+    <div class="p-cap" style="color:rgba(23,43,77,.65);font-weight:600">${t.tests} тестов · ${t.q} вопросов</div>
+    <div class="p-row" style="gap:10px"><div class="p-bar" style="background:rgba(255,255,255,.7)"><i style="width:${t.p}%;background:${PAL[t.c].fg}"></i></div><b style="font-size:22px;font-variant-numeric:tabular-nums">${t.p}%</b></div>
+  </section>
+  <div class="p-hscroll">${['Все', 'Существительное', 'Прилагательное', 'Глагол', 'Наречие'].map((s, i) => `<button class="p-chip ${i === 0 ? 'on' : ''}">${s}</button>`).join('')}</div>
+  <div style="display:flex;flex-direction:column;gap:10px">${TESTS.map((x, i) => `
+    <button class="p-card p-test" data-test="${i}">
+      <div class="p-between" style="width:100%"><b style="font-size:16px">${x.t}</b><span class="p-badge ${DIFF[x.d][0]}">${DIFF[x.d][1]}</span></div>
+      <div class="facts"><span>${ic('q', 14)} ${x.n} вопросов</span><span>${ic('clock', 14)} ~${x.min} мин</span><span>${ic('trophy', 14)} ${x.pts} б.</span></div>
+      <div class="p-between" style="width:100%"><span class="p-micro" style="color:${x.st.startsWith('Пройден') ? 'var(--p-success)' : x.st.startsWith('В процессе') ? 'var(--p-primary)' : 'var(--p-muted)'}">${x.st}</span>${ic('chev', 18)}</div>
+    </button>`).join('')}</div>
+</div>${nav()}`;
+};
+
+function testSheet(i) {
+  const x = TESTS[i];
+  return `<div class="p-dim" data-close></div><div class="p-sheet" role="dialog" aria-label="Детали теста">
+    <div class="grab"></div>
+    <div><span class="p-badge ${DIFF[x.d][0]}">${DIFF[x.d][1]}</span><div class="p-h1" style="font-size:22px;margin-top:8px">${x.t}</div><div class="p-cap">${S.topic.t}</div></div>
+    <div class="p-facts"><div class="p-fact"><b>${x.n}</b><span>вопросов</span></div><div class="p-fact"><b>~${x.min}</b><span>минут</span></div><div class="p-fact"><b>${x.pts}</b><span>баллов</span></div></div>
+    <ul class="p-rules"><li>У каждого вопроса свой таймер.</li><li>Ответ нельзя изменить после отправки.</li><li>Нет ответа — 0 баллов, тест идёт дальше.</li><li>В рейтинг идёт лучший результат.</li></ul>
+    <div class="p-row"><button class="p-btn white" aria-label="Поделиться">${ic('share', 20)}</button><button class="p-btn primary block" data-act="start">Начать тест</button></div>
+  </div>`;
+}
+function exitSheet() {
+  return `<div class="p-dim" data-close></div><div class="p-sheet" role="dialog" aria-label="Выход из теста">
+    <div class="grab"></div>
+    <div class="p-h1" style="font-size:22px">Выйти из теста?</div>
+    <p class="p-cap" style="font-size:14px">Прогресс сохранится, но таймер вопроса продолжит идти. Вернуться можно с главной.</p>
+    <button class="p-btn primary block" data-close>Продолжить тест</button>
+    <button class="p-btn soft block" data-act="quit">Выйти</button>
+  </div>`;
+}
+
+/* ---- Quiz ---- */
+function startQuiz() {
+  stopTimer();
+  S.quiz = { i: 0, sel: null, phase: 'answer', res: [], deadline: 0, fbEnd: 0, started: Date.now() };
+  S.sheet = null; S.screen = 'quiz'; openQuestion();
+}
+function openQuestion() {
+  const q = QUESTIONS[S.quiz.i];
+  Object.assign(S.quiz, { sel: null, phase: 'answer', deadline: Date.now() + q.t * 1000 });
+  render(); tick();
+  S.timerId = setInterval(tick, 100);
+}
+function stopTimer() { if (S.timerId) clearInterval(S.timerId); S.timerId = null; }
+function tick() {
+  const z = S.quiz; if (!z || S.screen !== 'quiz') return stopTimer();
+  const q = QUESTIONS[z.i];
+  if (z.phase === 'answer') {
+    if (S.sheet === 'exit') { /* timer keeps going while sheet open — like real app */ }
+    const left = Math.max(0, z.deadline - Date.now());
+    const el = $('#tm', app);
+    if (el) {
+      const sec = Math.ceil(left / 1000), frac = left / (q.t * 1000);
+      el.classList.toggle('low', sec <= 5);
+      $('b', el).textContent = sec;
+      const ring = $('circle.fg', el);
+      ring.setAttribute('stroke-dashoffset', String(138.2 * (1 - frac)));
+      ring.setAttribute('stroke', sec <= 5 ? '#F59E0B' : '#2678F5');
+    }
+    if (left <= 0) finishQuestion(null);
+  } else {
+    const left = Math.max(0, z.fbEnd - Date.now());
+    const bar = $('#auto', app); if (bar) bar.style.transform = `scaleX(${left / z.fbDur})`;
+    if (left <= 0) nextQuestion();
+  }
+}
+function finishQuestion(choice) {
+  const z = S.quiz, q = QUESTIONS[z.i];
+  const kind = choice === null ? 'to' : choice === q.a ? 'ok' : 'bad';
+  z.res.push({ kind, choice, pts: kind === 'ok' ? q.pts : 0 });
+  z.phase = 'fb'; z.fbDur = q.ex ? 5000 : 3000; z.fbEnd = Date.now() + z.fbDur; S.sheet = null;
+  render();
+}
+function nextQuestion() {
+  const z = S.quiz;
+  if (z.i + 1 >= QUESTIONS.length) { stopTimer(); z.total = Date.now() - z.started; S.screen = 'result'; render(); return; }
+  stopTimer(); z.i++; openQuestion();
+}
+
+V.quiz = () => {
+  const z = S.quiz, q = QUESTIONS[z.i], last = z.res[z.i];
+  const fb = z.phase === 'fb';
+  const segs = QUESTIONS.map((_, k) => `<i class="${k < z.res.length ? z.res[k].kind : k === z.i ? 'cur' : ''}"></i>`).join('');
+  const L = 'ABCD';
+  const opts = q.o.map((o, k) => {
+    let cls = '', mark = '';
+    if (!fb && z.sel === k) cls = 'sel';
+    if (fb) {
+      if (k === q.a) { cls = 'ok'; mark = `<span class="mark" style="color:var(--p-success)">${ic('check', 22, 2.6)}</span>`; }
+      else if (last.choice === k) { cls = 'bad'; mark = `<span class="mark" style="color:var(--p-error)">${ic('x', 22, 2.6)}</span>`; }
+      else cls = 'dim';
+    }
+    return `<button class="p-opt ${cls}" data-opt="${k}" ${fb ? 'disabled' : ''} aria-pressed="${z.sel === k}"><span class="l">${L[k]}</span>${esc(o)}${mark}</button>`;
+  }).join('');
+  const fbMeta = fb ? { ok: ['ok', 'Правильно!', 'check'], bad: ['bad', 'Неправильно', 'x'], to: ['to', 'Время вышло', 'hourglass'] }[last.kind] : null;
+  const timerLeft = fb ? 0 : Math.max(0, Math.ceil((z.deadline - Date.now()) / 1000));
+  return `<div class="scr nonav">
+    <div class="p-qtop">
+      <button class="p-icon-btn" data-act="exit" aria-label="Выйти">${ic('close', 20)}</button>
+      <div class="p-qcount">Вопрос ${z.i + 1} из ${QUESTIONS.length}<small>Морфология · Существительное</small></div>
+      <div class="p-timer ${timerLeft <= 5 && !fb ? 'low' : ''}" id="tm" role="timer" aria-label="Осталось секунд">
+        <svg width="50" height="50" viewBox="0 0 50 50"><circle cx="25" cy="25" r="22" stroke="#E6EAF0" stroke-width="5" fill="#fff"/><circle class="fg" cx="25" cy="25" r="22" stroke="#2678F5" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="${fb ? 138.2 : 0}"/></svg><b>${fb ? '—' : timerLeft}</b>
+      </div>
+    </div>
+    <div class="p-segs" aria-hidden="true">${segs}</div>
+    <div class="p-qcard"><span class="p-badge done">${q.pts} баллов</span><div class="q">${esc(q.q)}</div></div>
+    <div class="p-opts">${opts}</div>
+  </div>
+  ${fb ? `<div class="p-sheet" role="status" style="box-shadow:0 -10px 40px rgba(14,22,38,.14)">
+      <div class="p-fb-head"><div class="p-fb-ic ${fbMeta[0]}">${ic(fbMeta[2], 26, 2.6)}</div><div class="p-fb-title">${fbMeta[1]}</div><span class="p-pts ${last.pts ? 'ok' : 'none'}">+${last.pts}</span></div>
+      ${last.kind !== 'ok' ? `<div class="p-cap" style="font-size:14px">Правильный ответ: <b style="color:var(--p-ink)">${esc(q.o[q.a])}</b></div>` : ''}
+      <div class="p-expl">${q.ex}</div>
+      <div class="p-auto"><i id="auto"></i></div>
+      <button class="p-btn soft block" data-act="next">${z.i + 1 >= QUESTIONS.length ? 'К результатам' : 'Дальше'}</button>
+    </div>`
+  : `<div class="p-dock"><button class="p-btn primary block" data-act="answer" ${z.sel === null ? 'disabled' : ''}>Ответить</button></div>`}`;
+};
+
+V.result = () => {
+  const z = S.quiz || demoResult();
+  const max = QUESTIONS.reduce((s, q) => s + q.pts, 0), got = z.res.reduce((s, r) => s + r.pts, 0);
+  const cnt = (k) => z.res.filter((r) => r.kind === k).length;
+  const acc = Math.round((cnt('ok') / QUESTIONS.length) * 100);
+  const sec = Math.round((z.total || 41000) / 1000);
+  const verdict = acc >= 75 ? ['Отличный результат!', 'trophy'] : acc >= 40 ? ['Хороший старт', 'target'] : ['Есть над чем поработать', 'target'];
+  return `<div class="scr nonav">
+    <div class="p-between"><button class="p-icon-btn" data-go="home" aria-label="Закрыть">${ic('close', 20)}</button><div class="p-h2">Результат</div><button class="p-icon-btn" aria-label="Поделиться">${ic('share', 20)}</button></div>
+    <div class="p-res-hero">${illo(verdict[1], 'blue', 130)}<div class="p-h1" style="font-size:22px">${verdict[0]}</div><div class="p-score">${got}<small> / ${max}</small></div><div class="p-cap">баллов · точность ${acc}%</div></div>
+    <div class="p-stats">
+      <div class="p-stat"><div class="dot" style="background:var(--p-success-50);color:var(--p-success)">${ic('check', 20, 2.6)}</div><div><b>${cnt('ok')}</b><span>Правильно</span></div></div>
+      <div class="p-stat"><div class="dot" style="background:var(--p-error-50);color:var(--p-error)">${ic('x', 20, 2.6)}</div><div><b>${cnt('bad')}</b><span>Неправильно</span></div></div>
+      <div class="p-stat"><div class="dot" style="background:var(--p-warning-50);color:var(--p-warning)">${ic('hourglass', 20, 2.2)}</div><div><b>${cnt('to')}</b><span>Без ответа</span></div></div>
+      <div class="p-stat"><div class="dot" style="background:var(--p-primary-50);color:var(--p-primary)">${ic('clock', 20, 2.2)}</div><div><b>${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</b><span>Время</span></div></div>
+    </div>
+    <button class="p-btn primary block" data-go="review">${ic('list', 20)} Разбор ошибок</button>
+    <div class="p-actions"><button class="p-btn soft" data-act="start">${ic('repeat', 18)} Повторить</button><button class="p-btn white" data-go="home">${ic('home', 18)} На главную</button></div>
+  </div>`;
+};
+function demoResult() { return { res: [{ kind: 'ok', choice: 1, pts: 100 }, { kind: 'bad', choice: 0, pts: 0 }, { kind: 'ok', choice: 1, pts: 150 }, { kind: 'to', choice: null, pts: 0 }], total: 41000 }; }
+
+V.review = () => {
+  const z = S.quiz || demoResult();
+  return `<div class="scr nonav">
+    <div class="p-between"><button class="p-icon-btn" data-go="result" aria-label="Назад">${ic('back')}</button><div class="p-h2">Разбор ошибок</div><span style="width:44px"></span></div>
+    <div class="p-hscroll">${['Все', 'Ошибки', 'Без ответа'].map((s, i) => `<button class="p-chip ${i === 0 ? 'on' : ''}">${s}</button>`).join('')}</div>
+    ${QUESTIONS.map((q, k) => { const r = z.res[k] || { kind: 'to', choice: null, pts: 0 }; const b = { ok: ['easy', 'Правильно'], bad: ['hard', 'Ошибка'], to: ['mid', 'Время вышло'] }[r.kind];
+      return `<div class="p-card p-rev">
+        <div class="p-between"><span class="p-micro">Вопрос ${k + 1}</span><span class="p-badge ${b[0]}">${b[1]} · +${r.pts}</span></div>
+        <b style="font-size:15px">${esc(q.q)}</b>
+        ${r.kind === 'bad' ? `<div class="ans" style="color:var(--p-error)"><i>✕</i>${esc(q.o[r.choice])}</div>` : ''}
+        ${r.kind === 'to' ? `<div class="ans" style="color:#B66F00"><i>⏱</i>Ответ не выбран</div>` : ''}
+        <div class="ans" style="color:var(--p-success)"><i>✓</i>${esc(q.o[q.a])}</div>
+        <div class="p-expl">${q.ex}</div>
+      </div>`; }).join('')}
+  </div>`;
+};
+
+V.rating = () => {
+  const rows = LB[S.lb], top = rows.slice(0, 3);
+  const pod = (r, h, col, n) => `<div class="p-pod"><div class="p-avatar" style="width:${n === 1 ? 60 : 50}px;height:${n === 1 ? 60 : 50}px">${initials(r[0])}</div><div class="nm">${r[0]}</div><div class="sc">${r[1]}</div><div class="col" style="height:${h}px;background:${col}">${n}</div></div>`;
+  return `<div class="scr">
+    <div class="p-h1">Рейтинг</div>
+    <div class="p-seg" role="tablist">${[['ind', 'Индивид.'], ['live', 'Эфиры'], ['grp', 'Группы']].map(([k, l]) => `<button role="tab" aria-selected="${S.lb === k}" class="${S.lb === k ? 'on' : ''}" data-lb="${k}">${l}</button>`).join('')}</div>
+    <div class="p-hscroll"><button class="p-chip on">Эта неделя</button><button class="p-chip">Месяц</button><button class="p-chip">Всё время</button></div>
+    <div class="p-podium">${pod(top[1], 70, '#9DB4D6', 2)}${pod(top[0], 100, '#F5B70B', 1)}${pod(top[2], 54, '#E89B6C', 3)}</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${rows.slice(3).map((r, k) => `<div class="p-lb-row ${r[2] ? 'me' : ''}"><span class="rk">${k + 4}</span><div class="p-avatar">${initials(r[0])}</div><b style="font-size:15px">${r[0]}${r[2] ? ' (вы)' : ''}</b><span class="sc">${r[1]}</span></div>`).join('')}</div>
+  </div>${nav()}`;
+};
+
+V.profile = () => `<div class="scr">
+  <div class="p-prof"><div class="p-avatar">АИ</div><div class="p-h1" style="font-size:22px">Алексей Иванов</div><div class="p-cap">@alexey_iv · с октября 2026</div></div>
+  <div class="p-facts"><div class="p-fact" style="background:#fff;box-shadow:var(--p-shadow)"><b>24</b><span>тестов</span></div><div class="p-fact" style="background:#fff;box-shadow:var(--p-shadow)"><b>78%</b><span>точность</span></div><div class="p-fact" style="background:#fff;box-shadow:var(--p-shadow)"><b>3 120</b><span>баллов</span></div></div>
+  <div><div class="p-h2" style="margin-bottom:10px">История</div>
+  <div class="p-list">${[['Имя прилагательное', 'Морфология', '1200/1500', 'blue'], ['Знаки в сложном предл.', 'Пунктуация', '600/1000', 'peach'], ['Прямой эфир #12', 'Эфир · 4 место', '900', 'pink']].map(([a, b, c, col]) => `<div class="p-li"><div class="ic c-${col}" style="color:${PAL[col].fg}">${ic('trophy', 18)}</div><div style="min-width:0"><div>${a}</div><div class="p-micro">${b}</div></div><span class="end" style="color:var(--p-ink);font-variant-numeric:tabular-nums">${c}</span></div>`).join('')}</div></div>
+  <div><div class="p-h2" style="margin-bottom:10px">Настройки</div>
+  <div class="p-list">
+    <div class="p-li"><div class="ic c-blue" style="color:#2678F5">${ic('bell', 18)}</div>Уведомления<span class="end"><span class="p-switch"></span></span></div>
+    <div class="p-li"><div class="ic c-violet" style="color:#7C5CFA">${ic('vib', 18)}</div>Вибрация<span class="end"><span class="p-switch"></span></span></div>
+    <div class="p-li"><div class="ic c-mint" style="color:#16A37A">${ic('q', 18)}</div>Помощь<span class="end">${ic('chev', 18)}</span></div>
+  </div></div>
+</div>${nav()}`;
+
+V.live = () => {
+  const st = S.liveState;
+  const head = `<div class="p-between"><button class="p-icon-btn" data-go="home" aria-label="Назад">${ic('back')}</button><div class="p-h2">Прямой эфир</div><span class="p-badge live">LIVE</span></div>`;
+  if (st === 'lobby') return `<div class="scr nonav">${head}
+    <section class="p-live-hero"><div class="art">${illo('rocket', 'pink', 110)}</div>
+      <div class="p-micro" style="color:rgba(255,255,255,.8)">Ведущий: Мария Петровна</div>
+      <div style="font-size:21px;font-weight:800;max-width:62%;line-height:1.15">Морфология: финал недели</div>
+      <div class="p-micro" style="color:rgba(255,255,255,.8);margin-top:8px">Код для входа</div><div class="p-code">RQ·4821</div>
+    </section>
+    <div class="p-wait"><div class="p-spinner"></div><b>Ждём начала эфира</b><span class="p-cap">Ведущий запустит первый вопрос для всех одновременно</span></div>
+    <div><div class="p-between" style="margin-bottom:10px"><div class="p-h2">Участники</div><span class="p-badge done">18 в лобби</span></div>
+    <div class="p-people">${['Алексей И. (вы)', 'Мадина Р.', 'Тимур А.', 'Ольга С.', 'Джасур К.', 'Анна В.', '+12'].map((n) => `<span class="p-person">${n.startsWith('+') ? '' : `<span class="p-avatar">${initials(n)}</span>`}${n}</span>`).join('')}</div></div>
+  </div><div class="p-dock"><button class="p-btn white block">${ic('share', 18)} Пригласить друзей</button></div>`;
+  if (st === 'waiting') return `<div class="scr nonav">${head}
+    <div class="p-qtop"><span style="width:50px"></span><div class="p-qcount">Вопрос 3 из 10<small>18 участников</small></div><div class="p-timer"><svg width="50" height="50" viewBox="0 0 50 50"><circle cx="25" cy="25" r="22" stroke="#E6EAF0" stroke-width="5" fill="#fff"/><circle cx="25" cy="25" r="22" stroke="#2678F5" stroke-width="5" fill="none" stroke-dasharray="138.2" stroke-dashoffset="80"/></svg><b>7</b></div></div>
+    <div class="p-qcard"><span class="p-badge done">150 баллов</span><div class="q">В каком слове пишется Ь после шипящей?</div></div>
+    <div class="p-opts">${['Луч…', 'Ноч…', 'Врач…', 'Шалаш…'].map((o, k) => `<button class="p-opt ${k === 1 ? 'sel' : 'dim'}" disabled><span class="l">${'ABCD'[k]}</span>${o}${k === 1 ? `<span class="mark" style="color:var(--p-primary)">${ic('check', 20, 2.4)}</span>` : ''}</button>`).join('')}</div>
+    <div class="p-card p-wait" style="padding:16px"><div class="p-spinner" style="width:32px;height:32px"></div><b>Ответ принят</b><span class="p-cap">Ждём остальных: ответили 11 из 18. Правильный ответ откроется для всех одновременно.</span></div>
+  </div>`;
+  return `<div class="scr nonav">${head}
+    <div class="p-card" style="display:flex;flex-direction:column;gap:12px"><div class="p-fb-head"><div class="p-fb-ic ok">${ic('check', 26, 2.6)}</div><div><div class="p-fb-title">Правильно!</div><div class="p-cap">Ответили верно 12 из 18</div></div><span class="p-pts ok">+150</span></div>
+    <div class="p-expl">После шипящих у существительных женского рода 3-го склонения пишется Ь: <b>ночь</b>.</div></div>
+    <div class="p-between"><div class="p-h2">Таблица эфира</div><span class="p-micro">после 3 вопросов</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px">${[['Тимур А.', 450], ['Ольга С.', 400], ['Алексей И.', 400, 1], ['Мадина Р.', 250], ['Анна В.', 150]].map((r, k) => `<div class="p-lb-row ${r[2] ? 'me' : ''}"><span class="rk">${k + 1}</span><div class="p-avatar">${initials(r[0])}</div><b style="font-size:15px">${r[0]}${r[2] ? ' (вы)' : ''}</b><span class="sc">${r[1]}</span></div>`).join('')}</div>
+    <div class="p-auto"><i style="width:60%"></i></div><div class="p-cap" style="text-align:center">Следующий вопрос через 3 сек</div>
+  </div>`;
+};
+
+/* ---------- UX notes ---------- */
+const SCREENS = [
+  ['home', 'Главная'], ['topics', 'Темы'], ['tests', 'Тесты темы'], ['quiz', 'Вопрос'], ['result', 'Результат'],
+  ['review', 'Разбор'], ['rating', 'Рейтинг'], ['profile', 'Профиль'], ['live', 'Прямой эфир'],
+];
+const NOTES = {
+  home: ['Главная — «nima qilay?» savoliga 3 soniyada javob', [
+    '<b>Tepada inson bor</b> (avatar va ism, R4 dan). Ilova shaxsiy bo‘lib tuyuladi.',
+    '<b>Ko‘k banner va sariq tugma</b> — ekrandagi eng kuchli joy, birinchi harakat «Начать тест».',
+    '<b>«Продолжить»</b> faqat tugallanmagan test bo‘lsa chiqadi. Qaytib kelgan foydalanuvchi uchun eng qisqa yo‘l.',
+    '<b>Rejim kartalari rangli</b>, 3D obyekt kartaning tepasidan chiqib turadi (R5). Har rejimning o‘z rangi: ko‘k, pushti va yashil.',
+    '<b>Mavzu kartalari</b> (R3): katta foiz raqami foydalanuvchiga «qancha qoldi?» degan savolga javob beradi.',
+  ]],
+  topics: ['Темы — tez topish va tanlash', [
+    '<b>Katta harfli tablar</b> (R1) qiyinlik bo‘yicha filtrlaydi. Chiplardan ko‘ra ko‘zga tez tashlanadi va ilovaga o‘z «ovozini» beradi.',
+    '<b>Qidiruv</b> doim tepada. Mavzular soni ko‘paysa, shu asosiy yo‘l bo‘ladi.',
+    'Har mavzuning <b>o‘z rangi va 3D obyekti</b> bor. Foydalanuvchi o‘qimasdan, rangidan taniydi.',
+    'Kartani bosing: shu mavzuning testlari ochiladi.',
+  ]],
+  tests: ['Тесты темы — test tanlash', [
+    'Yuqorida <b>mavzu rangidagi katta blok</b> va umumiy progress. Foydalanuvchi qayerda turganini biladi.',
+    '<b>Kichik mavzu chiplari</b> (R2) gorizontal suriladi.',
+    'Test kartasida hammasi bor: qiyinlik, savollar soni, taxminiy vaqt (taymerlar yig‘indisi), ball va <b>holat</b> (Пройден / В процессе / Не начат).',
+    'Kartani bosing: tafsilotlar <b>alohida ekran emas, pastdan chiqadigan oyna</b>da ochiladi. Bitta qadam kam, foydalanuvchi joyini yo‘qotmaydi.',
+  ]],
+  quiz: ['Вопрос — ilovaning yuragi', [
+    '<b>Menyu yo‘q</b>, faqat ✕ (chiqishdan oldin so‘raydi). Diqqat faqat savolda.',
+    '<b>Taymer halqasi</b> o‘ng tepada. Oxirgi 5 soniyada to‘q sariq rangga kiradi va «uradi».',
+    'Yuqoridagi <b>bo‘laklar</b> har savol natijasini ko‘rsatadi: yashil, qizil yoki sariq.',
+    'Variant tanlanganda <b>ko‘k chegara</b> chiqadi. Javob faqat <b>«Ответить»</b> bosilganda yuboriladi, tasodifiy bosishdan himoya.',
+    'Natija <b>pastdan chiquvchi oyna</b>da chiqadi: belgi, ball, to‘g‘ri javob va izoh. Pastdagi chiziq avtomatik o‘tishgacha qolgan vaqtni ko‘rsatadi (izoh bo‘lsa 5 s, bo‘lmasa 3 s).',
+    '<b>Sinab ko‘ring:</b> bitta savolga javob bermay kuting, «Время вышло» holati chiqadi.',
+  ]],
+  result: ['Результат — yutuqni his qilish', [
+    '<b>Katta 3D kubok</b> va katta raqam: hissiy cho‘qqi shu yerda.',
+    'Ball va <b>aniqlik foizi alohida</b>. Savollarning bali har xil bo‘lgani uchun ular farq qilishi mumkin.',
+    '4 ta raqam: to‘g‘ri, xato, javobsiz, vaqt. Har birining o‘z rangi va belgisi bor.',
+    'Asosiy harakat <b>«Разбор ошибок»</b> — o‘rganish shu yerda bo‘ladi. Qolganlari ikkinchi darajali.',
+  ]],
+  review: ['Разбор — xatodan o‘rganish', [
+    'Har savolda: <b>sizning javobingiz</b> (qizil), <b>to‘g‘ri javob</b> (yashil) va izoh.',
+    'Filtr: faqat xatolar yoki faqat javobsizlar. Uzun testda kerakli savolni tez topish uchun.',
+  ]],
+  rating: ['Рейтинг — adolatli raqobat', [
+    '<b>Uch xil reyting alohida</b>: shaxsiy, efirlar, guruhlar. Aralashtirilsa, ko‘p test ishlagan odam doim yutadi va bu adolatsiz.',
+    'Tepada <b>shohsupa</b>: top-3 ko‘zga tashlanadi.',
+    '<b>Sizning qatoringiz ko‘k</b>, ro‘yxatda o‘zingizni darrov topasiz.',
+  ]],
+  profile: ['Профиль — mening yo‘lim', [
+    'Avatar va ism Telegram’dan avtomatik olinadi, ro‘yxatdan o‘tish kerak emas.',
+    '3 ta asosiy raqam, test tarixi va sozlamalar.',
+    'Yutuqlar (achievements) keyingi bosqichga qoldirildi.',
+  ]],
+  live: ['Прямой эфир — hamma birga', [
+    '<b>Kutish xonasi:</b> katta kod, boshlovchi ismi, ishtirokchilar va «Ждём начала» animatsiyasi. Foydalanuvchi to‘g‘ri joyga kirganini biladi.',
+    '<b>Javob berilgandan keyin:</b> javob qulflanadi, lekin <b>to‘g‘ri yoki xatoligi aytilmaydi</b>. «Ответили 11 из 18» degan yozuv kutishni qiziqarli qiladi.',
+    '<b>Vaqt tugaganda:</b> hammaga bir vaqtda natija va jonli jadval ochiladi.',
+    'Pastdagi tugmalar bilan holatlarni almashtiring.',
+  ]],
+};
+const STATES = { live: [['lobby', 'Kutish xonasi'], ['waiting', 'Javob berildi'], ['reveal', 'Natija ochildi']] };
+
+/* ---------- render ---------- */
+function render() {
+  const view = V[S.screen] || V.home;
+  let html = statusBar + view();
+  if (S.sheet && S.sheet.startsWith('test:')) html += testSheet(+S.sheet.split(':')[1]);
+  if (S.sheet === 'exit') html += exitSheet();
+  app.innerHTML = html;
+  $('#picker').innerHTML = SCREENS.map(([k, l]) => `<button data-pick="${k}" aria-pressed="${S.screen === k}">${l}</button>`).join('');
+  const [title, items] = NOTES[S.screen];
+  const st = STATES[S.screen];
+  $('#notes').innerHTML = `<h3>${title}</h3><ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>${st ? `<div class="state-picker" role="group" aria-label="Holat">${st.map(([k, l]) => `<button data-state="${k}" aria-pressed="${S.liveState === k}">${l}</button>`).join('')}</div>` : ''}`;
+}
+
+function go(screen) {
+  if (screen !== 'quiz') stopTimer();
+  if (screen === 'quiz') { startQuiz(); return; }
+  S.sheet = null; S.screen = screen; render();
+  const scr = $('.scr', app); if (scr) scr.scrollTop = 0;
+}
+
+app.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-go],[data-act],[data-topic],[data-test],[data-opt],[data-close],[data-diff],[data-lb]');
+  if (!t) return;
+  if (t.dataset.go) { if (t.dataset.go === 'live') S.liveState = 'lobby'; go(t.dataset.go); return; }
+  if (t.dataset.topic) { S.topic = TOPICS.find((x) => x.slug === t.dataset.topic); go('tests'); return; }
+  if (t.dataset.test !== undefined) { S.sheet = 'test:' + t.dataset.test; render(); return; }
+  if (t.dataset.diff !== undefined) { S.diff = +t.dataset.diff; render(); return; }
+  if (t.dataset.lb) { S.lb = t.dataset.lb; render(); return; }
+  if (t.dataset.close !== undefined) { S.sheet = null; render(); if (S.screen === 'quiz') tick(); return; }
+  if (t.dataset.opt !== undefined && S.quiz && S.quiz.phase === 'answer') { S.quiz.sel = +t.dataset.opt; render(); tick(); return; }
+  const a = t.dataset.act;
+  if (a === 'start') startQuiz();
+  else if (a === 'answer' && S.quiz && S.quiz.sel !== null) finishQuestion(S.quiz.sel);
+  else if (a === 'next') nextQuestion();
+  else if (a === 'exit') { S.sheet = 'exit'; render(); tick(); }
+  else if (a === 'quit') { stopTimer(); S.quiz = null; go('home'); }
+});
+$('#picker').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  const k = b.dataset.pick;
+  if (k === 'quiz') startQuiz();
+  else { if ((k === 'result' || k === 'review') && (!S.quiz || !S.quiz.res || S.quiz.res.length < QUESTIONS.length)) S.quiz = demoResult(); go(k); }
+});
+$('#notes').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-state]'); if (!b) return;
+  S.liveState = b.dataset.state; render();
+});
+
+/* ---------- spec sections ---------- */
+const MAIN = [
+  ['Primary', '#2678F5', 'Tugmalar, faol holat, havolalar'], ['Sun', '#FFD84D', 'Faqat ko‘k fondagi asosiy tugma'],
+  ['Canvas', '#F5F6F8', 'Ilova foni'], ['Surface', '#FFFFFF', 'Kartalar'], ['Ink', '#172B4D', 'Asosiy matn'],
+  ['Muted', '#7B8794', 'Ikkinchi darajali matn'], ['Success', '#16A34A', 'To‘g‘ri javob'], ['Error', '#EF4444', 'Xato javob, LIVE'],
+  ['Warning', '#F59E0B', 'Vaqt tugadi, oxirgi 5 s'],
+];
+$('#sw-main').innerHTML = MAIN.map(([n, h, d]) => `<div class="sw"><div class="chip" style="background:${h};${h === '#FFFFFF' ? 'box-shadow:inset 0 -1px 0 #E3E8F0' : ''}"></div><div class="lbl"><b>${n}</b><span class="mono">${h}</span><span style="color:var(--fg-2)">${d}</span></div></div>`).join('');
+const TN = { blue: 'Морфология', violet: 'Орфография', mint: 'Синтаксис', peach: 'Пунктуация', pink: 'Лексика', yellow: 'Фонетика' };
+$('#sw-topic').innerHTML = Object.entries(PAL).map(([k, v]) => `<div class="sw"><div class="chip" style="background:${v.bg};display:flex;align-items:flex-end;gap:6px;padding:10px"><span style="width:22px;height:22px;border-radius:7px;background:${v.fg}"></span><span style="width:22px;height:22px;border-radius:7px;background:${v.deep}"></span></div><div class="lbl"><b>${TN[k]}</b><span class="mono">fon ${v.bg} · ${v.fg} · ${v.deep}</span></div></div>`).join('');
+
+const optDemo = (cls, label, text, mark = '') => `<div class="comp-label">${label}</div><div class="p-opt ${cls}" style="cursor:default"><span class="l">B</span>${text}${mark}</div>`;
+$('#opt-states').innerHTML =
+  optDemo('', '1 · Oddiy', 'Быстро') +
+  optDemo('sel', '2 · Tanlangan (hali yuborilmagan)', 'Быстро') +
+  optDemo('ok', '3 · To‘g‘ri', 'Быстро', `<span class="mark" style="color:#16A34A">${ic('check', 22, 2.6)}</span>`) +
+  optDemo('bad', '4 · Xato (siz tanlagan)', 'Быстрый', `<span class="mark" style="color:#EF4444">${ic('x', 22, 2.6)}</span>`) +
+  optDemo('dim', '5 · Boshqa variantlar (natijadan keyin)', 'Быстрота');
+$('#misc-states').innerHTML = `
+  <div class="comp-label">Tugmalar</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px"><button class="p-btn primary" type="button">Ответить</button><button class="p-btn soft" type="button">Повторить</button><button class="p-btn white" type="button">На главную</button></div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button class="p-btn primary" type="button" disabled>Ответить</button><span style="font-size:13px;color:#7B8794">variant tanlanmaguncha o‘chiq</span></div>
+  <div style="background:#2678F5;border-radius:16px;padding:12px;display:flex;gap:10px;align-items:center"><button class="p-btn sun" type="button">${ic('play', 16)} Начать тест</button><span style="color:#fff;font-size:13px">Sun — faqat ko‘k fonda</span></div>
+  <div class="comp-label">Chiplar va belgilar</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="p-chip on">Все</span><span class="p-chip">Глагол</span><span class="p-badge easy">Лёгкий</span><span class="p-badge mid">Средний</span><span class="p-badge hard">Сложный</span><span class="p-badge live">LIVE</span></div>
+  <div class="comp-label">Taymer</div>
+  <div style="display:flex;gap:18px;align-items:center">
+    <div class="p-timer"><svg width="50" height="50" viewBox="0 0 50 50"><circle cx="25" cy="25" r="22" stroke="#E6EAF0" stroke-width="5" fill="#fff"/><circle cx="25" cy="25" r="22" stroke="#2678F5" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="40"/></svg><b>14</b></div><span style="font-size:13px;color:#7B8794">oddiy</span>
+    <div class="p-timer low"><svg width="50" height="50" viewBox="0 0 50 50"><circle cx="25" cy="25" r="22" stroke="#E6EAF0" stroke-width="5" fill="#fff"/><circle cx="25" cy="25" r="22" stroke="#F59E0B" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="110"/></svg><b>4</b></div><span style="font-size:13px;color:#7B8794">≤ 5 s</span>
+  </div>`;
+
+const ASSETS = [
+  ['T01', 'Ochiq kitob', 'Mavzu: Морфология', 'Ko‘k', 'P1'], ['T02', 'Qalam', 'Mavzu: Орфография', 'Binafsha', 'P1'],
+  ['T03', 'Bog‘langan bloklar / pazl', 'Mavzu: Синтаксис', 'Yalpiz', 'P1'], ['T04', 'Vergul va nuqta', 'Mavzu: Пунктуация', 'Shaftoli', 'P1'],
+  ['T05', 'Ikki gap pufakchasi', 'Mavzu: Лексика', 'Pushti', 'P1'], ['T06', 'Mikrofon va tovush to‘lqini', 'Mavzu: Фонетика', 'Sariq', 'P1'],
+  ['M01', 'Nishon va o‘q', 'Rejim: Индивидуальный', 'Ko‘k karta ustida', 'P1'], ['M02', 'Sekundomer va chaqmoq', 'Rejim: Прямой эфир', 'Pushti karta ustida', 'P1'],
+  ['M03', 'Uchta yumaloq figura', 'Rejim: Группа', 'Yashil karta ustida', 'P1'], ['H01', 'Kitoblar, akademik qalpoq, yulduz', 'Bosh banner', 'Ko‘k fon ustida', 'P1'],
+  ['R01', 'Oltin kubok', 'Natija: yaxshi', 'Oltin', 'P1'], ['R02', 'Medal', 'Natija: o‘rtacha', 'Kumush/ko‘k', 'P2'],
+  ['R03', 'Gul tuvakdagi nihol', 'Natija: past (dalda)', 'Yashil', 'P2'], ['L01', 'Shohsupa', 'Рейтинг (bo‘sh holat)', 'Oltin/ko‘k', 'P2'],
+  ['L02', 'Raketa', 'Efir kutish xonasi', 'Pushti', 'P2'], ['F01–F03', 'Galochka, xoch, qum soati', 'Javob natijasi', 'Yashil/qizil/sariq', 'P3'],
+  ['E01', 'Lupa', 'Qidiruv: hech narsa topilmadi', 'Ko‘k', 'P2'], ['E02', 'Bo‘sh quti', 'Tarix bo‘sh', 'Ko‘k', 'P2'],
+  ['E03', 'Uzilgan kabel', 'Internet yo‘q / xato', 'Kulrang-ko‘k', 'P2'],
+];
+$('#asset-table tbody').innerHTML = ASSETS.map((r) => `<tr><td><span class="mono">${r[0]}</span></td><td><b>${r[1]}</b></td><td>${r[2]}</td><td>${r[3]}</td><td><span class="tag ${r[4] === 'P1' ? '' : 'todo'}">${r[4]}</span></td></tr>`).join('');
+
+render();
+})();
+</script>

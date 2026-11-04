@@ -1,0 +1,16 @@
+{
+  "name": "russian-quiz",
+  "private": true,
+  "workspaces": [
+    "apps/miniapp",
+    "apps/admin",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @rq/miniapp",
+    "build": "npm run build -w @rq/miniapp && npm run build -w @rq/admin",
+    "test": "npm run test -w @rq/miniapp && npm run test -w @rq/admin",
+    "typecheck": "npm run typecheck -w @rq/miniapp",
+    "dev:admin": "npm run dev -w @rq/admin"
+  }
+}

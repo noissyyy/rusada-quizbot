@@ -1,0 +1,85 @@
+# Production: copy .env.example → .env, fill it in, then:
+#   docker compose pull && docker compose up -d
+# Images are built by GitHub Actions (.github/workflows/images.yml); the server never builds.
+# Local build instead of pulling: docker compose up -d --build
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }   # logs never fill the disk
+
+services:
+  db:
+    image: postgres:16-alpine
+    logging: *logging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rq
+      POSTGRES_USER: rq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rq -d rq"]
+      interval: 5s
+      retries: 20
+
+  api:
+    logging: *logging
+    image: ghcr.io/noissyyy/rusada-quizbot-api:${IMAGE_TAG:-latest}
+    build: ./services/api
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rq:${POSTGRES_PASSWORD}@db:5432/rq
+      BOT_TOKEN: ${BOT_TOKEN:?set BOT_TOKEN in .env}
+      BOT_USERNAME: ${BOT_USERNAME:-Rusada_QuizBot}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN in .env}
+      SUPERADMIN_TELEGRAM_IDS: ${SUPERADMIN_TELEGRAM_IDS:-}
+      MINIAPP_URL: https://${MINIAPP_DOMAIN}
+      ADMIN_URL: https://${ADMIN_DOMAIN}
+      MINIAPP_SHORT_NAME: ${MINIAPP_SHORT_NAME:-}
+      CORS_ORIGINS: https://${MINIAPP_DOMAIN},https://${ADMIN_DOMAIN}
+
+  bot:
+    logging: *logging
+    image: ghcr.io/noissyyy/rusada-quizbot-bot:${IMAGE_TAG:-latest}
+    build: ./services/telegram-bot
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_USERNAME: ${BOT_USERNAME:-Rusada_QuizBot}
+      API_URL: http://api:8000
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+      MINIAPP_URL: https://${MINIAPP_DOMAIN}
+      MINIAPP_SHORT_NAME: ${MINIAPP_SHORT_NAME:-}
+
+  web:
+    logging: *logging
+    image: ghcr.io/noissyyy/rusada-quizbot-web:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: infrastructure/web.Dockerfile
+      args: { BOT_USERNAME: "${BOT_USERNAME:-Rusada_QuizBot}" }
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      MINIAPP_DOMAIN: ${MINIAPP_DOMAIN:?set MINIAPP_DOMAIN in .env}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?set ADMIN_DOMAIN in .env}
+    volumes: [caddy_data:/data, caddy_config:/config]
+
+  backup:
+    image: postgres:16-alpine
+    logging: *logging
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BOT_TOKEN: ${BOT_TOKEN}
+      SUPERADMIN_TELEGRAM_IDS: ${SUPERADMIN_TELEGRAM_IDS:-}
+    volumes: [./backups:/backups, ./infrastructure/backup.sh:/backup.sh:ro]
+    # daily at 03:00 (server time): dump → keep 14 days → copy to super-admins in Telegram;
+    # also warns in Telegram when the disk is over 80 % full
+    entrypoint: ["sh", "-c", "apk add --no-cache curl >/dev/null && echo '0 3 * * * sh /backup.sh' | crontab - && crond -f"]
+
+volumes: { pgdata: {}, caddy_data: {}, caddy_config: {} }

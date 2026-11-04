@@ -1,0 +1,56 @@
+import type { TopicTest } from '@rq/shared-types';
+import { Link, useParams } from 'react-router-dom';
+import { api } from '../data/api';
+import { useAsync } from '../lib/useAsync';
+import { useI18n } from '../lib/i18n';
+import { Screen } from '../components/Screen';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { Badge, ProgressBar, Skeleton } from '../components/ui';
+import { topicBg } from '../components/home/TestRow';
+
+export function TopicScreen() {
+  const { slug = '' } = useParams();
+  const { t } = useI18n();
+  const state = useAsync(() => api().getTopic(slug), [slug]);
+  if (state.status !== 'success') return <Screen><Skeleton className="h-[180px] rounded-hero" /></Screen>;
+  const { topic, tests } = state.data;
+
+  return (
+    <Screen className="flex flex-col gap-[18px]">
+      <ScreenHeader back="/tests" title={topic.title} />
+      <section className={`relative flex min-h-[180px] flex-col justify-end gap-2.5 overflow-hidden rounded-hero p-5 ${topicBg[topic.color]}`}>
+        <img src={topic.illustration} alt="" className="absolute -right-1.5 -top-1 size-[150px] object-contain" />
+        <span className="relative text-[12px] font-semibold text-ink-2">{t('topic.stats', { t: topic.testsCount, q: topic.questionsCount })}</span>
+        <span className="relative flex items-center gap-2.5">
+          <ProgressBar value={topic.progress} label={topic.title} trackClassName="bg-white/75" className="!h-2" />
+          <span className="font-display text-[24px] font-extrabold tracking-tight">{topic.progress}%</span>
+        </span>
+      </section>
+      <div className="flex flex-col gap-2.5">{tests.map((test) => <TestCard key={test.id} test={test} />)}</div>
+    </Screen>
+  );
+}
+
+function TestCard({ test }: { test: TopicTest }) {
+  const { t } = useI18n();
+  const s = test.status;
+  return (
+    <Link to={`/tests/${test.id}`} className="flex flex-col gap-2.5 rounded-card bg-surface p-4 text-ink shadow-card">
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-[16px] font-bold">{test.title}</span>
+        <Badge tone={test.difficulty}>{t(`difficulty.${test.difficulty}`)}</Badge>
+      </span>
+      <span className="text-[12px] font-medium text-muted">{t('test.meta', { q: test.questionsCount, m: test.durationMinutes, p: test.maxPoints })}</span>
+      {s.kind === 'in_progress' && (
+        <span className="flex items-center gap-2"><ProgressBar value={s.answered} max={test.questionsCount} label={test.title} />
+          <span className="shrink-0 text-[12px] font-bold text-primary">{t('status.inProgress', { a: s.answered, n: test.questionsCount })}</span></span>
+      )}
+      {s.kind === 'done' && (
+        <span className="flex items-center justify-between text-[12px] font-bold">
+          <span className="text-success-ink">{t('status.done', { p: s.bestPercent })}</span><span className="text-primary">{t('status.retry')}</span>
+        </span>
+      )}
+      {s.kind === 'new' && <span className="text-[12px] font-bold text-muted">{t('status.new')}</span>}
+    </Link>
+  );
+}

@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+@import '../../miniapp/src/styles/tokens.css';
+
+@layer base {
+  html, body, #root { min-height: 100%; }
+  body { margin: 0; background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:disabled { cursor: default; }
+  input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+}
