@@ -42,7 +42,7 @@ export function HomeScreen() {
         <div className="grid grid-cols-2 gap-3">{sections.map((tp) => <TopicCard key={tp.id} topic={tp} />)}</div>
       </section>
 
-      {books.length > 0 && <BooksBanner books={books} />}
+      {books.length > 0 && <BooksBanner />}
 
       <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="modes-title">
         <h2 id="modes-title" className="font-display text-title font-bold tracking-tight">{t('home.modes')}</h2>
