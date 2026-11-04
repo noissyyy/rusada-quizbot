@@ -1,6 +1,7 @@
 import type { HomeFeed, TestSummary } from '@rq/shared-types';
 import { getWebApp } from '../lib/telegram/webapp';
 import type { QuizApi } from './api';
+import { server } from './mockServer';
 
 /** MOCK DATA — dev/demo only. Never shown as real metrics. */
 export const mockTests: TestSummary[] = [
@@ -19,10 +20,17 @@ export const mockApi: QuizApi = {
         ? { id: String(tg.id), telegramId: tg.id, firstName: tg.first_name, lastName: tg.last_name, username: tg.username, photoUrl: tg.photo_url, languageCode: tg.language_code }
         : { id: 'dev', telegramId: 0, firstName: 'Алексей', lastName: 'Иванов' },
       unreadNotifications: 2,
-      quickStart: { quizId: 'q-quick', questionsCount: 10, durationMinutes: 5 },
-      continueAttempt: { sessionId: 's-42', quizTitle: 'Имя существительное', answered: 2, total: 4, remainingSeconds: 112 },
+      quickStart: { quizId: 'q-quick', questionsCount: 4, durationMinutes: 2 },
+      continueAttempt: { sessionId: 'q-noun', quizTitle: 'Имя существительное', answered: 2, total: 4, remainingSeconds: 112 },
       popularTests: mockTests,
       liveNow: 2,
     };
   },
+  getTopics: () => server.topics(),
+  getTopic: (slug) => server.topic(slug),
+  getTest: (id) => server.test(id),
+  startSession: (quizId) => server.start(quizId),
+  submitAnswer: (sid, qid, oid) => server.submit(sid, qid, oid),
+  finishSession: (sid, opts) => server.finish(sid, opts),
+  getResult: (sid) => server.result(sid),
 };

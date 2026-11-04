@@ -56,3 +56,70 @@ export interface HomeFeed {
   /** number of live sessions open right now; 0 hides the LIVE badge */
   liveNow: number;
 }
+
+/* ---------- Topics & tests ---------- */
+
+export interface TopicSummary {
+  id: ID;
+  slug: string;
+  title: string;          // content: Russian
+  color: TopicColor;
+  illustration: string;
+  testsCount: number;
+  questionsCount: number;
+  /** 0..100 */
+  progress: number;
+  difficulties: Difficulty[];
+}
+
+export type TestStatus = { kind: 'new' } | { kind: 'in_progress'; answered: number } | { kind: 'done'; bestPercent: number };
+
+export interface TopicTest extends TestSummary {
+  description: string;
+  maxPoints: number;
+  status: TestStatus;
+}
+
+/* ---------- Quiz session (server-authoritative) ---------- */
+
+export interface QuestionPublic {
+  id: ID;
+  text: string;
+  points: number;
+  options: { id: ID; label: 'A' | 'B' | 'C' | 'D'; text: string }[];
+  // NOTE: no correct answer here — it is revealed only in AnswerResult
+}
+
+export interface SessionStart {
+  sessionId: ID;
+  quizTitle: string;
+  topicTitle: string;
+  /** one timer for the whole test */
+  durationSec: number;
+  questions: QuestionPublic[];
+}
+
+export type AnswerOutcome = 'correct' | 'wrong' | 'unanswered';
+
+export interface AnswerResult {
+  questionId: ID;
+  outcome: AnswerOutcome;
+  chosenOptionId: ID | null;
+  correctOptionId: ID;
+  pointsAwarded: number;
+  explanation?: string;
+}
+
+export interface SessionResult {
+  sessionId: ID;
+  quizTitle: string;
+  maxPoints: number;
+  points: number;
+  correct: number;
+  wrong: number;
+  unanswered: number;
+  usedSec: number;
+  timedOut: boolean;
+  bestPoints: number;
+  review: (AnswerResult & { questionText: string; chosenText?: string; correctText: string })[];
+}

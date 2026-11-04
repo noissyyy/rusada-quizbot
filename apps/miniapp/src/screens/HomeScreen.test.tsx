@@ -30,7 +30,7 @@ describe('HomeScreen', () => {
   it('renders start card, popular tests and three modes with function hints', async () => {
     renderAt('/');
     expect(await screen.findByText('Привет, Алексей!')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Начать тест: 10\s+вопросов · 5\s+мин/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Начать тест: 4\s+вопросов · 2\s+мин/ })).toBeInTheDocument();
     expect(screen.getByText('Популярные тесты')).toBeInTheDocument();
     expect(screen.getByText('Имя прилагательное')).toBeInTheDocument();
     for (const hint of ['Тесты в своём темпе', 'Все отвечают одновременно', 'Тест для своей группы']) expect(screen.getByText(hint)).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe('HomeScreen', () => {
   });
 
   it('shows error state when the API fails', async () => {
-    setApi({ getHomeFeed: () => Promise.reject(new Error('network')) });
+    setApi({ ...mockApi, getHomeFeed: () => Promise.reject(new Error('network')) });
     renderAt('/');
     expect(await screen.findByRole('alert')).toHaveTextContent('Не удалось загрузить данные');
   });

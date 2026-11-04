@@ -51,6 +51,14 @@ const paths = {
       <path d="M12 8v4.2l2.8 1.8" />
     </>
   ),
+  search: (<><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></>),
+  share: <path d="M12 15V4M8 8l4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />,
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  x: <path d="M7 7l10 10M17 7 7 17" />,
+  hourglass: <path d="M7 4h10M7 20h10M8 4c0 5 8 5 8 8s-8 3-8 8M16 4c0 5-8 5-8 8s8 3 8 8" />,
+  list: <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />,
+  stopwatch: (<><circle cx="12" cy="13" r="7.5" /><path d="M12 9.5V13l2.5 1.5M10 3h4" /></>),
+  pause: (<><rect x="6" y="5" width="4" height="14" rx="1.5" fill="currentColor" stroke="none" /><rect x="14" y="5" width="4" height="14" rx="1.5" fill="currentColor" stroke="none" /></>),
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   sparkle: <path d="M12 3.5c.5 4.3 2.2 6 6.5 6.5-4.3.5-6 2.2-6.5 6.5-.5-4.3-2.2-6-6.5-6.5 4.3-.5 6-2.2 6.5-6.5z" />,
 } as const;
