@@ -2,7 +2,7 @@ import { api } from '../data/api';
 import { useAsync } from '../lib/useAsync';
 import { useI18n } from '../lib/i18n';
 import { Screen } from '../components/Screen';
-import { Avatar, Skeleton } from '../components/ui';
+import { Skeleton } from '../components/ui';
 import { ErrorView } from '../components/states/StateViews';
 import { HomeHeader } from '../components/home/HomeHeader';
 import { StartCard } from '../components/home/StartCard';
@@ -27,11 +27,7 @@ export function HomeScreen() {
   const fullName = [feed.user.firstName, feed.user.lastName].filter(Boolean).join(' ');
   return (
     <Screen className="flex flex-col gap-5">
-      <HomeHeader unread={feed.unreadNotifications} />
-      <section className="flex items-center gap-3">
-        <Avatar name={fullName} src={feed.user.photoUrl} size={52} />
-        <h1 className="font-display text-display font-bold tracking-tight">{t('home.greeting', { name: feed.user.firstName })}</h1>
-      </section>
+      <HomeHeader unread={feed.unreadNotifications} firstName={feed.user.firstName} fullName={fullName} photoUrl={feed.user.photoUrl} />
 
       {feed.quickStart && <StartCard quick={feed.quickStart} />}
       {feed.continueAttempt && <ContinueCard attempt={feed.continueAttempt} />}
