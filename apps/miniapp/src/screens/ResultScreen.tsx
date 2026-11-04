@@ -12,7 +12,7 @@ export function ResultScreen() {
   const state = useAsync(() => api().getResult(sid), [sid]);
   if (state.status !== 'success') return <div className="mx-auto max-w-[480px] p-5"><Skeleton className="h-80" /></div>;
   const r = state.data;
-  const accuracy = Math.round((r.correct / r.review.length) * 100);
+  const accuracy = r.review.length ? Math.round((r.correct / r.review.length) * 100) : 0;
   const [titleKey, img] = accuracy >= 75 ? ['result.great', 'R01'] as const : accuracy >= 40 ? ['result.good', 'R02'] as const : ['result.low', 'R03'] as const;
   const stats: [IconName, string, string | number, string][] = [
     ['check', 'bg-success-50 text-success', r.correct, t('result.correct')],
@@ -26,7 +26,7 @@ export function ResultScreen() {
       <header className="flex items-center justify-between">
         <Link to="/" replace aria-label={t('result.close')} className={circleBtn}><Icon name="close" size={20} /></Link>
         <span className="text-[17px] font-bold">{t('result.title')}</span>
-        <button type="button" aria-label={t('result.share')} className={circleBtn}><Icon name="share" size={20} /></button>
+        <Link to={`/result/${sid}/share`} aria-label={t('result.share')} className={circleBtn}><Icon name="share" size={20} /></Link>
       </header>
 
       <section className="flex flex-col items-center gap-2 text-center">
@@ -51,8 +51,13 @@ export function ResultScreen() {
 
       <div className="mt-auto flex flex-col gap-2.5">
         <Link to={`/result/${sid}/review`} className="flex h-14 items-center justify-center gap-2 rounded-control bg-primary text-[16px] font-bold text-white shadow-primary"><Icon name="list" size={20} />{t('result.review')}</Link>
+        {r.assignmentId && (
+          <Link to={`/group/${r.assignmentId}/result`} className="flex h-[52px] items-center justify-center gap-2 rounded-control bg-mode-group text-[15px] font-bold text-white"><Icon name="users" size={20} />{t('result.toGroup')}</Link>
+        )}
         <div className="grid grid-cols-2 gap-2.5">
-          <Link to="/quiz/q-noun" replace className="flex h-[52px] items-center justify-center rounded-control bg-primary-50 text-[15px] font-bold text-primary">{t('result.retry')}</Link>
+          {r.quizId && !r.assignmentId
+            ? <Link to={`/quiz/${r.quizId}`} replace className="flex h-[52px] items-center justify-center rounded-control bg-primary-50 text-[15px] font-bold text-primary">{t('result.retry')}</Link>
+            : <Link to={`/result/${sid}/share`} className="flex h-[52px] items-center justify-center rounded-control bg-primary-50 text-[15px] font-bold text-primary">{t('result.share')}</Link>}
           <Link to="/" replace className="flex h-[52px] items-center justify-center rounded-control bg-surface text-[15px] font-bold text-ink shadow-card">{t('result.home')}</Link>
         </div>
       </div>

@@ -33,9 +33,28 @@ export function bootstrapTelegram(canvas = '#F6F5FA') {
   if (wa.isVersionAtLeast('7.7')) wa.disableVerticalSwipes?.();
 }
 
+let hapticsOn = true;
+/** Profile → «Вибрация при ответе». */
+export function setHapticsEnabled(on: boolean) { hapticsOn = on; }
+const hf = () => (hapticsOn ? getWebApp()?.HapticFeedback : undefined);
+
 export const haptic = {
-  tap: () => getWebApp()?.HapticFeedback.impactOccurred('light'),
-  select: () => getWebApp()?.HapticFeedback.selectionChanged(),
-  success: () => getWebApp()?.HapticFeedback.notificationOccurred('success'),
-  error: () => getWebApp()?.HapticFeedback.notificationOccurred('error'),
+  tap: () => hf()?.impactOccurred('light'),
+  select: () => hf()?.selectionChanged(),
+  success: () => hf()?.notificationOccurred('success'),
+  error: () => hf()?.notificationOccurred('error'),
 };
+
+/** Start parameter from a t.me/<bot>?startapp=… link, or ?start=… from a bot web_app button. */
+export function getStartParam(): string | null {
+  const fromTg = getWebApp()?.initDataUnsafe.start_param;
+  if (fromTg) return fromTg;
+  try { return new URLSearchParams(location.search).get('start'); } catch { return null; }
+}
+
+/** Route for a start parameter: g_<assignment> → group test, l_<live> → live lobby, t_<test> → test details. */
+export function routeForStart(param: string | null): string | null {
+  if (!param || !/^[glt]_[A-Za-z0-9]{1,60}$/.test(param)) return null;
+  const id = param.slice(2);
+  return { g: `/group/${id}`, l: `/live/${id}`, t: `/tests/${id}` }[param[0] as 'g' | 'l' | 't'];
+}

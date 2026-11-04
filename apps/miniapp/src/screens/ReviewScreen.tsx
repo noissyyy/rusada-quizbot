@@ -42,7 +42,9 @@ export function ReviewScreen() {
           {x.explanation && <p className="rounded-[14px] bg-canvas px-3 py-2.5 text-caption text-ink-2">{x.explanation}</p>}
         </article>
       ))}
-      <Link to="/quiz/q-noun" replace className="mt-auto flex h-14 items-center justify-center rounded-control bg-primary text-[16px] font-bold text-white shadow-primary">{t('review.retry')}</Link>
+      {state.data.quizId && !state.data.assignmentId && (
+        <Link to={`/quiz/${state.data.quizId}`} replace className="mt-auto flex h-14 items-center justify-center rounded-control bg-primary text-[16px] font-bold text-white shadow-primary">{t('review.retry')}</Link>
+      )}
     </div>
   );
 }

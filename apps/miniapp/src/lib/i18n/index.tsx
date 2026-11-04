@@ -4,6 +4,7 @@ import { latinToCyrillic } from './translit';
 
 export type Lang = 'uz' | 'uz-cyrl' | 'ru';
 export const LANGS: Lang[] = ['uz', 'uz-cyrl', 'ru'];
+export const LANG_NAMES: Record<Lang, string> = { uz: 'O‘zbekcha', 'uz-cyrl': 'Ўзбекча', ru: 'Русский' };
 
 const STORAGE_KEY = 'rq.lang';
 const uzCyrl = Object.fromEntries(Object.entries(uz).map(([k, v]) => [k, latinToCyrillic(v)])) as Record<MessageKey, string>;

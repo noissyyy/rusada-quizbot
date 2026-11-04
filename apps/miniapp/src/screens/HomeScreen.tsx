@@ -2,7 +2,8 @@ import { api } from '../data/api';
 import { useAsync } from '../lib/useAsync';
 import { useI18n } from '../lib/i18n';
 import { Screen } from '../components/Screen';
-import { Avatar, Button, Skeleton } from '../components/ui';
+import { Avatar, Skeleton } from '../components/ui';
+import { ErrorView } from '../components/states/StateViews';
 import { HomeHeader } from '../components/home/HomeHeader';
 import { StartCard } from '../components/home/StartCard';
 import { ContinueCard } from '../components/home/ContinueCard';
@@ -16,15 +17,7 @@ export function HomeScreen() {
 
   if (state.status === 'loading') return <HomeSkeleton label={t('loading')} />;
   if (state.status === 'error') {
-    return (
-      <Screen>
-        <div role="alert" className="mt-24 text-center">
-          <p className="text-title font-bold">{t('error.load')}</p>
-          <p className="mt-1 text-caption text-muted">{state.error.message}</p>
-          <Button className="mt-4" onClick={() => location.reload()}>{t('error.retry')}</Button>
-        </div>
-      </Screen>
-    );
+    return <ErrorView error={state.error} onRetry={state.reload} />;
   }
 
   const feed = state.data;
@@ -37,7 +30,7 @@ export function HomeScreen() {
         <h1 className="font-display text-display font-bold tracking-tight">{t('home.greeting', { name: feed.user.firstName })}</h1>
       </section>
 
-      <StartCard quick={feed.quickStart} />
+      {feed.quickStart && <StartCard quick={feed.quickStart} />}
       {feed.continueAttempt && <ContinueCard attempt={feed.continueAttempt} />}
 
       <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="popular-title">

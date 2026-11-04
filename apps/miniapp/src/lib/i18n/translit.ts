@@ -20,9 +20,9 @@ const SINGLE: Record<string, string> = {
   n: 'н', o: 'о', p: 'п', q: 'қ', r: 'р', s: 'с', t: 'т', u: 'у', v: 'в', x: 'х', y: 'й', z: 'з',
 };
 
-/** Translate text but keep {placeholders} intact. */
+/** Translate text but keep {placeholders} and brand names (QuizBot, @handles) intact. */
 export function latinToCyrillic(input: string): string {
-  return input.split(/(\{[^}]+\})/).map((part) => (part.startsWith('{') ? part : convert(part))).join('');
+  return input.split(/(\{[^}]+\}|QuizBot|@\w+)/).map((part, i) => (i % 2 ? part : convert(part))).join('');
 }
 
 function convert(input: string): string {

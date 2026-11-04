@@ -5,9 +5,10 @@ export type AsyncState<T> =
   | { status: 'error'; error: Error }
   | { status: 'success'; data: T };
 
-/** Tiny fetch hook; replace with TanStack Query when real caching/mutations arrive (Phase 3). */
-export function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncState<T> {
+/** Tiny fetch hook with a reload() for retry buttons. */
+export function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncState<T> & { reload: () => void } {
   const [state, setState] = useState<AsyncState<T>>({ status: 'loading' });
+  const [nonce, setNonce] = useState(0);
   useEffect(() => {
     let alive = true;
     setState({ status: 'loading' });
@@ -17,6 +18,6 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncSt
     );
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
-  return state;
+  }, [...deps, nonce]);
+  return { ...state, reload: () => setNonce((n) => n + 1) };
 }

@@ -1,3 +1,4 @@
+import { api } from '../data/api';
 import { clsx } from 'clsx';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -53,7 +54,7 @@ export function LanguageScreen() {
         {t('lang.note')}
       </p>
 
-      <Button size="lg" block className="mt-auto" onClick={() => { setLang(picked); nav('/', { replace: true }); }}>
+      <Button size="lg" block className="mt-auto" onClick={() => { setLang(picked); void api().updateSettings({ lang: picked }).catch(() => undefined); if ((window.history.state?.idx ?? 0) > 0) nav(-1); else nav('/', { replace: true }); }}>
         {t('lang.continue')}
       </Button>
     </Screen>

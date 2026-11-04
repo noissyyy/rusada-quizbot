@@ -8,7 +8,7 @@ export const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60)
 export function ContinueCard({ attempt }: { attempt: InProgressAttempt }) {
   const { t } = useI18n();
   return (
-    <Link to={`/quiz/${attempt.sessionId}`} className="flex items-center gap-3 rounded-card bg-surface p-4 text-ink shadow-card">
+    <Link to={`/quiz/${attempt.quizId}`} className="flex items-center gap-3 rounded-card bg-surface p-4 text-ink shadow-card">
       <span className="grid size-12 shrink-0 place-items-center rounded-control bg-primary-50 text-primary"><Icon name="clock" size={24} /></span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-micro font-bold uppercase tracking-wide text-muted">{t('home.continue', { time: mmss(attempt.remainingSeconds) })}</span>

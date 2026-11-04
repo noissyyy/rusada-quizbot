@@ -60,7 +60,7 @@ describe('quiz flow (one timer per test)', () => {
   });
 
   it('when the whole-test time runs out the test ends and unanswered questions score 0', async () => {
-    setApi({ ...mockApi, startSession: async (id) => ({ ...(await mockApi.startSession(id)), durationSec: 1 }) });
+    setApi({ ...mockApi, startSession: async (target) => ({ ...(await mockApi.startSession(target)), durationSec: 1, remainingSec: 1 }) });
     renderQuiz();
     expect(await screen.findByText('Время вышло', {}, { timeout: 3000 })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('0 из 4')).toBeInTheDocument());

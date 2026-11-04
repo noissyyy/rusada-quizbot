@@ -19,3 +19,9 @@ describe('latinToCyrillic', () => {
     expect(t('Salom, {name}! Морфология')).toBe('Салом, {name}! Морфология');
   });
 });
+
+describe('brand names', () => {
+  it('keeps QuizBot and @handles in Latin', () => {
+    expect(t('QuizBot ilovasi @Rusada_QuizBot {n}')).toBe('QuizBot иловаси @Rusada_QuizBot {n}');
+  });
+});

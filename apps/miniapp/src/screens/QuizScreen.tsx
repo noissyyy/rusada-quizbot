@@ -1,10 +1,10 @@
 import { clsx } from 'clsx';
 import type { AnswerOutcome, AnswerResult, SessionStart } from '@rq/shared-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { api } from '../data/api';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { api, ApiError } from '../data/api';
 import { useI18n } from '../lib/i18n';
-import { createTimer, feedbackMs, formatClock, isExpired, LOW_TIME_MS, pause, remainingMs, resume, type TestTimer } from '../lib/quiz/timer';
+import { createTimer, formatClock, isExpired, LOW_TIME_MS, pause, remainingMs, resume, type TestTimer } from '../lib/quiz/timer';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
 import { Icon, Skeleton } from '../components/ui';
 import { circleBtn } from '../components/ScreenHeader';
@@ -13,6 +13,8 @@ type Phase = 'loading' | 'answering' | 'submitting' | 'feedback' | 'finishing';
 
 export function QuizScreen() {
   const { id = '' } = useParams();
+  const [params] = useSearchParams();
+  const assignmentId = params.get('a');
   const nav = useNavigate();
   const { t } = useI18n();
 
@@ -28,17 +30,33 @@ export function QuizScreen() {
   const [exitOpen, setExitOpen] = useState(false);
   const finishing = useRef(false);
 
-  // Start (server creates the session and owns the deadline)
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Start or resume (server creates the session and owns the deadline)
   useEffect(() => {
     let alive = true;
-    api().startSession(id).then((s) => {
+    api().startSession(assignmentId ? { assignmentId } : { quizId: id }).then((s) => {
       if (!alive) return;
+      const done = new Map(s.answered.map((a) => [a.questionId, a.outcome]));
+      const firstOpen = s.questions.findIndex((q) => !done.has(q.id));
+      if (firstOpen === -1 && s.questions.length) {
+        // every question already answered in an earlier visit — just close the attempt
+        void api().finishSession(s.sessionId, { usedSec: 0, timedOut: false }).then(() => nav(`/result/${s.sessionId}`, { replace: true }));
+        return;
+      }
+      setOutcomes(s.questions.slice(0, firstOpen).map((q) => done.get(q.id) ?? 'unanswered'));
+      setIndex(Math.max(0, firstOpen));
       setSession(s);
-      setTimer(createTimer(s.durationSec, Date.now()));
+      setTimer(createTimer(s.remainingSec, Date.now()));
       setPhase('answering');
+    }, (e: unknown) => {
+      if (!alive) return;
+      if (e instanceof ApiError && e.detail === 'already_taken' && assignmentId) { nav(`/group/${assignmentId}/result`, { replace: true }); return; }
+      if (e instanceof ApiError && e.status === 403 && assignmentId) { nav(`/group/${assignmentId}`, { replace: true }); return; }
+      setLoadError(e instanceof Error ? e.message : String(e));
     });
     return () => { alive = false; };
-  }, [id]);
+  }, [id, assignmentId, nav]);
 
   // Display tick
   useEffect(() => {
@@ -91,9 +109,19 @@ export function QuizScreen() {
     if (r.outcome === 'correct') haptic.success(); else haptic.error();
     setFeedback(r);
     setOutcomes((o) => [...o, r.outcome]);
-    const duration = feedbackMs(Boolean(r.explanation));
+    const duration = r.explanation ? session.feedbackExplainMs : session.feedbackMs;
     setFeedbackEnd({ at: Date.now() + duration, duration });
     setPhase('feedback');
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col items-center justify-center gap-3 px-[18px] text-center">
+        <img src="/3d/rq-3d-E03.webp" alt="" className="size-[150px] object-contain" />
+        <p className="text-body font-bold">{t('error.load')}</p>
+        <button type="button" onClick={() => nav(-1)} className="h-[52px] rounded-control bg-primary px-6 font-bold text-white">{t('common.back')}</button>
+      </div>
+    );
   }
 
   if (!session || !timer) {

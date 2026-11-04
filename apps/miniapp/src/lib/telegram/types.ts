@@ -24,6 +24,8 @@ export interface TelegramWebApp {
   enableClosingConfirmation(): void;
   disableClosingConfirmation(): void;
   disableVerticalSwipes?(): void;
+  openTelegramLink(url: string): void;
+  openLink(url: string): void;
   enableVerticalSwipes?(): void;
   onEvent(event: string, cb: () => void): void;
   offEvent(event: string, cb: () => void): void;
