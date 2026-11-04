@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom';
 import { api } from '../data/api';
 import { LANG_NAMES, useI18n } from '../lib/i18n';
 import { useAsync } from '../lib/useAsync';
-import { setHapticsEnabled } from '../lib/telegram/webapp';
+import { haptic, setHapticsEnabled } from '../lib/telegram/webapp';
+import { getThemePref, setThemePref, type ThemePref } from '../lib/theme';
 import { Screen } from '../components/Screen';
 import { topicBg as topicColorBg } from '../components/home/TestRow';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -124,6 +125,7 @@ function Settings({ p, langName }: { p: Profile; langName: string }) {
       <div className="overflow-hidden rounded-card bg-surface shadow-card">
         <Toggle icon="bell" tone="bg-primary-50 text-primary" label={t('profile.notify')} checked={notify} onChange={(v) => { setNotify(v); save({ notifyLive: v }); }} />
         <Toggle icon="sparkle" tone="bg-success-50 text-success-ink" label={t('profile.haptics')} checked={haptics} onChange={(v) => { setHaptics(v); save({ haptics: v }); }} />
+        <ThemeRow />
         <SettingLink to="/language" icon="globe" tone="bg-topic-blue text-[#2F6FD0]" label={t('profile.lang')} value={langName} />
         <button type="button" onClick={() => setAbout((x) => !x)} aria-expanded={about} className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-[15px] font-semibold">
           <span className="grid size-9 place-items-center rounded-sm bg-topic-pink text-[#B42C50]"><Icon name="question" size={18} /></span>
@@ -133,6 +135,28 @@ function Settings({ p, langName }: { p: Profile; langName: string }) {
         {about && <p className="px-4 pb-4 text-caption leading-5 text-ink-2">{t('profile.aboutText')}</p>}
       </div>
     </section>
+  );
+}
+
+function ThemeRow() {
+  const { t } = useI18n();
+  const [pref, setPref] = useState<ThemePref>(getThemePref);
+  const pick = (p: ThemePref) => { setPref(p); setThemePref(p); haptic.select(); };
+  return (
+    <div className="flex flex-col gap-2.5 border-b border-line px-4 py-3.5">
+      <span className="flex items-center gap-3 text-[15px] font-semibold">
+        <span className="grid size-9 place-items-center rounded-sm bg-topic-indigo text-primary"><Icon name="moon" size={18} /></span>
+        {t('profile.theme')}
+      </span>
+      <div role="radiogroup" aria-label={t('profile.theme')} className="grid grid-cols-3 gap-1 rounded-[14px] bg-track p-1">
+        {(['auto', 'light', 'dark'] as const).map((p) => (
+          <button key={p} type="button" role="radio" aria-checked={pref === p} onClick={() => pick(p)}
+            className={clsx('h-9 rounded-[10px] text-[13px] font-bold transition-colors', pref === p ? 'bg-surface text-ink shadow-card' : 'text-muted')}>
+            {t(p === 'auto' ? 'profile.themeAuto' : p === 'light' ? 'profile.themeLight' : 'profile.themeDark')}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
