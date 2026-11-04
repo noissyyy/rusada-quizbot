@@ -1,15 +1,13 @@
 /**
  * Contract types shared between Mini App, Admin and (mirrored) FastAPI schemas.
- * Client-facing question types NEVER contain the correct answer: it is only
- * delivered in a reveal/feedback payload after the server evaluates a submission.
+ * Client-facing question types never contain the correct answer: it arrives
+ * only in the server's reveal payload after a submission is evaluated.
  */
 
 export type ID = string;
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type QuizMode = 'individual' | 'live' | 'group';
 export type TopicColor = 'blue' | 'violet' | 'mint' | 'peach' | 'pink' | 'yellow';
-export type TopicIllustration =
-  | 'morphology' | 'orthography' | 'syntax' | 'punctuation' | 'lexicon' | 'phonetics';
 
 export interface UserProfile {
   id: ID;
@@ -18,43 +16,43 @@ export interface UserProfile {
   lastName?: string;
   username?: string;
   photoUrl?: string;
+  languageCode?: string;
 }
 
-export interface TopicSummary {
+export interface TestSummary {
   id: ID;
-  slug: string;
-  title: string;
-  description: string;
-  color: TopicColor;
-  illustration: TopicIllustration;
-  testsCount: number;
+  title: string;          // content: always Russian
+  topicTitle: string;     // content: always Russian
+  topicColor: TopicColor;
+  /** public path of the topic's 3D illustration, e.g. /3d/rq-3d-T01.webp */
+  illustration: string;
   questionsCount: number;
-  /** 0..100, computed server-side from the user's completed tests */
-  progress: number;
+  /** one timer for the whole test (minutes) */
+  durationMinutes: number;
+  difficulty: Difficulty;
+}
+
+export interface QuickStart {
+  quizId: ID;
+  questionsCount: number;
+  durationMinutes: number;
 }
 
 export interface InProgressAttempt {
   sessionId: ID;
-  quizId: ID;
   quizTitle: string;
-  topicTitle: string;
-  topicColor: TopicColor;
   answered: number;
   total: number;
-}
-
-export interface QuizModeInfo {
-  mode: QuizMode;
-  title: string;
-  description: string;
-  /** e.g. number of currently open live sessions */
-  badge?: string;
+  /** server-computed; the test timer keeps running while the app is closed */
+  remainingSeconds: number;
 }
 
 export interface HomeFeed {
   user: UserProfile;
   unreadNotifications: number;
+  quickStart: QuickStart;
   continueAttempt: InProgressAttempt | null;
-  modes: QuizModeInfo[];
-  featuredTopics: TopicSummary[];
+  popularTests: TestSummary[];
+  /** number of live sessions open right now; 0 hides the LIVE badge */
+  liveNow: number;
 }

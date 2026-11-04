@@ -2,6 +2,14 @@
 @import './tokens.css';
 
 /*
+ * Helvetica Now Display slot. When licensed woff2 files are added to
+ * public/fonts/, uncomment — no other code changes needed.
+ *
+ * @font-face { font-family: 'Helvetica Now Display'; font-weight: 700 800;
+ *   src: url('/fonts/HelveticaNowDisplay-Bold.woff2') format('woff2'); font-display: swap; }
+ */
+
+/*
  * Telegram safe areas. Telegram (Bot API 8.0+) sets --tg-safe-area-inset-* and
  * --tg-content-safe-area-inset-*; we fall back to env() for plain browsers.
  */

@@ -1,27 +1,24 @@
 import type { InProgressAttempt } from '@rq/shared-types';
-import { topicClasses } from '../../styles/palette';
-import { Card, Icon, ProgressBar } from '../ui';
+import { Link } from 'react-router-dom';
+import { useI18n } from '../../lib/i18n';
+import { Icon, ProgressBar } from '../ui';
 
-export function ContinueCard({ attempt, onContinue }: { attempt: InProgressAttempt; onContinue: () => void }) {
-  const t = topicClasses[attempt.topicColor];
+export const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+
+export function ContinueCard({ attempt }: { attempt: InProgressAttempt }) {
+  const { t } = useI18n();
   return (
-    <Card className="p-4">
-      <button type="button" onClick={onContinue} className="flex w-full items-center gap-3 text-left">
-        <span className={`grid size-12 shrink-0 place-items-center rounded-[14px] ${t.bg} ${t.fg}`}>
-          <Icon name="clock" size={24} />
+    <Link to={`/quiz/${attempt.sessionId}`} className="flex items-center gap-3 rounded-card bg-surface p-4 text-ink shadow-card">
+      <span className="grid size-12 shrink-0 place-items-center rounded-control bg-primary-50 text-primary"><Icon name="clock" size={24} /></span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-micro font-bold uppercase tracking-wide text-muted">{t('home.continue', { time: mmss(attempt.remainingSeconds) })}</span>
+        <span className="truncate text-[16px] font-bold">{attempt.quizTitle}</span>
+        <span className="mt-1 flex items-center gap-2">
+          <ProgressBar value={attempt.answered} max={attempt.total} label={attempt.quizTitle} />
+          <span className="text-[12px] font-bold text-ink-2">{attempt.answered}/{attempt.total}</span>
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-micro font-semibold uppercase tracking-wide text-muted">Продолжить · {attempt.topicTitle}</span>
-          <span className="block truncate text-body font-semibold text-ink">{attempt.quizTitle}</span>
-          <span className="mt-2 flex items-center gap-2">
-            <ProgressBar value={attempt.answered} max={attempt.total} label="Прогресс теста" fillClassName={t.fill} />
-            <span className="shrink-0 text-micro font-semibold text-ink-2">{attempt.answered}/{attempt.total}</span>
-          </span>
-        </span>
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-white shadow-primary">
-          <Icon name="play" size={16} filled />
-        </span>
-      </button>
-    </Card>
+      </span>
+      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-white shadow-primary"><Icon name="play" size={14} filled strokeWidth={0} /></span>
+    </Link>
   );
 }

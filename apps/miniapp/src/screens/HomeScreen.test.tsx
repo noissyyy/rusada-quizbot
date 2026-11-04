@@ -4,52 +4,70 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { setApi } from '../data/api';
 import { mockApi } from '../data/mock';
+import { I18nProvider, type Lang } from '../lib/i18n';
 import { HomeScreen } from './HomeScreen';
+import { LanguageScreen } from './LanguageScreen';
 import { BottomNav } from '../components/BottomNav';
 
-function renderHome() {
+function renderAt(path: string, lang: Lang = 'ru') {
   return render(
-    <MemoryRouter initialEntries={['/']}>
-      <Routes>
-        <Route path="/" element={<HomeScreen />} />
-        <Route path="/topics" element={<p>TOPICS_PAGE</p>} />
-        <Route path="/mode/:mode" element={<p>MODE_PAGE</p>} />
-      </Routes>
-      <BottomNav />
-    </MemoryRouter>,
+    <I18nProvider initial={lang}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/" element={<HomeScreen />} />
+          <Route path="/language" element={<LanguageScreen />} />
+          <Route path="/quiz/:id" element={<p>QUIZ_PAGE</p>} />
+        </Routes>
+        <BottomNav />
+      </MemoryRouter>
+    </I18nProvider>,
   );
 }
 
 describe('HomeScreen', () => {
-  beforeEach(() => setApi(mockApi));
+  beforeEach(() => { setApi(mockApi); try { localStorage.clear(); } catch { /* noop */ } });
 
-  it('shows skeleton then greeting, hero CTA, 3 modes, featured topics', async () => {
-    renderHome();
-    expect(screen.getByLabelText('Загрузка')).toBeInTheDocument();
+  it('renders start card, popular tests and three modes with function hints', async () => {
+    renderAt('/');
     expect(await screen.findByText('Привет, Алексей!')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Начать тест/ })).toBeInTheDocument();
-    for (const t of ['Индивидуальный тест', 'Прямой эфир', 'Тест в группе']) expect(screen.getByText(t)).toBeInTheDocument();
-    expect(screen.getByText('Морфология')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: 'Прогресс теста' })).toHaveAttribute('aria-valuenow', '6');
+    expect(screen.getByRole('link', { name: /Начать тест: 10\s+вопросов · 5\s+мин/ })).toBeInTheDocument();
+    expect(screen.getByText('Популярные тесты')).toBeInTheDocument();
+    expect(screen.getByText('Имя прилагательное')).toBeInTheDocument();
+    for (const hint of ['Тесты в своём темпе', 'Все отвечают одновременно', 'Тест для своей группы']) expect(screen.getByText(hint)).toBeInTheDocument();
+    expect(screen.getByText('LIVE')).toBeInTheDocument();
   });
 
-  it('hero CTA navigates to topics', async () => {
-    renderHome();
-    await userEvent.click(await screen.findByRole('button', { name: /Начать тест/ }));
-    expect(screen.getByText('TOPICS_PAGE')).toBeInTheDocument();
+  it('start card opens the quiz directly', async () => {
+    renderAt('/');
+    await userEvent.click(await screen.findByRole('link', { name: /Начать тест/ }));
+    expect(screen.getByText('QUIZ_PAGE')).toBeInTheDocument();
   });
 
-  it('shows error state when API fails', async () => {
+  it('shows error state when the API fails', async () => {
     setApi({ getHomeFeed: () => Promise.reject(new Error('network')) });
-    renderHome();
+    renderAt('/');
     expect(await screen.findByRole('alert')).toHaveTextContent('Не удалось загрузить данные');
   });
 
-  it('bottom nav has 4 items and marks Главная active', async () => {
-    renderHome();
-    const nav = screen.getByRole('navigation', { name: 'Основная навигация' });
-    const links = within(nav).getAllByRole('link');
-    expect(links.map((l) => l.textContent)).toEqual(['Главная', 'Темы', 'Рейтинг', 'Профиль']);
-    expect(links[0]).toHaveAttribute('aria-current', 'page');
+  it('renders Uzbek Cyrillic generated from Latin strings', async () => {
+    renderAt('/', 'uz-cyrl');
+    expect(await screen.findByText('Тестни бошлаш')).toBeInTheDocument();
+    expect(screen.getByText('Машҳур тестлар')).toBeInTheDocument();
+  });
+
+  it('bottom nav: Главная, Тесты, Рейтинг, Профиль', () => {
+    renderAt('/');
+    const links = within(screen.getByRole('navigation', { name: 'Menu' })).getAllByRole('link');
+    expect(links.map((l) => l.getAttribute('aria-label'))).toEqual(['Главная', 'Тесты', 'Рейтинг', 'Профиль']);
+  });
+});
+
+describe('LanguageScreen', () => {
+  it('switches UI language and returns home', async () => {
+    renderAt('/language', 'ru');
+    await userEvent.click(screen.getByRole('radio', { name: /O‘zbekcha/ }));
+    expect(screen.getByRole('heading', { name: 'Tilni tanlang' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Продолжить' }));
+    expect(await screen.findByText('Testni boshlash')).toBeInTheDocument();
   });
 });

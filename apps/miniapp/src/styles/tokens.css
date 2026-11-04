@@ -1,58 +1,60 @@
 /*
- * Russian Quiz — Design tokens (single source of truth).
- * Tailwind v4 reads @theme and generates utilities: bg-primary, text-ink, rounded-card, shadow-card…
- * Spacing uses Tailwind's 4px base (p-2 = 8px), so the 8pt grid = even steps, 4pt = odd steps.
+ * Rusada QuizBot — design tokens (source of truth: Design canvas "Asoslar").
+ * Tailwind v4 turns these into utilities: bg-primary, text-ink, rounded-card…
  */
 @theme {
+  /* Fonts. Helvetica Now Display is licensed separately; until its files are
+     added (see global.css @font-face slot) the display stack falls back to Onest. */
   --font-sans: 'Onest Variable', 'Onest', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Helvetica Now Display', 'Onest Variable', 'Onest', system-ui, sans-serif;
 
   /* Brand */
-  --color-primary: #2678F5;
-  --color-primary-600: #1C66DB;
-  --color-primary-700: #1553B8;
-  --color-primary-50: #EAF2FF;
-  --color-primary-100: #D6E6FE;
+  --color-brand: #DF1D38;        /* logo red: splash, start card, LIVE only */
+  --color-brand-dark: #C8152F;
+  --color-primary: #6A3DF0;      /* buttons, selection, active nav */
+  --color-primary-600: #5428D6;
+  --color-primary-50: #F1ECFF;
 
   /* Neutrals */
-  --color-canvas: #F7F8FA;      /* app background */
-  --color-surface: #FFFFFF;     /* cards */
-  --color-ink: #172B4D;         /* main text */
-  --color-ink-2: #44546F;       /* emphasized secondary */
-  --color-muted: #7B8794;       /* secondary text */
-  --color-line: #E8EBF0;        /* hairlines, dividers */
-  --color-track: #EEF1F5;       /* progress tracks, inputs */
+  --color-canvas: #F6F5FA;
+  --color-surface: #FFFFFF;
+  --color-ink: #1A1530;
+  --color-ink-2: #4A4560;
+  --color-muted: #6E6A80;
+  --color-line: #E9E6F2;
+  --color-track: #EEEBF5;
 
   /* Semantic */
-  --color-success: #16A34A;
-  --color-success-50: #E8F7EE;
-  --color-error: #EF4444;
-  --color-error-50: #FDECEC;
-  --color-warning: #F59E0B;
-  --color-warning-50: #FEF4E2;
+  --color-success: #12A150;  --color-success-50: #E6F6EC; --color-success-ink: #0B7A3B;
+  --color-error: #E5484D;    --color-error-50: #FDECEC;   --color-error-ink: #B4232A;
+  --color-warning: #F59E0B;  --color-warning-50: #FEF3DC; --color-warning-ink: #8A4E00;
 
-  /* Pastel topic palettes: bg (card), fg (accent/text), deep (illustration shade) */
-  --color-blue-bg: #E6F0FF;   --color-blue-fg: #2678F5;   --color-blue-deep: #1553B8;
-  --color-violet-bg: #EFEAFE; --color-violet-fg: #7C5CFA; --color-violet-deep: #5B3FD6;
-  --color-mint-bg: #E3F7EF;   --color-mint-fg: #16A37A;   --color-mint-deep: #0E7A5B;
-  --color-peach-bg: #FFEEE3;  --color-peach-fg: #F07A3A;  --color-peach-deep: #C9561A;
-  --color-pink-bg: #FDE8F1;   --color-pink-fg: #E2508C;   --color-pink-deep: #B8326A;
-  --color-yellow-bg: #FFF5D9; --color-yellow-fg: #D99A06; --color-yellow-deep: #A87400;
+  /* Modes */
+  --color-mode-individual: #6A3DF0;
+  --color-mode-live: #1A1530;
+  --color-mode-group: #0B7D78;
 
-  /* Radii: small 10 · control 14 · card 20 · hero 28 */
-  --radius-sm: 10px;
-  --radius-control: 14px;
-  --radius-card: 20px;
-  --radius-hero: 28px;
+  /* Topic pastels */
+  --color-topic-blue: #E3F0FF;
+  --color-topic-violet: #EFEAFE;
+  --color-topic-mint: #E0F5EC;
+  --color-topic-peach: #FFEBDD;
+  --color-topic-pink: #FDE6EB;
+  --color-topic-yellow: #FFF3D1;
 
-  /* Elevation — soft, low-contrast, blue-tinted */
-  --shadow-card: 0 1px 2px rgba(23, 43, 77, 0.04), 0 4px 16px rgba(23, 43, 77, 0.05);
-  --shadow-raised: 0 2px 6px rgba(23, 43, 77, 0.06), 0 12px 32px rgba(23, 43, 77, 0.10);
-  --shadow-primary: 0 8px 20px rgba(38, 120, 245, 0.30);
+  /* Radii: 12 chip · 16 control · 24 card · 32 hero/sheet */
+  --radius-sm: 12px;
+  --radius-control: 16px;
+  --radius-card: 24px;
+  --radius-hero: 32px;
 
-  /* Type scale (size / line-height) */
-  --text-display: 28px;  --text-display--line-height: 34px;
-  --text-title: 22px;    --text-title--line-height: 28px;
-  --text-heading: 18px;  --text-heading--line-height: 24px;
+  --shadow-card: 0 1px 2px rgba(26, 21, 48, 0.05), 0 6px 18px rgba(26, 21, 48, 0.07);
+  --shadow-raised: 0 2px 6px rgba(26, 21, 48, 0.06), 0 14px 36px rgba(26, 21, 48, 0.14);
+  --shadow-primary: 0 8px 20px rgba(106, 61, 240, 0.32);
+  --shadow-brand: 0 16px 32px rgba(223, 29, 56, 0.24);
+
+  --text-display: 26px;  --text-display--line-height: 30px;
+  --text-title: 20px;    --text-title--line-height: 26px;
   --text-body: 15px;     --text-body--line-height: 22px;
   --text-caption: 13px;  --text-caption--line-height: 18px;
   --text-micro: 11px;    --text-micro--line-height: 14px;

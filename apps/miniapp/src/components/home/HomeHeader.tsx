@@ -1,33 +1,30 @@
-import type { UserProfile } from '@rq/shared-types';
-import { Avatar, IconButton } from '../ui';
+import { Link } from 'react-router-dom';
+import { useI18n } from '../../lib/i18n';
+import { Flag, langCode } from '../brand/Flag';
+import { Icon } from '../ui';
 
-export function Logo() {
+export function HomeHeader({ unread }: { unread: number }) {
+  const { lang, t } = useI18n();
   return (
-    <div className="flex items-center gap-2">
-      <span className="grid size-9 place-items-center rounded-[12px] bg-primary text-[15px] font-extrabold tracking-tight text-white shadow-primary">
-        Rq
-      </span>
-      <span className="text-[17px] font-bold tracking-tight text-ink">
-        Russian <span className="text-primary">Quiz</span>
-      </span>
-    </div>
-  );
-}
-
-export function HomeHeader({ user, unread }: { user: UserProfile; unread: number }) {
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
-  return (
-    <header className="space-y-5">
-      <div className="flex items-center justify-between">
-        <Logo />
-        <IconButton icon="bell" label={unread ? `Уведомления: ${unread} новых` : 'Уведомления'} dot={unread > 0} />
-      </div>
-      <div className="flex items-center gap-3">
-        <Avatar name={fullName} src={user.photoUrl} size={48} />
-        <div className="min-w-0">
-          <p className="truncate text-title font-bold text-ink">Привет, {user.firstName}!</p>
-          <p className="text-caption text-muted">Готов проверить свои знания?</p>
+    <header className="flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        <img src="/brand/rusada-uc-square.png" alt="Rusada" className="size-11 rounded-[14px] object-cover" />
+        <div className="flex flex-col">
+          <span className="font-display text-[20px] font-bold leading-[22px] tracking-tight">Rusada</span>
+          <span className="text-micro font-semibold text-muted">QuizBot</span>
         </div>
+      </div>
+      <div className="flex gap-2">
+        <Link to="/language" aria-label={`${t('lang.title')}: ${langCode[lang]}`}
+          className="flex h-11 items-center gap-1.5 rounded-full bg-surface pl-1.5 pr-2.5 text-caption font-bold text-ink shadow-card">
+          <Flag lang={lang} size={30} rounded={15} showScript={false} />
+          {langCode[lang]}
+        </Link>
+        <Link to="/notifications" aria-label={unread ? `${t('notifications')}: ${unread}` : t('notifications')}
+          className="relative grid size-11 place-items-center rounded-full bg-surface text-ink shadow-card">
+          <Icon name="bell" size={22} />
+          {unread > 0 && <span className="absolute right-[11px] top-2.5 size-2 rounded-full bg-brand ring-2 ring-surface" />}
+        </Link>
       </div>
     </header>
   );

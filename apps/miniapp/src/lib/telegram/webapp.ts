@@ -19,7 +19,7 @@ export const isInTelegram = () => getWebApp() !== null;
 export const getInitData = (): string | null => getWebApp()?.initData ?? null;
 
 /** Call once on boot: signal readiness, expand, sync chrome colors with our canvas. */
-export function bootstrapTelegram(canvas = '#F7F8FA') {
+export function bootstrapTelegram(canvas = '#F6F5FA') {
   const wa = getWebApp();
   if (!wa) return;
   wa.ready();

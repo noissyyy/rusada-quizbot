@@ -14,7 +14,7 @@ export function Avatar({ name, src, size = 44, className }: AvatarProps) {
   return (
     <span
       className={clsx(
-        'inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-primary-100 font-semibold text-primary ring-2 ring-surface',
+        'inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-primary-50 font-semibold text-primary ring-2 ring-surface',
         className,
       )}
       style={{ width: size, height: size, fontSize: size * 0.38 }}

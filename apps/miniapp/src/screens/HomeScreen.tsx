@@ -1,75 +1,74 @@
-import { useNavigate } from 'react-router-dom';
 import { api } from '../data/api';
 import { useAsync } from '../lib/useAsync';
-import { haptic } from '../lib/telegram/webapp';
+import { useI18n } from '../lib/i18n';
 import { Screen } from '../components/Screen';
-import { Button, SectionHeader, Skeleton } from '../components/ui';
+import { Avatar, Button, Skeleton } from '../components/ui';
 import { HomeHeader } from '../components/home/HomeHeader';
-import { HeroBanner } from '../components/home/HeroBanner';
+import { StartCard } from '../components/home/StartCard';
 import { ContinueCard } from '../components/home/ContinueCard';
-import { ModeCard } from '../components/home/ModeCard';
-import { TopicCard } from '../components/home/TopicCard';
+import { TestRow } from '../components/home/TestRow';
+import { ModeTile } from '../components/home/ModeTile';
+import { Link } from 'react-router-dom';
 
 export function HomeScreen() {
   const state = useAsync(() => api().getHomeFeed());
-  const nav = useNavigate();
+  const { t } = useI18n();
 
-  if (state.status === 'loading') return <HomeSkeleton />;
+  if (state.status === 'loading') return <HomeSkeleton label={t('loading')} />;
   if (state.status === 'error') {
     return (
       <Screen>
         <div role="alert" className="mt-24 text-center">
-          <p className="text-heading font-bold">Не удалось загрузить данные</p>
+          <p className="text-title font-bold">{t('error.load')}</p>
           <p className="mt-1 text-caption text-muted">{state.error.message}</p>
-          <Button className="mt-4" onClick={() => location.reload()}>Повторить</Button>
+          <Button className="mt-4" onClick={() => location.reload()}>{t('error.retry')}</Button>
         </div>
       </Screen>
     );
   }
 
   const feed = state.data;
+  const fullName = [feed.user.firstName, feed.user.lastName].filter(Boolean).join(' ');
   return (
-    <Screen className="space-y-6">
-      <HomeHeader user={feed.user} unread={feed.unreadNotifications} />
-      <HeroBanner onStart={() => { haptic.tap(); nav('/topics'); }} />
-
-      {feed.continueAttempt && (
-        <ContinueCard attempt={feed.continueAttempt} onContinue={() => nav(`/quiz/${feed.continueAttempt!.sessionId}`)} />
-      )}
-
-      <section aria-labelledby="modes-title">
-        <div id="modes-title"><SectionHeader title="Режимы" /></div>
-        <div className="space-y-2.5">
-          {feed.modes.map((m) => (
-            <ModeCard key={m.mode} info={m} onSelect={(mode) => nav(`/mode/${mode}`)} />
-          ))}
-        </div>
+    <Screen className="flex flex-col gap-5">
+      <HomeHeader unread={feed.unreadNotifications} />
+      <section className="flex items-center gap-3">
+        <Avatar name={fullName} src={feed.user.photoUrl} size={52} />
+        <h1 className="font-display text-display font-bold tracking-tight">{t('home.greeting', { name: feed.user.firstName })}</h1>
       </section>
 
-      <section aria-label="Популярные темы">
-        <SectionHeader
-          title="Популярные темы"
-          action={<button type="button" onClick={() => nav('/topics')} className="text-caption font-semibold text-primary">Все темы</button>}
-        />
-        <div className="grid grid-cols-2 gap-3">
-          {feed.featuredTopics.map((t) => (
-            <TopicCard key={t.id} topic={t} onOpen={(tp) => nav(`/topics/${tp.slug}`)} />
-          ))}
+      <StartCard quick={feed.quickStart} />
+      {feed.continueAttempt && <ContinueCard attempt={feed.continueAttempt} />}
+
+      <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="popular-title">
+        <div className="flex items-center justify-between">
+          <h2 id="popular-title" className="font-display text-title font-bold tracking-tight">{t('home.popular')}</h2>
+          <Link to="/tests" className="text-[14px] font-bold text-primary">{t('home.allTests')}</Link>
+        </div>
+        {feed.popularTests.map((test) => <TestRow key={test.id} test={test} />)}
+      </section>
+
+      <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="modes-title">
+        <h2 id="modes-title" className="font-display text-title font-bold tracking-tight">{t('home.modes')}</h2>
+        <div className="grid grid-cols-3 gap-2.5">
+          <ModeTile mode="individual" />
+          <ModeTile mode="live" live={feed.liveNow > 0} />
+          <ModeTile mode="group" />
         </div>
       </section>
     </Screen>
   );
 }
 
-function HomeSkeleton() {
+function HomeSkeleton({ label }: { label: string }) {
   return (
-    <Screen className="space-y-6" >
-      <div aria-busy="true" aria-label="Загрузка" className="space-y-6">
-        <div className="flex justify-between"><Skeleton className="h-9 w-40" /><Skeleton className="size-11" /></div>
-        <div className="flex items-center gap-3"><Skeleton className="size-12 rounded-full" /><Skeleton className="h-10 w-48" /></div>
-        <Skeleton className="h-48 rounded-hero" />
-        <Skeleton className="h-20" />
-        <div className="space-y-2.5"><Skeleton className="h-[76px]" /><Skeleton className="h-[76px]" /><Skeleton className="h-[76px]" /></div>
+    <Screen>
+      <div aria-busy="true" aria-label={label} className="flex flex-col gap-5">
+        <div className="flex justify-between"><Skeleton className="h-11 w-36" /><Skeleton className="h-11 w-28" /></div>
+        <div className="flex items-center gap-3"><Skeleton className="size-[52px] rounded-full" /><Skeleton className="h-8 w-52" /></div>
+        <Skeleton className="h-[140px] rounded-hero" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-[78px]" /><Skeleton className="h-[78px]" /><Skeleton className="h-[78px]" />
       </div>
     </Screen>
   );
