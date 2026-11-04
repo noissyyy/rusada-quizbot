@@ -19,7 +19,7 @@ from sqlalchemy.orm import undefer
 from .. import telegram
 from ..config import settings
 from ..db import get_db
-from ..models import Member, PaymentRequest, Subscription, User, utcnow
+from ..models import Book, Member, PaymentRequest, Question, Subscription, User, utcnow
 from ..schemas import Camel
 from ..security import require_role, settings_superadmins, telegram_user
 from ..services import pdf_pages
@@ -74,6 +74,9 @@ class AccessOut(Camel):
     support_username: str
     pending: PendingOut | None
     rejected_comment: str | None
+    #: real numbers for the subscription page (never a made-up figure)
+    questions_count: int = 0
+    books_count: int = 0
 
 
 @router.get("/api/access", response_model=AccessOut)
@@ -83,8 +86,10 @@ async def my_access(user: User = Depends(telegram_user), db: AsyncSession = Depe
     end = await subscription_end(db, user)
     last = (await db.execute(select(PaymentRequest).where(PaymentRequest.user_id == user.id)
                              .order_by(PaymentRequest.created_at.desc()).limit(1))).scalars().first()
+    questions = (await db.execute(select(func.count()).select_from(Question).where(Question.status == "published"))).scalar_one()
+    books = (await db.execute(select(func.count()).select_from(Book).where(Book.is_active.is_(True)))).scalar_one()
     await db.commit()
-    return AccessOut(telegram_id=user.telegram_id, username=user.username, has_access=reason is not None, reason=reason, mode=cfg.mode,
+    return AccessOut(questions_count=questions, books_count=books, telegram_id=user.telegram_id, username=user.username, has_access=reason is not None, reason=reason, mode=cfg.mode,
                      subscription_ends_at=end if end and end > utcnow() else None,
                      price_uzs=cfg.price_uzs, days=cfg.days, card_number=cfg.card_number, card_holder=cfg.card_holder,
                      note=cfg.note, support_username=cfg.support_username,

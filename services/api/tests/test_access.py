@@ -30,6 +30,7 @@ async def test_closed_mode_members_staff_and_paywall(client, auth, admin_headers
     stranger = auth(71, username="stranger1")
     a = (await client.get("/api/access", headers=stranger)).json()
     assert a["hasAccess"] is False and a["priceUzs"] == 100000 and a["cardNumber"] == "8600 1234 5678 9012"
+    assert a["questionsCount"] >= 4 and a["booksCount"] == 0  # real numbers from the database
     assert (await client.get("/api/home", headers=stranger)).status_code == 402
     assert (await client.get("/api/me", headers=stranger)).status_code == 200  # paywall still knows who you are
 
