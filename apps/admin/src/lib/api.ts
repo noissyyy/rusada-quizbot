@@ -50,6 +50,7 @@ export const get = <T,>(p: string) => http<T>('GET', p);
 export const post = <T,>(p: string, b: unknown = {}) => http<T>('POST', p, b);
 export const put = <T,>(p: string, b: unknown) => http<T>('PUT', p, b);
 export const patch = <T,>(p: string, b: unknown) => http<T>('PATCH', p, b);
+export const del = <T,>(p: string) => http<T>('DELETE', p);
 
 export async function upload<T>(path: string, file: File): Promise<T> {
   const fd = new FormData();

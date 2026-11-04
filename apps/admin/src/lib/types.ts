@@ -21,7 +21,7 @@ export interface QuizFull {
 }
 export interface QuizRow {
   id: string; title: string; topicTitle: string; questionsCount: number; durationSec: number; liveQuestionSec: number;
-  modes: ('individual' | 'live' | 'group')[]; attempts: number; status: Status; isLive: boolean; updatedAt: string;
+  modes: ('individual' | 'live' | 'group')[]; attempts: number; status: Status; isLive: boolean; deletable: boolean; updatedAt: string;
 }
 export interface AppSettings {
   defaultDurationMin: number; liveQuestionSec: number; feedbackMs: number; feedbackExplainMs: number;

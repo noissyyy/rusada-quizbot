@@ -322,6 +322,15 @@ async def bulk_questions(body: dict, user: User = Depends(admin), db: AsyncSessi
             continue
         if action in ("archive", "publish", "draft"):
             q.status = {"archive": "archived", "publish": "published", "draft": "draft"}[action]
+        elif action == "delete":
+            used = (await db.execute(select(func.count()).select_from(QuizQuestion)
+                                     .where(QuizQuestion.question_id == qid))).scalar_one()
+            answered = (await db.execute(select(func.count()).select_from(AttemptAnswer)
+                                         .where(AttemptAnswer.question_id == qid))).scalar_one()
+            if used or answered:
+                raise HTTPException(409, f"Вопрос «{q.text[:40]}…» есть в тесте или на него уже отвечали. "
+                                         "Удалить нельзя — переведите его в архив.")
+            await db.delete(q)
         elif action == "duplicate":
             db.add(Question(topic_id=q.topic_id, subtopic_id=q.subtopic_id, text=q.text, image_url=q.image_url,
                             difficulty=q.difficulty, points=q.points, explanation_ru=q.explanation_ru,
@@ -362,11 +371,14 @@ async def list_tests(status_: str | None = Query(None, alias="status"), user: Us
     rows = (await db.execute(stmt)).unique().scalars().all()
     counts = dict((await db.execute(select(Attempt.quiz_id, func.count()).group_by(Attempt.quiz_id))).all())
     live_ids = set((await db.execute(select(LiveSession.quiz_id).where(LiveSession.state.in_(live_svc.ACTIVE)))).scalars())
+    used_ids = set((await db.execute(select(LiveSession.quiz_id))).scalars()) | \
+        set((await db.execute(select(GroupAssignment.quiz_id))).scalars())
     return [{"id": q.id, "title": q.title, "topicTitle": q.topic.title, "questionsCount": len(catalog.live_questions(q)),
              "durationSec": q.duration_sec, "liveQuestionSec": q.live_question_sec,
              "modes": [m for m, on in (("individual", q.mode_individual), ("live", q.mode_live),
                                        ("group", q.mode_group)) if on],
              "attempts": counts.get(q.id, 0), "status": q.status, "isLive": q.id in live_ids,
+             "deletable": not counts.get(q.id, 0) and q.id not in used_ids,
              "updatedAt": q.updated_at.isoformat()} for q in rows]
 
 
@@ -414,6 +426,85 @@ async def update_test(qid: str, body: QuizIn, user: User = Depends(admin), db: A
     await audit(db, user, "test.update", quiz.id)
     await db.commit()
     return await _quiz_out(db, await db.get(Quiz, qid, populate_existing=True))
+
+
+async def _delete_test(db: AsyncSession, user: User, quiz: Quiz) -> tuple[str | None, int, int]:
+    """Deletes a test nobody took, together with its questions.
+    Returns (refusal reason | None, questions deleted, questions kept because another test uses them)."""
+    attempts = (await db.execute(select(func.count()).select_from(Attempt).where(Attempt.quiz_id == quiz.id))).scalar_one()
+    if attempts:
+        return f"тест уже проходили ({attempts}) — только в архив", 0, 0
+    lives = (await db.execute(select(func.count()).select_from(LiveSession).where(LiveSession.quiz_id == quiz.id))).scalar_one()
+    asg = (await db.execute(select(func.count()).select_from(GroupAssignment).where(GroupAssignment.quiz_id == quiz.id))).scalar_one()
+    if lives or asg:
+        return "тест использовался в эфире или в группе — только в архив", 0, 0
+    qids = [i.question_id for i in quiz.items]
+    await audit(db, user, "test.delete", quiz.id, title=quiz.title)
+    await db.delete(quiz)
+    await db.flush()
+    deleted = kept = 0
+    for qid in qids:
+        # a question is removed with its test unless another test still uses it or someone answered it
+        other = (await db.execute(select(func.count()).select_from(QuizQuestion)
+                                  .where(QuizQuestion.question_id == qid))).scalar_one()
+        answered = (await db.execute(select(func.count()).select_from(AttemptAnswer)
+                                     .where(AttemptAnswer.question_id == qid))).scalar_one()
+        q = await db.get(Question, qid)
+        if q is None:
+            continue
+        if other or answered:
+            kept += 1
+        else:
+            await db.delete(q)
+            deleted += 1
+    return None, deleted, kept
+
+
+@router.delete("/tests/{qid}")
+async def delete_test(qid: str, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    """Deletes a test nobody has taken, with its questions; otherwise 409 (archive it instead)."""
+    quiz = await db.get(Quiz, qid)
+    if quiz is None:
+        raise HTTPException(404)
+    reason, deleted, kept = await _delete_test(db, user, quiz)
+    if reason:
+        raise HTTPException(409, f"Удалить нельзя: {reason}.")
+    await db.commit()
+    return {"questionsDeleted": deleted, "questionsKept": kept}
+
+
+@router.post("/tests/bulk")
+async def bulk_tests(body: dict, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    """Publish / archive / return to drafts many tests at once. Tests that cannot change are reported, not fatal."""
+    action = body.get("action")
+    new = {"publish": "published", "archive": "archived", "draft": "draft", "delete": "deleted"}.get(action)
+    if new is None:
+        raise HTTPException(422, "unknown action")
+    done, failed, qdel, qkept = 0, [], 0, 0
+    for qid in body.get("ids", []):
+        quiz = await db.get(Quiz, qid)
+        if quiz is None:
+            continue
+        if new == "deleted":
+            reason, d, k = await _delete_test(db, user, quiz)
+            if reason:
+                failed.append({"title": quiz.title, "reason": reason})
+            else:
+                done, qdel, qkept = done + 1, qdel + d, qkept + k
+            continue
+        if new == "published":
+            for i in quiz.items:  # publishing a test publishes its draft questions
+                if i.question.status == "draft":
+                    i.question.status = "published"
+            if not catalog.live_questions(quiz):
+                failed.append({"title": quiz.title, "reason": "В тесте нет вопросов"})
+                continue
+            quiz.published_at = quiz.published_at or utcnow()
+        quiz.status = new
+        done += 1
+    await audit(db, user, f"test.bulk.{action}", None, count=done)
+    await db.commit()
+    return {"done": done, "failed": failed, "questionsDeleted": qdel, "questionsKept": qkept}
 
 
 @router.post("/tests/{qid}/status", response_model=QuizAdminOut)
