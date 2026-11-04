@@ -1,4 +1,7 @@
-# Production: copy .env.example → .env, fill it in, then: docker compose up -d --build
+# Production: copy .env.example → .env, fill it in, then:
+#   docker compose pull && docker compose up -d
+# Images are built by GitHub Actions (.github/workflows/images.yml); the server never builds.
+# Local build instead of pulling: docker compose up -d --build
 services:
   db:
     image: postgres:16-alpine
@@ -14,6 +17,7 @@ services:
       retries: 20
 
   api:
+    image: ghcr.io/noissyyy/rusada-quizbot-api:${IMAGE_TAG:-latest}
     build: ./services/api
     restart: unless-stopped
     depends_on: { db: { condition: service_healthy } }
@@ -30,6 +34,7 @@ services:
       CORS_ORIGINS: https://${MINIAPP_DOMAIN},https://${ADMIN_DOMAIN}
 
   bot:
+    image: ghcr.io/noissyyy/rusada-quizbot-bot:${IMAGE_TAG:-latest}
     build: ./services/telegram-bot
     restart: unless-stopped
     depends_on: [api]
@@ -42,6 +47,7 @@ services:
       MINIAPP_SHORT_NAME: ${MINIAPP_SHORT_NAME:-}
 
   web:
+    image: ghcr.io/noissyyy/rusada-quizbot-web:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: infrastructure/web.Dockerfile

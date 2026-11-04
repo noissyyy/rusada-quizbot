@@ -24,18 +24,22 @@ Kerak: Linux server (2 GB RAM yetadi), Docker, ikkita domen nomi (masalan `quiz.
 
 1. **BotFather'da tokenni yangilang.** Eski token chatda ko‘ringan bo‘lsa: `/revoke` → yangi token oling.
 2. **BotFather → Bot Settings → Configure Mini App → Enable Mini App**, manzil: `https://quiz.rusada.uz`. Shunda `t.me/Rusada_QuizBot?startapp=…` havolalari (guruh testlari, efir) ishlaydi.
-3. Serverda:
+3. Serverda (root sifatida) — Docker, 2 GB swap, firewall va kodni o‘rnatadi:
    ```bash
-   git clone https://github.com/noissyyy/rusada-quizbot.git && cd rusada-quizbot
-   cp .env.example .env
-   nano .env        # token, domenlar, parollar (openssl rand -hex 32), o‘z Telegram ID'ingiz
-   docker compose up -d --build
+   curl -fsSL https://raw.githubusercontent.com/noissyyy/rusada-quizbot/main/infrastructure/setup-server.sh | bash
    ```
+   Keyin:
+   ```bash
+   cd /opt/rusada
+   nano .env        # token, domenlar, parollar (openssl rand -hex 32), o‘z Telegram ID'ingiz
+   docker compose pull && docker compose up -d
+   ```
+   Ilova serverda yig‘ilmaydi: tayyor image'larni GitHub Actions yig‘ib, `ghcr.io` ga joylaydi (`.github/workflows/images.yml`). Shuning uchun 1 yadro / 2 GB server (VDS CLOUD 50) yetadi.
 4. Telegram'da botga `/start` yozing → ilova ochiladi. `SUPERADMIN_TELEGRAM_IDS` ga yozilgan odam botga `/admin` yozsa, admin panelga kirish havolasi keladi.
 5. Botni guruhga qo‘shing va **administrator** qiling — guruh admin panelning «Группы» bo‘limida paydo bo‘ladi.
 
 Zaxira nusxa: har kuni 03:00 da `./backups/` papkasiga (14 kun saqlanadi).
-Yangilash: `git pull && docker compose up -d --build` (baza migratsiyasi avtomatik).
+Yangilash: `cd /opt/rusada && git pull && docker compose pull && docker compose up -d` (baza migratsiyasi avtomatik).
 
 ## Dasturchi uchun
 

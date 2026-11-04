@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint,
+from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text,
                         Index, func)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -323,5 +323,3 @@ class AdminLoginToken(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     expires_at: Mapped[datetime] = mapped_column(TS)
     used: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    __table_args__ = (UniqueConstraint("token"),)
