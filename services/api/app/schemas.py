@@ -436,7 +436,8 @@ class QuizIn(Camel):
     topic_id: str
     description: str = ""
     difficulty: Difficulty = "medium"
-    duration_sec: int = Field(default=360, ge=30, le=3 * 3600)
+    #: ignored: the time is computed from the number of questions (Settings → minutes per question)
+    duration_sec: int | None = None
     live_question_sec: int = Field(default=20, ge=5, le=300)
     mode_individual: bool = True
     mode_live: bool = False
@@ -527,7 +528,9 @@ class ImportCommit(Camel):
 
 
 class SettingsIn(Camel):
-    default_duration_min: int = Field(default=6, ge=1, le=180)
+    default_duration_min: int = Field(default=30, ge=1, le=180)  # legacy, not used
+    #: whole-test time = number of questions × this (minutes); set automatically
+    minutes_per_question: int = Field(default=2, ge=1, le=30)
     live_question_sec: int = Field(default=20, ge=5, le=300)
     feedback_ms: int = Field(default=3000, ge=1000, le=10000)
     feedback_explain_ms: int = Field(default=5000, ge=1000, le=15000)

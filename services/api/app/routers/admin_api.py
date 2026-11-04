@@ -308,6 +308,8 @@ async def update_question(qid: str, body: QuestionIn, user: User = Depends(admin
         o.text, o.is_correct = new.text.strip(), new.is_correct
     q.updated_at = utcnow()
     await audit(db, user, "question.update", q.id)
+    affected = set((await db.execute(select(QuizQuestion.quiz_id).where(QuizQuestion.question_id == qid))).scalars())
+    await sync_durations(db, affected)
     await db.commit()
     return _question_out(await db.get(Question, qid, populate_existing=True))
 
@@ -339,6 +341,9 @@ async def bulk_questions(body: dict, user: User = Depends(admin), db: AsyncSessi
                                      for o in q.options]))
         else:
             raise HTTPException(422, "unknown action")
+    await db.flush()
+    affected = set((await db.execute(select(QuizQuestion.quiz_id).where(QuizQuestion.question_id.in_(ids)))).scalars())
+    await sync_durations(db, affected)
     await audit(db, user, f"question.{action}", None, count=len(ids))
     await db.commit()
 
@@ -390,8 +395,23 @@ async def get_test(qid: str, user: User = Depends(host), db: AsyncSession = Depe
     return await _quiz_out(db, quiz)
 
 
+async def sync_durations(db: AsyncSession, quiz_ids: set[str] | None = None) -> None:
+    """Whole-test time = live (non-archived) questions × minutes per question (default 2)."""
+    per = (await get_settings(db)).minutes_per_question * 60
+    await db.flush()
+    stmt = select(Quiz)
+    if quiz_ids is not None:
+        if not quiz_ids:
+            return
+        stmt = stmt.where(Quiz.id.in_(quiz_ids))
+    for quiz in (await db.execute(stmt)).unique().scalars():
+        await db.refresh(quiz, ["items"])
+        n = len([i for i in quiz.items if i.question.status != "archived"])
+        quiz.duration_sec = max(1, n) * per
+
+
 async def _apply_quiz(db: AsyncSession, quiz: Quiz, body: QuizIn) -> None:
-    for k, v in body.model_dump(exclude={"question_ids"}).items():
+    for k, v in body.model_dump(exclude={"question_ids", "duration_sec"}).items():
         setattr(quiz, k, v)
     await db.execute(delete(QuizQuestion).where(QuizQuestion.quiz_id == quiz.id))
     seen = set()
@@ -402,6 +422,7 @@ async def _apply_quiz(db: AsyncSession, quiz: Quiz, body: QuizIn) -> None:
         if await db.get(Question, qid) is None:
             raise HTTPException(422, f"question {qid} not found")
         db.add(QuizQuestion(quiz_id=quiz.id, question_id=qid, position=i))
+    await sync_durations(db, {quiz.id})
 
 
 @router.post("/tests", response_model=QuizAdminOut)
@@ -829,7 +850,10 @@ async def read_settings(user: User = Depends(admin), db: AsyncSession = Depends(
 @router.put("/settings", response_model=SettingsIn)
 async def write_settings(body: SettingsIn, user: User = Depends(superadmin), db: AsyncSession = Depends(get_db)):
     await audit(db, user, "settings.update", None, **body.model_dump())
-    return await save_settings(db, body)
+    saved = await save_settings(db, body)
+    await sync_durations(db)
+    await db.commit()
+    return saved
 
 
 @router.get("/audit")
@@ -964,7 +988,7 @@ async def import_commit(body: ImportCommit, user: User = Depends(admin), db: Asy
                                                             Quiz.status != "archived"))).unique().scalars().first()
                 if quiz is None:
                     quiz = Quiz(id=new_id(), topic_id=key[0], title=key[1], difficulty=r.difficulty,
-                                duration_sec=cfg.default_duration_min * 60, live_question_sec=cfg.live_question_sec,
+                                duration_sec=cfg.minutes_per_question * 60, live_question_sec=cfg.live_question_sec,
                                 mode_individual=True, mode_live=True, mode_group=True, status="draft",
                                 updated_by=user.id)
                     db.add(quiz)
@@ -977,9 +1001,8 @@ async def import_commit(body: ImportCommit, user: User = Depends(admin), db: Asy
             await db.flush()
             db.add(QuizQuestion(quiz_id=quiz.id, question_id=q.id, position=positions[quiz.id]))
             positions[quiz.id] += 1
-    # whole-test time: the larger of the default and ~40 s per question
-    for quiz in tests.values():
-        quiz.duration_sec = max(quiz.duration_sec, -(-positions[quiz.id] * 40 // 60) * 60)
+    # whole-test time follows the number of questions (2 min each by default)
+    await sync_durations(db, {q.id for q in tests.values()})
     await audit(db, user, "import", None, created=created, tests=len(tests))
     await db.commit()
     return {"created": created, "skipped": len(rows) - created, "tests": len(tests)}

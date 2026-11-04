@@ -284,3 +284,19 @@ async def test_bulk_publish_tests(client, auth, admin_headers):
     # the draft question went live together with its test, and students see the test
     assert (await client.get(f"/api/admin/questions/{q['id']}", headers=admin_headers)).json()["status"] == "published"
     assert (await client.get(f"/api/tests/{full['id']}", headers=auth(71))).status_code == 200
+
+
+async def test_test_time_is_two_minutes_per_question(client, admin_headers):
+    tid = (await client.get("/api/admin/topics", headers=admin_headers)).json()[0]["id"]
+    ids = []
+    for n in range(3):
+        q = (await client.post("/api/admin/questions", json={"topicId": tid, "text": f"Вопрос на время {n}",
+             "options": [{"text": "a", "isCorrect": True}, {"text": "b"}, {"text": "c"}, {"text": "d"}]}, headers=admin_headers)).json()
+        ids.append(q["id"])
+    t = (await client.post("/api/admin/tests", json={"title": "Время", "topicId": tid, "durationSec": 999, "questionIds": ids},
+                           headers=admin_headers)).json()
+    assert t["durationSec"] == 3 * 120  # the sent value is ignored
+    await client.post("/api/admin/questions/bulk", json={"ids": [ids[0]], "action": "archive"}, headers=admin_headers)
+    assert (await client.get(f"/api/admin/tests/{t['id']}", headers=admin_headers)).json()["durationSec"] == 2 * 120
+    await client.put("/api/admin/settings", json={"minutesPerQuestion": 3}, headers=admin_headers)
+    assert (await client.get(f"/api/admin/tests/{t['id']}", headers=admin_headers)).json()["durationSec"] == 2 * 180

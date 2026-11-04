@@ -15,6 +15,8 @@ export function QuizBuilderPage() {
   const me = useMe();
   const editor = can(me, 'admin');
   const topics = useLoad(() => get<Topic[]>('/api/admin/topics'));
+  const cfg = useLoad(() => get<{ minutesPerQuestion?: number }>('/api/admin/settings').catch(() => ({ minutesPerQuestion: 2 })));
+  const perQuestionMin = cfg.state.status === 'ok' ? cfg.state.data.minutesPerQuestion ?? 2 : 2;
   const [quiz, setQuiz] = useState<QuizFull | null>(null);
   const [d, setD] = useState<Draft | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -40,8 +42,8 @@ export function QuizBuilderPage() {
   const set = (p: Partial<Draft>) => setD({ ...d, ...p });
   const live = d.questions.filter((q) => q.status !== 'archived');
   const maxPoints = live.reduce((n, q) => n + q.points, 0);
-  const minutes = Math.round(d.durationSec / 60);
-  const perQ = live.length ? Math.round(d.durationSec / live.length) : 0;
+  // the whole-test time is automatic: questions × minutes per question (server does the same)
+  const minutes = Math.max(1, live.length) * perQuestionMin;
   const move = (i: number, dir: -1 | 1) => { const qs = [...d.questions]; const j = i + dir; if (j < 0 || j >= qs.length) return; [qs[i], qs[j]] = [qs[j]!, qs[i]!]; set({ questions: qs }); };
 
   const save = async (status?: 'published' | 'draft' | 'archived') => {
@@ -123,9 +125,10 @@ export function QuizBuilderPage() {
               <Toggle label="Группа" checked={d.modeGroup} onChange={(v) => set({ modeGroup: v })} />
               <Toggle label="Быстрый старт на главной («Начать тест»)" checked={d.isQuick} onChange={(v) => set({ isQuick: v })} />
             </div>
-            <Field label="Время на весь тест" hint={perQ ? `минут · ≈ ${perQ} с на вопрос` : 'минут'}>
-              <NumberInput aria-label="Минут на весь тест" min={1} max={180} value={minutes} onCommit={(v) => set({ durationSec: v * 60 })} />
-            </Field>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-bold text-ink-2">Время на весь тест</span>
+              <span className="rounded-[12px] bg-canvas px-3 py-2.5 text-[14px]"><b>{minutes} мин</b> <span className="text-muted">= {live.length} вопр. × {perQuestionMin} мин · ставится автоматически</span></span>
+            </div>
             {d.modeLive && <Field label="В прямом эфире: время на каждый вопрос" hint="секунд — одинаково для всех вопросов"><NumberInput aria-label="Секунд на вопрос в эфире" min={5} max={300} value={d.liveQuestionSec} onCommit={(v) => set({ liveQuestionSec: v })} /></Field>}
             <p className="rounded-[12px] bg-canvas p-3 text-[12px] text-muted">Попытки: без ограничений, в рейтинг идёт лучшая. Показ ответа после вопроса — по настройкам системы (таймер теста в это время на паузе).</p>
           </fieldset>

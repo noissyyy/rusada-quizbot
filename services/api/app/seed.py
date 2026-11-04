@@ -46,7 +46,7 @@ async def seed() -> bool:
         await db.flush()
         morph = topics["morphology"]
         subs = {s.title: s.id for s in morph.subtopics}
-        quiz = Quiz(topic_id=morph.id, title="Имя существительное", difficulty="easy", duration_sec=120,
+        quiz = Quiz(topic_id=morph.id, title="Имя существительное", difficulty="easy", duration_sec=len(STARTER) * 120,
                     description="Род, число и падеж существительных, мягкий знак после шипящих.",
                     mode_individual=True, mode_live=True, mode_group=True, is_quick=True, status="published",
                     published_at=utcnow())
