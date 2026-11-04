@@ -102,8 +102,12 @@ async def test_group_assignment_one_attempt_and_board(client, auth, admin_header
     assert gr["rank"] == 1 and gr["passed"] == 1 and gr["remainingMembers"] == 26
     assert (await client.get("/api/rating?kind=group&period=all", headers=h)).json()["me"]["points"] == 100
 
-    # closed assignment refuses new attempts
+    # someone who started before the close can still continue; nobody new can start
+    late = auth(23)
+    started = (await client.post("/api/sessions", json={"assignmentId": aid}, headers=late)).json()
     await client.post(f"/api/admin/assignments/{aid}/close", headers=admin_headers)
+    resumed = await client.post("/api/sessions", json={"assignmentId": aid}, headers=late)
+    assert resumed.status_code == 200 and resumed.json()["sessionId"] == started["sessionId"]
     other = auth(22)
     assert (await client.get(f"/api/group/{aid}", headers=other)).json()["access"] == "closed"
     assert (await client.post("/api/sessions", json={"assignmentId": aid}, headers=other)).status_code == 403
