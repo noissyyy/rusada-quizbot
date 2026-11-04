@@ -49,6 +49,11 @@ export const mockApi: QuizApi = {
   async getNotifications() { await wait(); return server.notifications.map((n) => ({ ...n })); },
   async readAllNotifications() { await wait(100); server.notifications.forEach((n) => { n.read = true; }); },
 
+  async getGroupHub() {
+    await wait();
+    return [{ id: 'a-demo', groupTitle: '10-Б · Русский язык', quizTitle: 'Имя прилагательное', questionsCount: 4, durationMinutes: 8,
+      closesAt: '2026-11-08T15:00:00Z', passed: 14, myStatus: null }];
+  },
   getGroupAssignment: (id) => server.group(id),
   getGroupResult: (id) => server.groupResult(id),
   async shareGroupResult() { await wait(); },

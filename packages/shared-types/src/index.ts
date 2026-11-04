@@ -199,6 +199,17 @@ export interface AppNotification {
 
 export interface GroupBoardEntry { rank: number; name: string; points: number; me: boolean }
 
+export interface GroupHubItem {
+  id: ID;
+  groupTitle: string;
+  quizTitle: string;
+  questionsCount: number;
+  durationMinutes: number;
+  closesAt: string | null;
+  passed: number;
+  myStatus: string | null;
+}
+
 export interface GroupAssignmentView {
   id: ID;
   access: 'ok' | 'not_member' | 'closed' | 'unknown';

@@ -231,6 +231,17 @@ class GroupBoardEntry(Camel):
     me: bool = False
 
 
+class GroupHubItem(Camel):
+    id: str
+    group_title: str
+    quiz_title: str
+    questions_count: int
+    duration_minutes: int
+    closes_at: datetime | None
+    passed: int
+    my_status: str | None
+
+
 class GroupAssignmentView(Camel):
     id: str
     access: Literal["ok", "not_member", "closed", "unknown"]
@@ -480,6 +491,7 @@ class AssignmentIn(Camel):
     quiz_id: str
     closes_at: datetime | None = None
     format: Literal["async", "live"] = "async"
+    is_public: bool = False
 
 
 class RoleIn(Camel):
