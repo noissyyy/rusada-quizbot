@@ -38,7 +38,7 @@ export function HomeScreen() {
 
       <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="sections-title">
         <div className="flex items-center justify-between">
-          <h2 id="sections-title" className="font-display text-title font-bold tracking-tight">{t('home.sections')}</h2>
+          <h2 id="sections-title" className="font-display text-title font-bold tracking-tight">{t('nav.tests')}</h2>
           <Link to="/tests" className="text-[14px] font-bold text-primary">{t('home.allTests')}</Link>
         </div>
         <div className="grid grid-cols-2 gap-3">{sections.map((tp) => <TopicCard key={tp.id} topic={tp} />)}</div>
