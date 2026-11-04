@@ -17,7 +17,7 @@ export function StartCard({ quick }: { quick: QuickStart }) {
         <span className="font-display text-[27px] font-extrabold uppercase leading-[30px] tracking-[0.01em]">{t('home.start')}</span>
         <span className="text-[13px] font-medium text-white/85">{meta}</span>
       </span>
-      <img src="/3d/rq-test-sheet.svg" alt="" className="relative -my-3 -mr-2 size-[112px] shrink-0 object-contain" />
+      <img src="/3d/rq-3d-H02.webp" alt="" className="relative -my-3 -mr-2 size-[112px] shrink-0 object-contain" />
     </Link>
   );
 }
