@@ -56,7 +56,7 @@ export function ReaderScreen() {
   if (!book || !book.pages) return <ErrorView error={new Error('not found')} onRetry={state.reload} />;
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-[480px] select-none flex-col bg-[#E9E7F0]" onContextMenu={(e) => e.preventDefault()}
+    <div className="mx-auto flex min-h-dvh max-w-[480px] select-none flex-col bg-track" onContextMenu={(e) => e.preventDefault()}
       style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}>
       <div className="sticky top-0 z-20 bg-canvas/95 px-[18px] pb-2 backdrop-blur" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
         <ScreenHeader back={`/books/${book.id}`} title={book.title} />

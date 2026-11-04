@@ -13,7 +13,7 @@ import { useAccess } from '../lib/access';
 import { Avatar, Icon, Skeleton } from '../components/ui';
 import { ErrorView } from '../components/states/StateViews';
 
-const topicBg: Record<string, string> = { ...topicColorBg, ink: 'bg-ink' };
+const topicBg: Record<string, string> = { ...topicColorBg, ink: 'bg-night' };
 
 export function formatDay(iso: string, lang: string) {
   return new Date(iso).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'long' });

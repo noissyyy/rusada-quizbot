@@ -58,3 +58,33 @@ button { font: inherit; color: inherit; }
 
 /* book reader: indeterminate loading bar */
 @keyframes reader-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+
+/* ---------- Dark theme: follows Telegram (or the phone outside Telegram). Set on <html data-theme="dark">. ---------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-primary: #8B6BFF;
+  --color-primary-600: #7A57FF;
+  --color-primary-50: #2A2147;
+
+  --color-canvas: #0F0D17;
+  --color-surface: #1B1826;
+  --color-ink: #F3F1FA;
+  --color-ink-2: #CAC5DA;
+  --color-muted: #9690AA;
+  --color-line: #2E2A3D;
+  --color-track: #2A2638;
+
+  --color-success-50: #11291C; --color-success-ink: #5BD68A;
+  --color-error-50: #3A171A;   --color-error-ink: #FF8A8E;
+  --color-warning-50: #35270C; --color-warning-ink: #F7C35C;
+
+  --color-topic-blue: #172338;  --color-topic-violet: #221B3A; --color-topic-mint: #13291F;  --color-topic-peach: #33221A;
+  --color-topic-pink: #33181F;  --color-topic-yellow: #302813; --color-topic-sky: #12293A;   --color-topic-indigo: #1C1F3D;
+  --color-topic-lavender: #2A1D38; --color-topic-plum: #321A30; --color-topic-rose: #351C1B; --color-topic-coral: #36201A;
+  --color-topic-orange: #342614; --color-topic-sand: #2E271C;  --color-topic-lime: #252E14;  --color-topic-green: #152B1A;
+  --color-topic-teal: #10302C;  --color-topic-olive: #2A2C17;  --color-topic-slate: #1F252E; --color-topic-gray: #24232C;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.28);
+  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.5);
+  --shadow-primary: 0 8px 20px rgba(139, 107, 255, 0.28);
+}

@@ -29,7 +29,7 @@ export function Flag({ lang, size = 52, rounded = 16, showScript = true }: { lan
         )}
       </svg>
       {showScript && lang !== 'ru' && (
-        <span aria-hidden className="absolute bottom-[3px] right-[3px] rounded-[6px] bg-ink px-[5px] py-px text-[9px] font-extrabold text-white">
+        <span aria-hidden className="absolute bottom-[3px] right-[3px] rounded-[6px] bg-night px-[5px] py-px text-[9px] font-extrabold text-white">
           {lang === 'uz' ? 'O‘z' : 'Ўз'}
         </span>
       )}
