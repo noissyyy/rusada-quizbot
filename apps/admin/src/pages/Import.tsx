@@ -5,7 +5,7 @@ import { download, post, upload } from '../lib/api';
 import { useToast } from '../lib/hooks';
 import { Button, Card, Icon, PageHeader, Segmented, Table, Toggle, diffLabel } from '../components/ui';
 
-interface Row { row: number; topic: string; subtopic: string | null; text: string; options: string[]; correct: string; difficulty: string; points: number | null; explanation: string | null; errors: string[]; duplicate: boolean; topicId: string | null; suggestion: string | null }
+interface Row { row: number; topic: string; subtopic: string | null; text: string; options: string[]; correct: string; difficulty: string; points: number | null; explanation: string | null; test: string | null; errors: string[]; duplicate: boolean; topicId: string | null; suggestion: string | null }
 interface Preview { fileName: string; rows: Row[]; ready: number; withErrors: number; duplicates: number }
 
 export function ImportPage() {
@@ -30,9 +30,9 @@ export function ImportPage() {
     if (!p) return;
     setBusy(true);
     try {
-      const r = await post<{ created: number; skipped: number }>('/api/admin/import/commit', { rows: p.rows, includeDuplicates: [...dups], publish });
-      toast(`Импортировано ${r.created} вопросов, пропущено ${r.skipped}`);
-      nav(`/questions${publish ? '' : '?status=draft'}`);
+      const r = await post<{ created: number; skipped: number; tests: number }>('/api/admin/import/commit', { rows: p.rows, includeDuplicates: [...dups], publish });
+      toast(`Импортировано ${r.created} вопросов${r.tests ? `, тестов: ${r.tests} (черновики)` : ''}, пропущено ${r.skipped}`);
+      nav(r.tests ? '/tests?status=draft' : `/questions${publish ? '' : '?status=draft'}`);
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
   const step = p ? 2 : file ? 1 : 0;
@@ -63,12 +63,13 @@ export function ImportPage() {
             {[[p.ready, 'готовы к импорту', 'text-success-ink'], [p.withErrors, 'с ошибками', 'text-error-ink'], [p.duplicates, 'похожи на дубликаты', 'text-warning-ink']].map(([n, l, c]) => <div key={String(l)} className="rounded-[16px] bg-canvas p-4"><div className={clsx('font-display text-[28px] font-extrabold', c)}>{n}</div><div className="text-[13px] text-muted">{l}</div></div>)}
           </div>
           <div className="mb-3"><Segmented label="Строки" value={view} onChange={setView} options={[['bad', `Проблемные · ${p.withErrors + p.duplicates}`], ['all', `Все строки · ${p.rows.length}`]]} /></div>
-          <Table head={['Строка', 'Раздел', 'Вопрос', 'Ответ', 'Сложн.', 'Баллы', 'Что не так']}>
+          <Table head={['Строка', 'Раздел', 'Вопрос', 'Ответ', 'Сложн.', 'Баллы', ...(p.rows.some((r) => r.test) ? ['Тест'] : []), 'Что не так']}>
             {shown.map((r) => (
               <tr key={r.row} className={r.errors.length ? 'bg-error-50/40' : r.duplicate ? 'bg-warning-50/50' : ''}>
                 <td className="font-mono">{r.row}</td><td>{r.topic || <i className="text-muted">пусто</i>}</td>
                 <td className="max-w-[340px]">{r.text || <i className="text-muted">пусто</i>}</td><td className="font-bold">{r.correct}</td>
                 <td>{diffLabel[r.difficulty] ?? r.difficulty}</td><td>{r.points ?? '—'}</td>
+                {p.rows.some((x) => x.test) && <td className="whitespace-nowrap text-[13px] text-muted">{r.test ?? '—'}</td>}
                 <td className="text-[13px]">
                   {r.errors.map((e) => <div key={e} className="font-semibold text-error-ink">{e}</div>)}
                   {r.suggestion && r.suggestion !== r.topic && <button type="button" onClick={() => fix(r)} className="mt-1 text-[12px] font-bold text-primary">Исправить</button>}
@@ -88,7 +89,8 @@ export function ImportPage() {
       )}
       <Card title="Как подготовить файл">
         <ul className="list-inside list-disc space-y-1 text-[14px] text-ink-2">
-          <li>Колонки: <b>Раздел, Подраздел, Вопрос, A, B, C, D, Правильный, Сложность, Баллы, Объяснение</b>.</li>
+          <li>Колонки: <b>Раздел, Подраздел, Вопрос, A, B, C, D, Правильный, Сложность, Баллы, Объяснение, Тест</b>.</li>
+          <li>«Тест» — необязательно: строки с одинаковым названием теста сразу собираются в один тест (черновик) в порядке файла. Останется проверить и опубликовать.</li>
           <li>«Правильный» — буква A, B, C или D. «Сложность» — лёгкий, средний или сложный. Баллы — от 10, кратно 10.</li>
           <li>Новые подразделы создаются автоматически. Вопросы, которые уже есть в банке, помечаются как дубликаты.</li>
           <li><button type="button" onClick={() => download('GET', '/api/admin/import/template', 'rusada-template.xlsx')} className="inline-flex items-center gap-1 font-bold text-primary"><Icon name="download" size={16} />Скачать шаблон</button></li>

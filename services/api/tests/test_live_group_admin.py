@@ -140,8 +140,12 @@ async def test_roles_and_login_link(client, auth, admin_headers):
 async def test_excel_import_preview_and_commit(client, admin_headers):
     wb = Workbook()
     ws = wb.active
-    ws.append(["Раздел", "Подраздел", "Вопрос", "A", "B", "C", "D", "Правильный", "Сложность", "Баллы", "Объяснение"])
-    ws.append(["Морфология", "Наречие", "Найдите наречие", "Дом", "Вдали", "Синий", "Бежать", "B", "Лёгкий", 100, ""])
+    ws.append(["Раздел", "Подраздел", "Вопрос", "A", "B", "C", "D", "Правильный", "Сложность", "Баллы", "Объяснение",
+               "Тест"])
+    ws.append(["Морфология", "Наречие", "Найдите наречие", "Дом", "Вдали", "Синий", "Бежать", "B", "Лёгкий", 100, "",
+               "Наречие · I вариант"])
+    ws.append(["Морфология", "Наречие", "Найдите наречие-2", "Дом", "Вдали", "Синий", "Бежать", "B", "Лёгкий", 150, "",
+               "Наречие · I вариант"])
     ws.append(["Морфология", "", "Найдите краткое прилагательное", "a", "b", "c", "d", "E", "Средний", 100, ""])
     ws.append(["Морфологя", "", "Какое слово — местоимение?", "Я", "Дом", "Кот", "Бег", "A", "Лёгкий", 100, ""])
     ws.append(["Морфология", "", "Укажите притяжательное", "a", "b", "c", "d", "B", "Сложный", -50, ""])
@@ -151,18 +155,30 @@ async def test_excel_import_preview_and_commit(client, admin_headers):
     files = {"file": ("morfologiya.xlsx", buf.getvalue(),
                       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
     p = (await client.post("/api/admin/import/preview", files=files, headers=admin_headers)).json()
-    assert (p["ready"], p["withErrors"], p["duplicates"]) == (1, 3, 1)
+    assert (p["ready"], p["withErrors"], p["duplicates"]) == (2, 3, 1)
     errs = {r["row"]: r["errors"] for r in p["rows"]}
-    assert "допустимо A, B, C или D" in errs[3][0]
-    assert errs[4][0] == "Раздел не найден. Может быть, «Морфология»?"
-    assert "Баллы -50" in errs[5][0]
+    assert "допустимо A, B, C или D" in errs[4][0]
+    assert errs[5][0] == "Раздел не найден. Может быть, «Морфология»?"
+    assert "Баллы -50" in errs[6][0]
     c = (await client.post("/api/admin/import/commit", json={"rows": p["rows"]}, headers=admin_headers)).json()
-    assert c == {"created": 1, "skipped": 4}
+    assert c == {"created": 2, "skipped": 4, "tests": 1}
     bank = (await client.get("/api/admin/questions?status=draft", headers=admin_headers)).json()
-    assert bank["total"] == 1 and bank["items"][0]["subtopicTitle"] == "Наречие"
+    assert bank["total"] == 2 and bank["items"][0]["subtopicTitle"] == "Наречие"
+    # rows with a test name became one draft test, in file order
+    tests = [t for t in (await client.get("/api/admin/tests", headers=admin_headers)).json() if t["title"] == "Наречие · I вариант"]
+    assert len(tests) == 1 and tests[0]["status"] == "draft" and tests[0]["questionsCount"] == 2
+    full = (await client.get(f"/api/admin/tests/{tests[0]['id']}", headers=admin_headers)).json()
+    assert [q["text"] for q in full["questions"]] == ["Найдите наречие", "Найдите наречие-2"] and full["maxPoints"] == 250
+    # importing again appends to the same test instead of creating a second one
+    again = [dict(r, text=r["text"] + " (2)") for r in p["rows"] if r.get("test")]
+    c2 = (await client.post("/api/admin/import/commit", json={"rows": again}, headers=admin_headers)).json()
+    assert c2["tests"] == 1
+    full = (await client.get(f"/api/admin/tests/{tests[0]['id']}", headers=admin_headers)).json()
+    assert full["questionsCount"] == 4
     err_file = await client.post("/api/admin/import/errors", json={"rows": p["rows"]}, headers=admin_headers)
     sheet = load_workbook(io.BytesIO(err_file.content)).active
     assert sheet.max_row == 5  # header + 4 flagged rows
+    assert sheet.cell(1, 12).value == "Тест"
 
 
 async def test_build_and_publish_test_then_export(client, auth, admin_headers):

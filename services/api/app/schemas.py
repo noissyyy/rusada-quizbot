@@ -500,6 +500,8 @@ class ImportRow(Camel):
     difficulty: str
     points: int | None
     explanation: str | None = None
+    #: optional: rows with the same test name become one (draft) test, in file order
+    test: str | None = None
     errors: list[str] = []
     duplicate: bool = False
     topic_id: str | None = None
