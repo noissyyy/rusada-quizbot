@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 # One-time setup of a fresh Ubuntu 22.04/24.04 server (run as root):
-#   curl -fsSL https://raw.githubusercontent.com/noissyyy/rusada-quizbot/main/infrastructure/setup-server.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/noissyyy/rusada-quizbot/main/infrastructure/setup-server.sh -o setup.sh && bash setup.sh
 set -euo pipefail
 
+# Never stop for questions; keep the provider's existing config files (e.g. sshd_config,
+# otherwise root password login could be switched off and the owner locked out).
+export DEBIAN_FRONTEND=noninteractive UCF_FORCE_CONFFOLD=1
+echo 'Dpkg::Options {"--force-confdef";"--force-confold";};' > /etc/apt/apt.conf.d/90keep-conf
+
 echo "==> Updates"
+dpkg --configure -a
 apt-get update -y && apt-get upgrade -y
 
 echo "==> Docker"
