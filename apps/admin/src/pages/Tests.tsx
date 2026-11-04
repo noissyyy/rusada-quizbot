@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { can, get } from '../lib/api';
 import { fmtNum, useLoad, useMe } from '../lib/hooks';
 import type { QuizRow } from '../lib/types';
@@ -8,7 +8,8 @@ import { Button, Card, Empty, ErrorBox, Icon, PageHeader, Pill, Segmented, Spinn
 export function TestsPage() {
   const me = useMe();
   const nav = useNavigate();
-  const [filter, setFilter] = useState<'' | 'published' | 'draft' | 'archived'>('');
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<'' | 'published' | 'draft' | 'archived'>((params.get('status') as 'draft') ?? '');
   const { state, reload } = useLoad(() => get<QuizRow[]>('/api/admin/tests'));
   const rows = state.status === 'ok' ? state.data : [];
   const count = (s: string) => rows.filter((r) => r.status === s).length;

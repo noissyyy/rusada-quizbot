@@ -752,7 +752,7 @@ async def audit_log(user: User = Depends(superadmin), db: AsyncSession = Depends
 
 HEADERS = {"раздел": "topic", "тема": "topic", "подраздел": "subtopic", "вопрос": "text", "a": "a", "b": "b",
            "c": "c", "d": "d", "правильный": "correct", "ответ": "correct", "сложность": "difficulty",
-           "баллы": "points", "объяснение": "explanation"}
+           "баллы": "points", "объяснение": "explanation", "тест": "test"}
 DIFF = {"лёгкий": "easy", "легкий": "easy", "easy": "easy", "средний": "medium", "medium": "medium",
         "сложный": "hard", "hard": "hard", "": "medium"}
 
@@ -830,7 +830,7 @@ async def import_preview(file: UploadFile = File(...), user: User = Depends(admi
         rows.append(ImportRow(row=n, topic=get(row, "topic"), subtopic=get(row, "subtopic") or None, text=get(row, "text"),
                               options=[get(row, k) for k in "abcd"], correct=get(row, "correct").upper(),
                               difficulty=DIFF.get(_norm(get(row, "difficulty")), "?"), points=pts,
-                              explanation=get(row, "explanation") or None))
+                              explanation=get(row, "explanation") or None, test=get(row, "test") or None))
     rows = await _validate_rows(db, rows)
     return ImportPreview(file_name=file.filename or "", rows=rows,
                          ready=sum(1 for r in rows if not r.errors and not r.duplicate),
@@ -841,7 +841,10 @@ async def import_preview(file: UploadFile = File(...), user: User = Depends(admi
 @router.post("/import/commit")
 async def import_commit(body: ImportCommit, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
     rows = await _validate_rows(db, body.rows)  # never trust the client's validation
+    cfg = await get_settings(db)
     created = 0
+    tests: dict[tuple[str, str], Quiz] = {}
+    positions: dict[str, int] = {}
     for r in rows:
         if r.errors or (r.duplicate and r.row not in body.include_duplicates):
             continue
@@ -855,14 +858,40 @@ async def import_commit(body: ImportCommit, user: User = Depends(admin), db: Asy
                 await db.flush()
             sub_id = sub.id
         correct = "ABCD".index(r.correct)
-        db.add(Question(topic_id=r.topic_id, subtopic_id=sub_id, text=r.text.strip(), difficulty=r.difficulty,
-                        points=r.points, explanation_ru=r.explanation, status="published" if body.publish else "draft",
-                        options=[QuestionOption(position=i, text=o.strip(), is_correct=i == correct)
-                                 for i, o in enumerate(r.options)]))
+        q = Question(topic_id=r.topic_id, subtopic_id=sub_id, text=r.text.strip(), difficulty=r.difficulty,
+                     points=r.points, explanation_ru=r.explanation, status="published" if body.publish else "draft",
+                     options=[QuestionOption(position=i, text=o.strip(), is_correct=i == correct)
+                              for i, o in enumerate(r.options)])
+        db.add(q)
         created += 1
-    await audit(db, user, "import", None, created=created)
+        if r.test and r.test.strip():
+            key = (r.topic_id or "", r.test.strip())
+            quiz = tests.get(key)
+            if quiz is None:
+                # re-importing into a test with the same name appends to it instead of duplicating it
+                quiz = (await db.execute(select(Quiz).where(Quiz.topic_id == key[0], Quiz.title == key[1],
+                                                            Quiz.status != "archived"))).unique().scalars().first()
+                if quiz is None:
+                    quiz = Quiz(id=new_id(), topic_id=key[0], title=key[1], difficulty=r.difficulty,
+                                duration_sec=cfg.default_duration_min * 60, live_question_sec=cfg.live_question_sec,
+                                mode_individual=True, mode_live=True, mode_group=True, status="draft",
+                                updated_by=user.id)
+                    db.add(quiz)
+                    await db.flush()
+                    positions[quiz.id] = 0
+                else:
+                    positions[quiz.id] = (await db.execute(select(func.count()).select_from(QuizQuestion)
+                                                           .where(QuizQuestion.quiz_id == quiz.id))).scalar_one()
+                tests[key] = quiz
+            await db.flush()
+            db.add(QuizQuestion(quiz_id=quiz.id, question_id=q.id, position=positions[quiz.id]))
+            positions[quiz.id] += 1
+    # whole-test time: the larger of the default and ~40 s per question
+    for quiz in tests.values():
+        quiz.duration_sec = max(quiz.duration_sec, -(-positions[quiz.id] * 40 // 60) * 60)
+    await audit(db, user, "import", None, created=created, tests=len(tests))
     await db.commit()
-    return {"created": created, "skipped": len(rows) - created}
+    return {"created": created, "skipped": len(rows) - created, "tests": len(tests)}
 
 
 def _xlsx(header: list[str], rows: list[list[Any]], name: str) -> Response:
@@ -878,18 +907,20 @@ def _xlsx(header: list[str], rows: list[list[Any]], name: str) -> Response:
                     headers={"Content-Disposition": f"attachment; filename={name}"})
 
 
-TEMPLATE = ["Раздел", "Подраздел", "Вопрос", "A", "B", "C", "D", "Правильный", "Сложность", "Баллы", "Объяснение"]
+TEMPLATE = ["Раздел", "Подраздел", "Вопрос", "A", "B", "C", "D", "Правильный", "Сложность", "Баллы", "Объяснение",
+            "Тест"]
 
 
 @router.get("/import/template")
 async def import_template(user: User = Depends(admin)):
     return _xlsx(TEMPLATE, [["Морфология", "Наречие", "Какое из слов является наречием?", "Быстрый", "Быстро",
                              "Быстрота", "Ускорить", "B", "Лёгкий", 100,
-                             "«Быстро» отвечает на вопрос «как?» и не изменяется."]], "rusada-template.xlsx")
+                             "«Быстро» отвечает на вопрос «как?» и не изменяется.", "Наречие · I вариант"]],
+                 "rusada-template.xlsx")
 
 
 @router.post("/import/errors")
 async def import_errors_file(body: ImportCommit, user: User = Depends(admin)):
     rows = [[r.topic, r.subtopic or "", r.text, *r.options, r.correct, r.difficulty, r.points, r.explanation or "",
-             "; ".join(r.errors) or ("Дубликат" if r.duplicate else "")] for r in body.rows if r.errors or r.duplicate]
+             r.test or "", "; ".join(r.errors) or ("Дубликат" if r.duplicate else "")] for r in body.rows if r.errors or r.duplicate]
     return _xlsx(TEMPLATE + ["Что не так"], rows, "import-errors.xlsx")
