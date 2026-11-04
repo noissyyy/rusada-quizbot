@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..config import settings
 from ..db import SessionLocal, get_db
 from ..models import (Attempt, GroupAssignment, GroupMember, LiveParticipant, LiveSession, Notification,
-                      NotificationRead, Quiz, Topic, User, utcnow)
+                      NotificationRead, Quiz, Subtopic, Topic, User, utcnow)
 from ..schemas import (AnswerBody, AnswerResult, FinishBody, GroupAssignmentView, GroupBoardEntry, GroupHubItem, GroupResultView,
                        HomeFeed, InProgressAttempt, LiveAnswerBody, LiveJoinBody, LiveListItem, LiveState,
                        NotificationOut, Profile, QuickStart, Rating, SessionResult, SessionStart, SettingsPatch,
@@ -71,6 +71,17 @@ async def topic(slug: str, user: User = Depends(current_user), db: AsyncSession 
     sts = await catalog.statuses(db, user, [q.id for q in quizzes])
     return {"topic": summary.model_dump(by_alias=True),
             "tests": [catalog.topic_test(q, sts.get(q.id)).model_dump(by_alias=True) for q in quizzes]}
+
+
+@router.get("/works/{sid}/cover")
+async def work_cover(sid: str, db: AsyncSession = Depends(get_db)):
+    """Public on purpose: <img> tags cannot send the Telegram auth header. The version in the URL busts caches."""
+    from fastapi.responses import Response
+    from sqlalchemy.orm import undefer
+    s = (await db.execute(select(Subtopic).options(undefer(Subtopic.cover)).where(Subtopic.id == sid))).scalar_one_or_none()
+    if s is None or not s.cover:
+        raise HTTPException(404)
+    return Response(s.cover, media_type=s.cover_type or "image/jpeg", headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
 @router.get("/tests", response_model=list[TestSummary])

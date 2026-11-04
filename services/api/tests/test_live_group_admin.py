@@ -360,3 +360,50 @@ def test_group_message_shows_tashkent_time():
     from datetime import datetime, timezone
     from app.routers.admin_api import _local
     assert _local(datetime(2026, 11, 4, 17, 0, tzinfo=timezone.utc)).strftime("%d.%m %H:%M") == "04.11 22:00"
+
+
+async def test_works_section_shelf_and_auto_linking(client, auth, admin_headers):
+    import io
+    from PIL import Image
+    tp = (await client.post("/api/admin/topics", json={"title": "Обязательные произведения",
+          "subtopics": [{"title": "Евгений Онегин"}, {"title": "Мёртвые души"}]}, headers=admin_headers)).json()
+    onegin, souls = tp["subtopics"]
+    qids = [(await client.post("/api/admin/questions", json={"topicId": tp["id"], "subtopicId": onegin["id"], "text": f"Онегин {n}",
+             "options": [{"text": "a", "isCorrect": True}, {"text": "b"}, {"text": "c"}, {"text": "d"}]},
+             headers=admin_headers)).json()["id"] for n in range(2)]
+    t = (await client.post("/api/admin/tests", json={"title": "Онегин · вариант 1", "topicId": tp["id"], "questionIds": qids},
+                           headers=admin_headers)).json()
+    await client.post("/api/admin/tests/bulk", json={"ids": [t["id"]], "action": "publish"}, headers=admin_headers)
+    assert t["subtopicId"] is None
+
+    # switching the section to «works» links existing tests by their questions; authors are saved
+    body = {"title": tp["title"], "layout": "works", "subtopics": [
+        {"id": onegin["id"], "title": "Евгений Онегин", "author": "А. С. Пушкин"},
+        {"id": souls["id"], "title": "Мёртвые души", "author": "Н. В. Гоголь"}]}
+    up = (await client.put(f"/api/admin/topics/{tp['id']}", json=body, headers=admin_headers)).json()
+    assert up["layout"] == "works" and up["subtopics"][0]["author"] == "А. С. Пушкин"
+    assert (await client.get(f"/api/admin/tests/{t['id']}", headers=admin_headers)).json()["subtopicId"] == onegin["id"]
+
+    # cover upload → public URL with a version
+    buf = io.BytesIO(); Image.new("RGB", (900, 1200), (30, 60, 120)).save(buf, "PNG")
+    c = (await client.post(f"/api/admin/works/{onegin['id']}/cover", files={"file": ("c.png", buf.getvalue(), "image/png")},
+                           headers=admin_headers)).json()
+    url = c["subtopics"][0]["coverUrl"]
+    assert url.startswith(f"/api/works/{onegin['id']}/cover?v=")
+    img = await client.get(url)
+    assert img.status_code == 200 and Image.open(io.BytesIO(img.content)).size == (600, 800)
+
+    # the Mini App gets the shelf: every work with author, cover and number of tests; tests know their work
+    h = auth(91)
+    data = (await client.get(f"/api/topics/{tp['slug'] if 'slug' in tp else up['slug']}", headers=h)).json()
+    assert data["topic"]["layout"] == "works"
+    works = {w["title"]: w for w in data["topic"]["works"]}
+    assert works["Евгений Онегин"]["testsCount"] == 1 and works["Евгений Онегин"]["coverUrl"] == url
+    assert works["Мёртвые души"]["testsCount"] == 0 and works["Мёртвые души"]["author"] == "Н. В. Гоголь"
+    assert data["tests"][0]["workId"] == onegin["id"]
+
+    # a work from another section is refused
+    other = (await client.get("/api/admin/topics", headers=admin_headers)).json()[0]
+    bad = await client.put(f"/api/admin/tests/{t['id']}", json={"title": "x", "topicId": other["id"], "subtopicId": onegin["id"], "questionIds": qids},
+                           headers=admin_headers)
+    assert bad.status_code == 422

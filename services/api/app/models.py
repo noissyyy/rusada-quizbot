@@ -68,6 +68,8 @@ class Topic(Base):
     illustration: Mapped[str] = mapped_column(String(256), default="/3d/rq-3d-T01.webp")
     position: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    #: default — tests in a list with subtopic chips; works — a shelf of literary works (covers), tests inside each
+    layout: Mapped[str] = mapped_column(String(12), default="default", server_default="default")
     subtopics: Mapped[list[Subtopic]] = relationship(back_populates="topic", order_by="Subtopic.position",
                                                      cascade="all, delete-orphan")
 
@@ -78,6 +80,11 @@ class Subtopic(Base):
     topic_id: Mapped[str] = mapped_column(ForeignKey("topics.id", ondelete="CASCADE"), index=True)
     title: Mapped[str] = mapped_column(String(128))
     position: Mapped[int] = mapped_column(Integer, default=0)
+    #: «works» sections: a subtopic is a literary work with its author and a cover
+    author: Mapped[str] = mapped_column(String(128), default="", server_default="")
+    cover: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    cover_type: Mapped[str | None] = mapped_column(String(32))
+    cover_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     topic: Mapped[Topic] = relationship(back_populates="subtopics")
 
 
@@ -128,6 +135,8 @@ class Quiz(Base):
     mode_group: Mapped[bool] = mapped_column(Boolean, default=True)
     #: shown as the one-tap "Начать тест" card on Home
     is_quick: Mapped[bool] = mapped_column(Boolean, default=False)
+    #: in a «works» section: which work this test is about
+    subtopic_id: Mapped[str | None] = mapped_column(ForeignKey("subtopics.id", ondelete="SET NULL"), index=True)
     #: draft | published | archived
     status: Mapped[str] = mapped_column(String(12), default="draft", index=True)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)

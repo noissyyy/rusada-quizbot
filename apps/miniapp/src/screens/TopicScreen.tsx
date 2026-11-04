@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import type { TopicTest } from '@rq/shared-types';
+import type { TopicSummary, TopicTest } from '@rq/shared-types';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../data/api';
@@ -9,6 +9,7 @@ import { Screen } from '../components/Screen';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Badge, ProgressBar, Skeleton } from '../components/ui';
 import { topicBg } from '../components/home/TestRow';
+import { BookCover } from '../components/books/BookCover';
 
 export function TopicScreen() {
   const { slug = '' } = useParams();
@@ -17,6 +18,7 @@ export function TopicScreen() {
   const [sub, setSub] = useState<string | null>(null);
   if (state.status !== 'success') return <Screen><Skeleton className="h-[180px] rounded-hero" /></Screen>;
   const { topic, tests } = state.data;
+  if (topic.layout === 'works') return <WorksShelf topic={topic} tests={tests} />;
   const chips = topic.subtopics ?? [];
   const shown = sub ? tests.filter((x) => x.subtopicIds?.includes(sub)) : tests;
 
@@ -44,6 +46,68 @@ export function TopicScreen() {
         </div>
       )}
       <div className="flex flex-col gap-2.5">{shown.map((test) => <TestCard key={test.id} test={test} />)}</div>
+    </Screen>
+  );
+}
+
+/** «Обязательные произведения»: the section is a shelf of works; each opens its own tests. */
+function WorksShelf({ topic, tests }: { topic: TopicSummary; tests: TopicTest[] }) {
+  const { t } = useI18n();
+  const works = topic.works ?? [];
+  const known = new Set(works.map((w) => w.id));
+  const loose = tests.filter((x) => !x.workId || !known.has(x.workId));
+  return (
+    <Screen className="flex flex-col gap-[18px]">
+      <ScreenHeader back="/tests" title={topic.title} />
+      {topic.description && <p className="text-[14px] leading-5 text-ink-2">{topic.description}</p>}
+      <section aria-label={t('works.title')} className="grid grid-cols-2 gap-x-3 gap-y-5">
+        {works.map((w) => (
+          <Link key={w.id} to={`/topics/${topic.slug}/works/${w.id}`} className={clsx('flex flex-col gap-2 active:scale-[0.98]', !w.testsCount && 'opacity-60')}>
+            <BookCover book={w} />
+            <span className="flex flex-col">
+              <span className="line-clamp-2 text-[15px] font-bold leading-[19px]">{w.title}</span>
+              <span className="truncate text-[12px] font-semibold text-muted">{w.author}</span>
+              <span className={clsx('mt-1 self-start rounded-full px-2 py-0.5 text-[11px] font-bold', w.testsCount ? 'bg-primary-50 text-primary' : 'bg-track text-muted')}>
+                {w.testsCount ? t('works.tests', { n: w.testsCount }) : t('works.noTests')}
+              </span>
+            </span>
+          </Link>
+        ))}
+      </section>
+      {loose.length > 0 && (
+        <section className="flex flex-col gap-2.5">
+          <h2 className="font-display text-title font-bold tracking-tight">{t('works.other')}</h2>
+          {loose.map((test) => <TestCard key={test.id} test={test} />)}
+        </section>
+      )}
+    </Screen>
+  );
+}
+
+/** One work: its cover, author and tests. */
+export function WorkScreen() {
+  const { slug = '', workId = '' } = useParams();
+  const { t } = useI18n();
+  const state = useAsync(() => api().getTopic(slug), [slug]);
+  if (state.status !== 'success') return <Screen><Skeleton className="h-[220px] rounded-hero" /></Screen>;
+  const { topic, tests } = state.data;
+  const work = topic.works?.find((w) => w.id === workId);
+  const mine = tests.filter((x) => x.workId === workId);
+  return (
+    <Screen className="flex flex-col gap-[18px]">
+      <ScreenHeader back={`/topics/${slug}`} title={topic.title} />
+      {work && (
+        <section className={`flex items-end gap-4 rounded-hero p-4 ${topicBg[topic.color]}`}>
+          <BookCover book={work} className="w-[104px] shrink-0" />
+          <span className="flex min-w-0 flex-col gap-1 pb-1">
+            <span className="text-[13px] font-semibold text-ink-2">{work.author}</span>
+            <h1 className="font-display text-[22px] font-bold leading-[26px] tracking-tight">{work.title}</h1>
+            <span className="text-[12px] font-bold text-ink-2">{t('works.tests', { n: mine.length })}</span>
+          </span>
+        </section>
+      )}
+      {mine.length ? <div className="flex flex-col gap-2.5">{mine.map((test) => <TestCard key={test.id} test={test} />)}</div>
+        : <p className="rounded-card bg-surface p-5 text-center text-body text-ink-2 shadow-card">{t('works.empty')}</p>}
     </Screen>
   );
 }

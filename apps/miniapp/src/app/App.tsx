@@ -6,7 +6,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { LanguageScreen } from '../screens/LanguageScreen';
 import { SPLASH_ANIMATION_MS, SplashScreen } from '../screens/SplashScreen';
 import { TestsScreen } from '../screens/TestsScreen';
-import { TopicScreen } from '../screens/TopicScreen';
+import { TopicScreen, WorkScreen } from '../screens/TopicScreen';
 import { TestDetailsScreen } from '../screens/TestDetailsScreen';
 import { QuizScreen } from '../screens/QuizScreen';
 import { TimeUpScreen } from '../screens/TimeUpScreen';
@@ -54,6 +54,7 @@ function Shell() {
         <Route path="/language" element={<LanguageScreen />} />
         <Route path="/tests" element={<TestsScreen />} />
         <Route path="/topics/:slug" element={<TopicScreen />} />
+        <Route path="/topics/:slug/works/:workId" element={<WorkScreen />} />
         <Route path="/tests/:id" element={<TestDetailsScreen />} />
         <Route path="/quiz/:id" element={<QuizScreen />} />
         <Route path="/timeup/:sid" element={<TimeUpScreen />} />
