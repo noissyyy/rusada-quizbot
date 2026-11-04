@@ -9,7 +9,7 @@ const actionName: Record<string, string> = {
   login: 'Вход', 'settings.update': 'Настройки', 'user.role': 'Смена роли', 'user.block': 'Блокировка', 'user.unblock': 'Разблокировка',
   'question.create': 'Новый вопрос', 'question.update': 'Изменён вопрос', 'test.create': 'Новый тест', 'test.update': 'Изменён тест',
   'test.published': 'Тест опубликован', 'test.archived': 'Тест в архиве', 'import': 'Импорт Excel', 'group.assign': 'Тест в группу',
-  'live.create': 'Создан эфир', 'live.finish': 'Эфир завершён', 'topic.create': 'Новый раздел', 'topic.update': 'Изменён раздел',
+  'live.create': 'Создан эфир', 'live.finish': 'Эфир завершён', 'topic.create': 'Новый раздел', 'topic.update': 'Изменён раздел', 'topic.delete': 'Раздел удалён', 'topic.hide': 'Раздел скрыт', 'test.delete': 'Тест удалён',
 };
 
 export function SettingsPage() {
