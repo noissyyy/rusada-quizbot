@@ -25,3 +25,12 @@ describe('brand names', () => {
     expect(t('QuizBot ilovasi @Rusada_QuizBot {n}')).toBe('QuizBot иловаси @Rusada_QuizBot {n}');
   });
 });
+
+describe('default language', () => {
+  it('opens in Uzbek (Latin) until the user picks, whatever Telegram says', async () => {
+    const { guessLang } = await import('./index');
+    expect(guessLang('ru')).toBe('uz');
+    expect(guessLang('en')).toBe('uz');
+    expect(guessLang(undefined)).toBe('uz');
+  });
+});

@@ -348,11 +348,11 @@ class Book(Base):
 
 
 class Member(Base):
-    """A Rusada student: free access while the app is closed to the public. Added by @username;
-    the Telegram ID is remembered on first visit, so a later username change does not lock them out."""
+    """A Rusada student: free access while the app is closed to the public. Added by @username or by
+    Telegram ID; with a username the ID is remembered on first visit, so a later change does not lock them out."""
     __tablename__ = "members"
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
-    username: Mapped[str] = mapped_column(String(64), unique=True)  # lower-case, without @
+    username: Mapped[str | None] = mapped_column(String(64), unique=True)  # lower-case, without @
     telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True)
     note: Mapped[str] = mapped_column(String(200), default="")
     added_at: Mapped[datetime] = mapped_column(TS, default=utcnow)

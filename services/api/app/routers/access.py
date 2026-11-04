@@ -60,6 +60,8 @@ class PendingOut(Camel):
 
 
 class AccessOut(Camel):
+    telegram_id: int
+    username: str | None
     has_access: bool
     reason: str | None  # staff | open | member | subscription
     mode: str
@@ -82,7 +84,7 @@ async def my_access(user: User = Depends(telegram_user), db: AsyncSession = Depe
     last = (await db.execute(select(PaymentRequest).where(PaymentRequest.user_id == user.id)
                              .order_by(PaymentRequest.created_at.desc()).limit(1))).scalars().first()
     await db.commit()
-    return AccessOut(has_access=reason is not None, reason=reason, mode=cfg.mode,
+    return AccessOut(telegram_id=user.telegram_id, username=user.username, has_access=reason is not None, reason=reason, mode=cfg.mode,
                      subscription_ends_at=end if end and end > utcnow() else None,
                      price_uzs=cfg.price_uzs, days=cfg.days, card_number=cfg.card_number, card_holder=cfg.card_holder,
                      note=cfg.note, support_username=cfg.support_username,
@@ -142,7 +144,8 @@ async def write_access(body: AccessSettings, user: User = Depends(admin), db: As
 
 class MemberOut(Camel):
     id: str
-    username: str
+    username: str | None
+    telegram_id: int | None
     note: str
     seen: bool  # opened the app at least once (Telegram ID remembered)
     name: str | None
@@ -154,12 +157,13 @@ async def list_members(user: User = Depends(admin), db: AsyncSession = Depends(g
     rows = (await db.execute(select(Member).order_by(Member.added_at.desc()))).scalars().all()
     tids = [m.telegram_id for m in rows if m.telegram_id]
     names = dict((await db.execute(select(User.telegram_id, User.first_name).where(User.telegram_id.in_(tids)))).all()) if tids else {}
-    return [MemberOut(id=m.id, username=m.username, note=m.note, seen=m.telegram_id is not None,
+    return [MemberOut(id=m.id, username=m.username, telegram_id=m.telegram_id, note=m.note,
+                      seen=m.telegram_id is not None and m.telegram_id in names,
                       name=names.get(m.telegram_id), added_at=m.added_at) for m in rows]
 
 
 class MembersIn(Camel):
-    #: any text: one or many @usernames separated by spaces, commas or new lines
+    #: any text: @usernames and/or Telegram IDs (digits), separated by spaces, commas or new lines
     usernames: str = Field(min_length=1, max_length=50_000)
     note: str = Field(default="", max_length=200)
 
@@ -168,13 +172,19 @@ class MembersIn(Camel):
 async def add_members(body: MembersIn, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
     import re
     found = {norm_username(x) for x in re.split(r"[\s,;]+", body.usernames) if x.strip()}
-    valid = {u for u in found if re.fullmatch(r"[a-z0-9_]{4,32}", u)}
-    existing = set((await db.execute(select(Member.username).where(Member.username.in_(valid)))).scalars()) if valid else set()
-    for u in sorted(valid - existing):
+    ids = {int(u) for u in found if re.fullmatch(r"\d{5,15}", u)}
+    names = {u for u in found if re.fullmatch(r"[a-z][a-z0-9_]{3,31}", u)}
+    invalid = sorted(found - names - {str(i) for i in ids})
+    have_names = set((await db.execute(select(Member.username).where(Member.username.in_(names)))).scalars()) if names else set()
+    have_ids = set((await db.execute(select(Member.telegram_id).where(Member.telegram_id.in_(ids)))).scalars()) if ids else set()
+    for u in sorted(names - have_names):
         db.add(Member(username=u, note=body.note))
-    await audit(db, user, "members.add", None, count=len(valid - existing))
+    for i in sorted(ids - have_ids):
+        db.add(Member(username=None, telegram_id=i, note=body.note))
+    added = len(names - have_names) + len(ids - have_ids)
+    await audit(db, user, "members.add", None, count=added)
     await db.commit()
-    return {"added": len(valid - existing), "already": len(existing & valid), "invalid": sorted(found - valid)}
+    return {"added": added, "already": len(have_names) + len(have_ids), "invalid": invalid}
 
 
 @router.delete("/api/admin/members/{mid}", status_code=204)
@@ -183,7 +193,7 @@ async def delete_member(mid: str, user: User = Depends(admin), db: AsyncSession 
     if m is None:
         raise HTTPException(404)
     await db.delete(m)
-    await audit(db, user, "members.remove", None, username=m.username)
+    await audit(db, user, "members.remove", None, username=m.username, telegramId=m.telegram_id)
     await db.commit()
 
 
@@ -294,6 +304,7 @@ async def list_subscribers(user: User = Depends(admin), db: AsyncSession = Depen
 
 
 class GrantIn(Camel):
+    #: @username or Telegram ID
     username: str = Field(min_length=1, max_length=64)
     days: int = Field(default=30, ge=1, le=3660)
 
@@ -302,9 +313,11 @@ class GrantIn(Camel):
 async def grant_subscription(body: GrantIn, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
     """Give or extend access by hand (e.g. paid in cash)."""
     u = norm_username(body.username)
-    target = (await db.execute(select(User).where(func.lower(User.username) == u))).scalars().first()
+    who = select(User).where(User.telegram_id == int(u)) if u.isdigit() else select(User).where(func.lower(User.username) == u)
+    target = (await db.execute(who)).scalars().first()
     if target is None:
-        raise HTTPException(404, f"@{u} ещё не открывал бота — попросите его нажать /start, потом повторите")
+        label = f"ID {u}" if u.isdigit() else f"@{u}"
+        raise HTTPException(404, f"{label} ещё не открывал бота — попросите его нажать /start, потом повторите")
     end = await _grant(db, target, body.days, user, "manual")
     await audit(db, user, "subscription.grant", target.id, days=body.days)
     await db.commit()

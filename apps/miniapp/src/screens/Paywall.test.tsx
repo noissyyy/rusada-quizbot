@@ -9,12 +9,12 @@ import { mockApi } from '../data/mock';
 import { PaywallScreen } from './PaywallScreen';
 
 const closed: AccessInfo = {
-  hasAccess: false, reason: null, mode: 'closed', subscriptionEndsAt: null, priceUzs: 100000, days: 30,
+  telegramId: 123456789, username: null, hasAccess: false, reason: null, mode: 'closed', subscriptionEndsAt: null, priceUzs: 100000, days: 30,
   cardNumber: '8600 1234 5678 9012', cardHolder: 'RUSADA', note: '', supportUsername: 'rusada_admin', pending: null, rejectedComment: null,
 };
 
 function renderPaywall(access: AccessInfo, onChanged = () => undefined) {
-  return render(<I18nProvider><MemoryRouter><PaywallScreen access={access} onChanged={onChanged} /></MemoryRouter></I18nProvider>);
+  return render(<I18nProvider initial="ru"><MemoryRouter><PaywallScreen access={access} onChanged={onChanged} /></MemoryRouter></I18nProvider>);
 }
 
 describe('PaywallScreen', () => {
@@ -23,7 +23,8 @@ describe('PaywallScreen', () => {
     expect(screen.getByText('Что входит')).toBeInTheDocument();
     expect(screen.getByText('Библиотека')).toBeInTheDocument();
     expect(screen.getByText('8600 1234 5678 9012')).toBeInTheDocument();
-    expect(screen.getByText(/@rusada_admin/)).toBeInTheDocument();
+    expect(screen.getAllByText(/@rusada_admin/).length).toBeGreaterThan(0);
+    expect(screen.getByText('123456789')).toBeInTheDocument(); // own Telegram ID to send to the admin
   });
 
   it('uploads a receipt and asks the app to re-check access', async () => {

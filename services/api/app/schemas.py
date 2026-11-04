@@ -547,5 +547,5 @@ class SettingsIn(Camel):
     feedback_ms: int = Field(default=3000, ge=1000, le=10000)
     feedback_explain_ms: int = Field(default=5000, ge=1000, le=15000)
     langs: list[Literal["uz", "uz-cyrl", "ru"]] = ["uz", "uz-cyrl", "ru"]
-    default_lang: Literal["telegram", "uz", "uz-cyrl", "ru"] = "telegram"
+    default_lang: Literal["telegram", "uz", "uz-cyrl", "ru"] = "uz"
     rate_limit_per_min: int = Field(default=120, ge=10, le=10000)

@@ -97,3 +97,26 @@ async def test_receipt_approve_reject_and_manual_grant(client, auth, admin_heade
     assert (await client.get("/api/home", headers=h)).status_code == 402
     stats = (await client.get("/api/admin/access/stats", headers=admin_headers)).json()
     assert stats["pending"] == 0 and stats["activeSubscribers"] == 0
+
+
+async def test_members_and_grants_by_telegram_id(client, auth, admin_headers):
+    await _close(client, admin_headers)
+    no_name = auth(987654321)  # a student without a @username
+    a = (await client.get("/api/access", headers=no_name)).json()
+    assert a["hasAccess"] is False and a["telegramId"] == 987654321 and a["username"] is None
+    r = (await client.post("/api/admin/members", json={"usernames": "987654321, @mixed_user 12"}, headers=admin_headers)).json()
+    assert r == {"added": 2, "already": 0, "invalid": ["12"]}
+    assert (await client.get("/api/home", headers=no_name)).status_code == 200
+    row = next(m for m in (await client.get("/api/admin/members", headers=admin_headers)).json() if m["telegramId"] == 987654321)
+    assert row["username"] is None and row["seen"] is True
+    again = (await client.post("/api/admin/members", json={"usernames": "987654321"}, headers=admin_headers)).json()
+    assert again["already"] == 1 and again["added"] == 0
+
+    # manual grant by ID
+    other = auth(555000111)
+    await client.get("/api/access", headers=other)  # opened the bot once
+    g = await client.post("/api/admin/subscriptions", json={"username": "555000111", "days": 7}, headers=admin_headers)
+    assert g.status_code == 200
+    assert (await client.get("/api/home", headers=other)).status_code == 200
+    missing = await client.post("/api/admin/subscriptions", json={"username": "111222333"}, headers=admin_headers)
+    assert missing.status_code == 404 and "ID 111222333" in missing.json()["detail"]

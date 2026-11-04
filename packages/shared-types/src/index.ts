@@ -214,6 +214,8 @@ export interface Book {
 
 /** What this person may do: everyone (open), staff, a Rusada student, a subscriber — or nothing (paywall). */
 export interface AccessInfo {
+  telegramId: number;
+  username: string | null;
   hasAccess: boolean;
   reason: 'staff' | 'open' | 'member' | 'subscription' | null;
   mode: 'open' | 'closed';
