@@ -1,5 +1,5 @@
 import type {
-  AnswerResult, AppNotification, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
+  AnswerResult, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
   Rating, RatingKind, RatingPeriod, SessionResult, SessionStart, SettingsPatch, TestSummary, TopicSummary, TopicTest,
   UserProfile,
 } from '@rq/shared-types';
@@ -28,6 +28,7 @@ export interface QuizApi {
   getNotifications(): Promise<AppNotification[]>;
   readAllNotifications(): Promise<void>;
 
+  getBooks(): Promise<Book[]>;
   /** open group tests shown to everyone */
   getGroupHub(): Promise<GroupHubItem[]>;
   getGroupAssignment(id: string): Promise<GroupAssignmentView>;

@@ -5,7 +5,7 @@ import { useLoad, useToast } from '../lib/hooks';
 import type { Topic } from '../lib/types';
 import { Button, Card, ErrorBox, Field, Icon, Input, PageHeader, Pill, Spinner, Textarea, Toggle } from '../components/ui';
 
-const COLORS: [string, string][] = [['blue', 'bg-topic-blue'], ['violet', 'bg-topic-violet'], ['mint', 'bg-topic-mint'], ['peach', 'bg-topic-peach'], ['pink', 'bg-topic-pink'], ['yellow', 'bg-topic-yellow']];
+const COLORS: [string, string][] = [['blue', 'bg-topic-blue'], ['violet', 'bg-topic-violet'], ['mint', 'bg-topic-mint'], ['peach', 'bg-topic-peach'], ['pink', 'bg-topic-pink'], ['yellow', 'bg-topic-yellow'], ['sky', 'bg-topic-sky'], ['indigo', 'bg-topic-indigo'], ['lavender', 'bg-topic-lavender'], ['plum', 'bg-topic-plum'], ['rose', 'bg-topic-rose'], ['coral', 'bg-topic-coral'], ['orange', 'bg-topic-orange'], ['sand', 'bg-topic-sand'], ['lime', 'bg-topic-lime'], ['green', 'bg-topic-green'], ['teal', 'bg-topic-teal'], ['olive', 'bg-topic-olive'], ['slate', 'bg-topic-slate'], ['gray', 'bg-topic-gray']];
 const ARTS = ['T01', 'T02', 'T03', 'T04', 'T05', 'T06'];
 type Edit = Omit<Topic, 'id' | 'slug' | 'position' | 'testsCount' | 'questionsCount'> & { id?: string };
 
@@ -75,7 +75,7 @@ export function TopicsPage() {
               <Field label="Название"><Input value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} /></Field>
               <Field label="Короткое описание"><Textarea value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} /></Field>
               <div><span className="mb-1.5 block text-[13px] font-bold text-ink-2">Цвет карточки</span>
-                <div className="flex gap-2">{COLORS.map(([c, cls]) => <button key={c} type="button" aria-label={c} aria-pressed={edit.color === c} onClick={() => setEdit({ ...edit, color: c })} className={clsx('size-9 rounded-full', cls, edit.color === c && 'ring-2 ring-primary ring-offset-2')} />)}</div>
+                <div className="flex flex-wrap gap-2">{COLORS.map(([c, cls]) => <button key={c} type="button" aria-label={c} aria-pressed={edit.color === c} onClick={() => setEdit({ ...edit, color: c })} className={clsx('size-9 rounded-full', cls, edit.color === c && 'ring-2 ring-primary ring-offset-2')} />)}</div>
               </div>
               <div><span className="mb-1.5 block text-[13px] font-bold text-ink-2">Иллюстрация</span>
                 <div className="flex flex-wrap gap-2">{ARTS.map((a) => { const src = `/3d/rq-3d-${a}.webp`; return <button key={a} type="button" aria-label={a} aria-pressed={edit.illustration === src} onClick={() => setEdit({ ...edit, illustration: src })} className={clsx('size-12 rounded-[12px] bg-canvas p-1', edit.illustration === src && 'ring-2 ring-primary')}><img src={src} alt="" className="size-full object-contain" /></button>; })}</div>

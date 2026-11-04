@@ -54,6 +54,7 @@ export function createHttpApi(baseUrl: string): QuizApi {
     getNotifications: () => get('/api/notifications'),
     readAllNotifications: () => post('/api/notifications/read-all'),
 
+    getBooks: () => get('/api/books'),
     getGroupHub: () => get('/api/group'),
     getGroupAssignment: (id) => get(`/api/group/${id}`),
     getGroupResult: (id) => get(`/api/group/${id}/result`),

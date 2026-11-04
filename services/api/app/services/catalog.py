@@ -141,7 +141,7 @@ async def rating(db: AsyncSession, me: User, kind: str, period: str, limit: int 
     return Rating(kind=kind, period=period, entries=entries, me=me_entry)
 
 
-async def history(db: AsyncSession, user: User, limit: int = 20) -> list[HistoryItem]:
+async def history(db: AsyncSession, user: User, limit: int = 100) -> list[HistoryItem]:
     out: list[HistoryItem] = []
     attempts = (await db.execute(select(Attempt).where(Attempt.user_id == user.id, Attempt.status.in_(DONE))
                                  .order_by(Attempt.finished_at.desc()).limit(limit))).unique().scalars()

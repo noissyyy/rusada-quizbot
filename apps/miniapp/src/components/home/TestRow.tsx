@@ -4,8 +4,26 @@ import { useI18n } from '../../lib/i18n';
 import { Badge } from '../ui';
 
 export const topicBg: Record<TopicColor, string> = {
-  blue: 'bg-topic-blue', violet: 'bg-topic-violet', mint: 'bg-topic-mint',
-  peach: 'bg-topic-peach', pink: 'bg-topic-pink', yellow: 'bg-topic-yellow',
+  blue: 'bg-topic-blue',
+  violet: 'bg-topic-violet',
+  mint: 'bg-topic-mint',
+  peach: 'bg-topic-peach',
+  pink: 'bg-topic-pink',
+  yellow: 'bg-topic-yellow',
+  sky: 'bg-topic-sky',
+  indigo: 'bg-topic-indigo',
+  lavender: 'bg-topic-lavender',
+  plum: 'bg-topic-plum',
+  rose: 'bg-topic-rose',
+  coral: 'bg-topic-coral',
+  orange: 'bg-topic-orange',
+  sand: 'bg-topic-sand',
+  lime: 'bg-topic-lime',
+  green: 'bg-topic-green',
+  teal: 'bg-topic-teal',
+  olive: 'bg-topic-olive',
+  slate: 'bg-topic-slate',
+  gray: 'bg-topic-gray',
 };
 
 export function TestRow({ test }: { test: TestSummary }) {

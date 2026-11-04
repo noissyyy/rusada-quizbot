@@ -39,16 +39,19 @@ describe('quiz flow (one timer per test)', () => {
     expect(await screen.findByText('Вопрос 1 из 4')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ответить' })).toBeDisabled();
     await answer('Быстро$');
-    expect(await screen.findByText('Правильно!')).toBeInTheDocument();
-    expect(screen.getByText('+100')).toBeInTheDocument();
+    // only the options change colour: the correct one gets a check mark, no verdict panel
+    expect(await screen.findByLabelText('Правильно!')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(screen.getByRole('timer')).toHaveAccessibleName(/Таймер на паузе/);
+    expect(screen.getByRole('button', { name: 'Дальше' })).toBeInTheDocument();
+    expect(screen.getByText('Вопрос 1 из 4')).toBeInTheDocument();
   });
 
   it('wrong answer reveals the correct one; full run reaches result and review', async () => {
     renderQuiz();
     await answer('Быстрый');
-    expect(await screen.findByText('Неправильно')).toBeInTheDocument();
-    expect(screen.getByText('Быстро', { selector: 'b' })).toBeInTheDocument();
+    expect(await screen.findByLabelText('Правильно!')).toBeInTheDocument();
+    expect(screen.queryByText('Неправильно')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Дальше' }));
     await answer('Мозоль'); await userEvent.click(await screen.findByRole('button', { name: 'Дальше' }));
     await answer('Ноч'); await userEvent.click(await screen.findByRole('button', { name: 'Дальше' }));

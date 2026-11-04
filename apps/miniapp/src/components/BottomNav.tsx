@@ -8,6 +8,7 @@ import { Icon, type IconName } from './ui';
 const items: { to: string; label: MessageKey; icon: IconName }[] = [
   { to: '/', label: 'nav.home', icon: 'home' },
   { to: '/tests', label: 'nav.tests', icon: 'grid' },
+  { to: '/books', label: 'nav.books', icon: 'book' },
   { to: '/rating', label: 'nav.rating', icon: 'trophy' },
   { to: '/profile', label: 'nav.profile', icon: 'user' },
 ];
@@ -21,8 +22,8 @@ export function BottomNav() {
         {items.map((it) => (
           <li key={it.to}>
             <NavLink to={it.to} end={it.to === '/'} onClick={() => haptic.select()} aria-label={t(it.label)}
-              className={({ isActive }) => clsx('flex h-[50px] items-center justify-center gap-2 rounded-full text-[14px] font-bold transition-colors',
-                isActive ? 'bg-primary-50 px-[18px] text-primary' : 'w-[50px] text-muted hover:text-ink')}>
+              className={({ isActive }) => clsx('flex h-[50px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full text-[13px] font-bold transition-colors',
+                isActive ? 'bg-primary-50 px-3 text-primary' : 'w-[44px] text-muted hover:text-ink')}>
               {({ isActive }) => (<><Icon name={it.icon} size={22} strokeWidth={isActive ? 2.2 : 1.9} />{isActive && t(it.label)}</>)}
             </NavLink>
           </li>

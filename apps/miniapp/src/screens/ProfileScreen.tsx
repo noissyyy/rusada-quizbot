@@ -7,12 +7,12 @@ import { LANG_NAMES, useI18n } from '../lib/i18n';
 import { useAsync } from '../lib/useAsync';
 import { setHapticsEnabled } from '../lib/telegram/webapp';
 import { Screen } from '../components/Screen';
+import { topicBg as topicColorBg } from '../components/home/TestRow';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Avatar, Icon, Skeleton } from '../components/ui';
 import { ErrorView } from '../components/states/StateViews';
 
-const topicBg: Record<string, string> = {
-  blue: 'bg-topic-blue', violet: 'bg-topic-violet', mint: 'bg-topic-mint', peach: 'bg-topic-peach', pink: 'bg-topic-pink', yellow: 'bg-topic-yellow', ink: 'bg-ink',
-};
+const topicBg: Record<string, string> = { ...topicColorBg, ink: 'bg-ink' };
 
 export function formatDay(iso: string, lang: string) {
   return new Date(iso).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'long' });
@@ -44,21 +44,37 @@ export function ProfileScreen() {
         ))}
       </div>
 
-      <section className="flex flex-col gap-2.5">
-        <h2 className="font-display text-title font-bold">{t('profile.history')}</h2>
-        {p.history.length === 0 ? (
-          <div className="flex items-center gap-3 rounded-card bg-surface p-4 shadow-card">
-            <img src="/3d/rq-3d-E02.webp" alt="" className="size-16 object-contain" />
-            <p className="text-caption text-ink-2">{t('profile.historyEmpty')}</p>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-card bg-surface shadow-card">
-            {p.history.slice(0, 8).map((h, i) => <HistoryRow key={h.id} h={h} last={i === Math.min(p.history.length, 8) - 1} />)}
-          </div>
-        )}
-      </section>
+      <Link to="/profile/history" className="flex items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-[15px] font-semibold text-ink shadow-card">
+        <span className="grid size-9 place-items-center rounded-sm bg-primary-50 text-primary"><Icon name="clock" size={18} /></span>
+        {t('profile.history')}
+        <span className="ml-auto text-[14px] font-medium text-muted">{p.history.length}</span>
+        <Icon name="chevronRight" size={18} className="text-muted" />
+      </Link>
 
       <Settings p={p} langName={LANG_NAMES[lang]} />
+    </Screen>
+  );
+}
+
+/** 15b · История игр — opened from the profile */
+export function HistoryScreen() {
+  const { t } = useI18n();
+  const state = useAsync(() => api().getProfile());
+  if (state.status === 'error') return <ErrorView error={state.error} onRetry={state.reload} />;
+  const history = state.status === 'success' ? state.data.history : null;
+  return (
+    <Screen className="flex flex-col gap-4">
+      <ScreenHeader back="/profile" title={t('profile.history')} />
+      {history === null ? <Skeleton className="h-64 w-full" /> : history.length === 0 ? (
+        <div className="flex items-center gap-3 rounded-card bg-surface p-4 shadow-card">
+          <img src="/3d/rq-3d-E02.webp" alt="" className="size-16 object-contain" />
+          <p className="text-caption text-ink-2">{t('profile.historyEmpty')}</p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-card bg-surface shadow-card">
+          {history.map((h, i) => <HistoryRow key={h.id} h={h} last={i === history.length - 1} />)}
+        </div>
+      )}
     </Screen>
   );
 }

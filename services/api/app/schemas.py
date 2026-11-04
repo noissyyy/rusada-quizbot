@@ -381,7 +381,7 @@ class TopicIn(Camel):
     title: str = Field(min_length=1, max_length=128)
     slug: str | None = None
     description: str = ""
-    color: Literal["blue", "violet", "mint", "peach", "pink", "yellow"] = "blue"
+    color: Literal["blue", "violet", "mint", "peach", "pink", "yellow", "sky", "indigo", "lavender", "plum", "rose", "coral", "orange", "sand", "lime", "green", "teal", "olive", "slate", "gray"] = "blue"
     illustration: str = "/3d/rq-3d-T01.webp"
     is_active: bool = True
     subtopics: list[SubtopicIn] = []

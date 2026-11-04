@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 
 from .config import settings
 from .db import SessionLocal
-from .routers import admin_api, app_api, internal
+from .routers import admin_api, app_api, books, internal
 from .services import live as live_svc
 from .services.settings_store import get_settings
 
@@ -66,6 +66,7 @@ def create_app(run_ticker: bool = True) -> FastAPI:
     app.include_router(app_api.router)
     app.include_router(admin_api.router)
     app.include_router(internal.router)
+    app.include_router(books.router)
 
     @app.get("/health")
     async def health():
