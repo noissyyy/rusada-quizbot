@@ -26,7 +26,7 @@ Kerak: Linux server (2 GB RAM yetadi), Docker, ikkita domen nomi (masalan `quiz.
 2. **BotFather → Bot Settings → Configure Mini App → Enable Mini App**, manzil: `https://quiz.rusada.uz`. Shunda `t.me/Rusada_QuizBot?startapp=…` havolalari (guruh testlari, efir) ishlaydi.
 3. Serverda (root sifatida) — Docker, 2 GB swap, firewall va kodni o‘rnatadi:
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/noissyyy/rusada-quizbot/main/infrastructure/setup-server.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/noissyyy/rusada-quizbot/main/infrastructure/setup-server.sh -o setup.sh && bash setup.sh
    ```
    Keyin:
    ```bash
