@@ -1,4 +1,6 @@
-# Russian Quiz — Telegram Mini App
+# rusada-quizbot
+
+Russian Language Quiz Telegram Mini App — Rusada учебный центр.
 
 Monorepo. Phase 1 (Mini App UI) in progress.
 
