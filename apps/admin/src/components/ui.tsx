@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 
 /* ---------- icons (24px, 1.8 stroke) ---------- */
 const P = {
@@ -103,6 +103,20 @@ const ctl = 'h-11 rounded-[12px] border border-line bg-surface px-3 text-[14px] 
 export const Input = (p: InputHTMLAttributes<HTMLInputElement>) => <input {...p} className={clsx(ctl, p.className)} />;
 export const Select = ({ children, ...p }: SelectHTMLAttributes<HTMLSelectElement>) => <select {...p} className={clsx(ctl, 'pr-8', p.className)}>{children}</select>;
 export const Textarea = (p: TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...p} className={clsx(ctl, 'h-auto min-h-[88px] py-2.5 leading-5', p.className)} />;
+
+/** Number field that lets you clear and retype freely; the value is clamped and applied on blur / Enter. */
+export function NumberInput({ value, min, max, onCommit, ...rest }: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'min' | 'max'> & { value: number; min: number; max: number; onCommit: (v: number) => void }) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => { setText(String(value)); }, [value]);
+  const commit = () => {
+    const n = Math.round(Number(text));
+    const v = Number.isFinite(n) && text.trim() !== '' ? Math.min(max, Math.max(min, n)) : value;
+    setText(String(v));
+    if (v !== value) onCommit(v);
+  };
+  return <Input {...rest} type="number" inputMode="numeric" min={min} max={max} value={text} onChange={(e) => setText(e.target.value)} onBlur={commit}
+    onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />;
+}
 
 export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: ReactNode }) {
   return (
