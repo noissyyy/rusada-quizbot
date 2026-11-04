@@ -43,8 +43,9 @@ export function GroupJoinScreen() {
   if (state.status === 'loading') return <LoadingView />;
   if (state.status === 'error') return <ErrorView error={state.error} onRetry={state.reload} />;
   const g = state.data;
-  if (g.access !== 'ok' && !g.mySessionId) return <AccessErrorView group={g.groupTitle} link={g.groupLink} reason={g.access === 'closed' ? 'closed' : 'member'} />;
   const done = g.myStatus === 'finished' || g.myStatus === 'timed_out';
+  // a test already started can always be continued; otherwise no access means no start button
+  if (g.access !== 'ok' && !done && g.myStatus !== 'in_progress') return <AccessErrorView group={g.groupTitle} link={g.groupLink} reason={g.access === 'closed' ? 'closed' : 'member'} />;
 
   return (
     <main className={page} style={pad}>

@@ -95,7 +95,13 @@ async def test_details(quiz_id: str, user: User = Depends(current_user), db: Asy
 @router.post("/sessions", response_model=SessionStart)
 async def start_session(body: StartBody, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     if body.assignment_id:
-        a = await _assignment_for(db, user, body.assignment_id, require_access=True)
+        a = await _assignment_for(db, user, body.assignment_id, require_access=False)
+        ongoing = (await db.execute(select(Attempt.id).where(Attempt.assignment_id == a.id, Attempt.user_id == user.id,
+                                                             Attempt.status == "in_progress"))).first()
+        if ongoing is None:  # a started attempt is always resumable; it keeps its own deadline
+            access = await _access(db, user, a)
+            if access != "ok":
+                raise HTTPException(status.HTTP_403_FORBIDDEN, access)
         return await quiz_svc.start(db, user, a.quiz, a)
     if not body.quiz_id:
         raise HTTPException(422, "quiz_id required")

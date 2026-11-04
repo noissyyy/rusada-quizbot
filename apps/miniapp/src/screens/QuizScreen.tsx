@@ -52,8 +52,9 @@ export function QuizScreen() {
     }, (e: unknown) => {
       if (!alive) return;
       if (e instanceof ApiError && e.detail === 'already_taken' && assignmentId) { nav(`/group/${assignmentId}/result`, { replace: true }); return; }
-      if (e instanceof ApiError && e.status === 403 && assignmentId) { nav(`/group/${assignmentId}`, { replace: true }); return; }
-      setLoadError(e instanceof Error ? e.message : String(e));
+      // say why instead of silently bouncing back to the group page
+      if (e instanceof ApiError && e.status === 403 && assignmentId) { setLoadError(e.detail === 'closed' ? 'access.closed' : 'access.reasonMember'); return; }
+      setLoadError('error.load');
     });
     return () => { alive = false; };
   }, [id, assignmentId, nav]);
@@ -118,7 +119,7 @@ export function QuizScreen() {
     return (
       <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col items-center justify-center gap-3 px-[18px] text-center">
         <img src="/3d/rq-3d-E03.webp" alt="" className="size-[150px] object-contain" />
-        <p className="text-body font-bold">{t('error.load')}</p>
+        <p className="max-w-[300px] text-body font-bold">{t(loadError === 'access.closed' || loadError === 'access.reasonMember' ? loadError : 'error.load')}</p>
         <button type="button" onClick={() => nav(-1)} className="h-[52px] rounded-control bg-primary px-6 font-bold text-white">{t('common.back')}</button>
       </div>
     );
