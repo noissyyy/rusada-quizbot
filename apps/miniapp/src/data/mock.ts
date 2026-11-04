@@ -49,6 +49,16 @@ export const mockApi: QuizApi = {
   async getNotifications() { await wait(); return server.notifications.map((n) => ({ ...n })); },
   async readAllNotifications() { await wait(100); server.notifications.forEach((n) => { n.read = true; }); },
 
+  async getBooks() {
+    await wait();
+    return [
+      { id: 'b1', title: 'Тесты по литературе', author: 'Д. Алиева, Е. Торкунова', price: '85 000 сум', link: 'https://t.me/rusada_uz', coverUrl: null,
+        description: 'Сборник тестов по русской литературе: от Жуковского до Булгакова. Варианты с ответами для подготовки к экзаменам.' },
+      { id: 'b2', title: 'Русский язык. Морфология', author: 'Rusada', price: '70 000 сум', link: 'https://t.me/rusada_uz', coverUrl: null,
+        description: 'Правила и упражнения по частям речи с ключами.' },
+      { id: 'b3', title: 'Орфография без ошибок', author: 'Rusada', price: '', link: '', coverUrl: null, description: 'Справочник с примерами.' },
+    ];
+  },
   async getGroupHub() {
     await wait();
     return [{ id: 'a-demo', groupTitle: '10-Б · Русский язык', quizTitle: 'Имя прилагательное', questionsCount: 4, durationMinutes: 8,

@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text,
+from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Integer, LargeBinary, String, Text,
                         Index, func)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -325,3 +325,20 @@ class AdminLoginToken(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     expires_at: Mapped[datetime] = mapped_column(TS)
     used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class Book(Base):
+    """A book of the centre shown in the Mini App «Книги» tab. The cover is stored in the database."""
+    __tablename__ = "books"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    title: Mapped[str] = mapped_column(String(200))
+    author: Mapped[str] = mapped_column(String(200), default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    price: Mapped[str] = mapped_column(String(64), default="")
+    link: Mapped[str] = mapped_column(String(512), default="")
+    cover: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    cover_type: Mapped[str | None] = mapped_column(String(32))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(TS, default=utcnow, onupdate=utcnow)

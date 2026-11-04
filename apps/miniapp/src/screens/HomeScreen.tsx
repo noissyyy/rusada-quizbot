@@ -9,10 +9,12 @@ import { StartCard } from '../components/home/StartCard';
 import { ContinueCard } from '../components/home/ContinueCard';
 import { TopicCard } from '../components/tests/TopicCard';
 import { ModeTile } from '../components/home/ModeTile';
+import { BooksBanner } from '../components/home/BooksBanner';
 import { Link } from 'react-router-dom';
 
 export function HomeScreen() {
-  const state = useAsync(() => Promise.all([api().getHomeFeed(), api().getTopics()]));
+  // books are optional on Home: a failure there must not break the screen
+  const state = useAsync(() => Promise.all([api().getHomeFeed(), api().getTopics(), api().getBooks().catch(() => [])]));
   const { t } = useI18n();
 
   if (state.status === 'loading') return <HomeSkeleton label={t('loading')} />;
@@ -20,7 +22,7 @@ export function HomeScreen() {
     return <ErrorView error={state.error} onRetry={state.reload} />;
   }
 
-  const [feed, allTopics] = state.data;
+  const [feed, allTopics, books] = state.data;
   // sections that actually have tests; fall back to all of them while the catalogue is empty
   const withTests = allTopics.filter((tp) => tp.testsCount > 0);
   const sections = withTests.length ? withTests : allTopics;
@@ -39,6 +41,8 @@ export function HomeScreen() {
         </div>
         <div className="grid grid-cols-2 gap-3">{sections.map((tp) => <TopicCard key={tp.id} topic={tp} />)}</div>
       </section>
+
+      {books.length > 0 && <BooksBanner books={books} />}
 
       <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="modes-title">
         <h2 id="modes-title" className="font-display text-title font-bold tracking-tight">{t('home.modes')}</h2>

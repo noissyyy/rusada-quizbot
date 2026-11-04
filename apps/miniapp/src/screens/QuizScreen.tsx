@@ -93,13 +93,14 @@ export function QuizScreen() {
 
   // Whole-test time is over → finish; unanswered questions score 0 on the server
   useEffect(() => {
-    if (phase === 'answering' && timer && isExpired(timer, now)) { haptic.error(); void finish(true); }
+    if ((phase === 'answering' || phase === 'feedback') && timer && isExpired(timer, now)) { haptic.error(); void finish(true); }
   }, [phase, timer, now, finish]);
 
-  // Feedback auto-advance
+  // The answer stays on screen until «Дальше»; the clock is paused only for the
+  // short display window the server grants, then it runs again (as on the server).
   useEffect(() => {
-    if (phase === 'feedback' && now >= feedbackEnd.at) next();
-  }, [phase, now, feedbackEnd, next]);
+    if (phase === 'feedback' && now >= feedbackEnd.at) setTimer((tm) => (tm ? resume(tm, Date.now()) : tm));
+  }, [phase, now, feedbackEnd]);
 
   async function submit() {
     if (!session || selected === null || phase !== 'answering') return;
@@ -197,10 +198,16 @@ export function QuizScreen() {
         </div>
       )}
 
+      {inFeedback && feedback.explanation && (
+        <p role="note" className="rounded-[18px] bg-surface px-4 py-3.5 text-[14px] leading-5 text-ink-2 shadow-card">{feedback.explanation}</p>
+      )}
+
       {inFeedback && (
-        <FeedbackSheet result={feedback} correctText={q.options.find((o) => o.id === feedback.correctOptionId)?.text ?? ''}
-          progress={Math.max(0, Math.min(1, (feedbackEnd.at - now) / feedbackEnd.duration))}
-          nextLabel={isLast ? t('quiz.toResult') : t('quiz.next')} onNext={next} />
+        <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-[480px] bg-gradient-to-b from-canvas/0 via-canvas to-canvas px-[18px] pt-4" style={{ paddingBottom: 'calc(var(--safe-bottom) + 30px)' }}>
+          <button type="button" onClick={next} className="h-14 w-full rounded-control bg-primary text-[16px] font-bold text-white shadow-primary">
+            {isLast ? t('quiz.toResult') : t('quiz.next')}
+          </button>
+        </div>
       )}
 
       {exitOpen && (
@@ -217,28 +224,5 @@ export function QuizScreen() {
         </div>
       )}
     </div>
-  );
-}
-
-function FeedbackSheet({ result, correctText, progress, nextLabel, onNext }: { result: AnswerResult; correctText: string; progress: number; nextLabel: string; onNext: () => void }) {
-  const { t } = useI18n();
-  const ok = result.outcome === 'correct';
-  return (
-    <section role="status" className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[480px] flex-col gap-3.5 rounded-t-hero bg-surface px-5 pt-3.5 shadow-[0_-10px_40px_rgba(26,21,48,.14)]" style={{ paddingBottom: 'calc(var(--safe-bottom) + 30px)' }}>
-      <span aria-hidden className="mx-auto h-[5px] w-10 rounded-full bg-line" />
-      <div className="flex items-center gap-3">
-        <span className={clsx('grid size-[52px] shrink-0 place-items-center rounded-[18px] text-white', ok ? 'bg-success' : 'bg-error')}>
-          <Icon name={ok ? 'check' : 'x'} size={26} strokeWidth={2.6} />
-        </span>
-        <span className="font-display text-[22px] font-extrabold tracking-tight">{ok ? t('quiz.correct') : t('quiz.wrong')}</span>
-        <span className={clsx('ml-auto rounded-full px-3 py-1.5 text-body font-extrabold', ok ? 'bg-success-50 text-success-ink' : 'bg-track text-muted')}>+{result.pointsAwarded}</span>
-      </div>
-      {!ok && <p className="text-[14px] text-muted">{t('quiz.correctAnswer')} <b className="text-ink">{correctText}</b></p>}
-      {result.explanation && <p className="rounded-control bg-canvas px-3.5 py-3 text-[14px] leading-5 text-ink-2">{result.explanation}</p>}
-      <div role="progressbar" aria-label={t('quiz.autoNext')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} className="h-1 overflow-hidden rounded-full bg-track">
-        <div className="h-full bg-primary" style={{ width: `${progress * 100}%` }} />
-      </div>
-      <button type="button" onClick={onNext} className="h-[52px] rounded-control bg-primary-50 text-[16px] font-bold text-primary">{nextLabel}</button>
-    </section>
   );
 }

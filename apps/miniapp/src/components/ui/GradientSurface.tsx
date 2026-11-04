@@ -19,6 +19,19 @@ export const gradient: Record<GradientTone, { bg: string; shadow: string; text: 
   peach: { bg: 'linear-gradient(135deg, #FFB35C 0%, #FF7A45 50%, #E8553A 100%)', shadow: '0 12px 24px rgba(232,85,58,.28)', text: 'light' },
   pink: { bg: 'linear-gradient(135deg, #FF8FB1 0%, #E8457A 55%, #C42A5E 100%)', shadow: '0 12px 24px rgba(196,42,94,.26)', text: 'light' },
   yellow: { bg: 'linear-gradient(135deg, #FFE27A 0%, #FFC83D 55%, #F5A70B 100%)', shadow: '0 12px 24px rgba(245,167,11,.28)', text: 'dark' },
+  sky: { bg: 'linear-gradient(135deg, #5CC8F0 0%, #1E9FD6 55%, #127AA8 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  indigo: { bg: 'linear-gradient(135deg, #8C97FF 0%, #5562E8 55%, #3A44C4 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  lavender: { bg: 'linear-gradient(135deg, #D08CFF 0%, #A452E8 55%, #8034C4 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  plum: { bg: 'linear-gradient(135deg, #F08BD8 0%, #C94BB0 55%, #A0318C 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  rose: { bg: 'linear-gradient(135deg, #FF8A80 0%, #F0504A 55%, #C9332E 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  coral: { bg: 'linear-gradient(135deg, #FF9E7A 0%, #FF6B4A 55%, #D9472E 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  orange: { bg: 'linear-gradient(135deg, #FFC06B 0%, #FF9A2E 55%, #E07A0B 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  sand: { bg: 'linear-gradient(135deg, #E3C08A 0%, #C99A55 55%, #A3773A 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  lime: { bg: 'linear-gradient(135deg, #C8EC7E 0%, #9BD142 55%, #6FA81E 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'dark' },
+  green: { bg: 'linear-gradient(135deg, #6FD98A 0%, #2FB457 55%, #1E8A3E 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  olive: { bg: 'linear-gradient(135deg, #C3C77A 0%, #9AA04A 55%, #767C2E 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  slate: { bg: 'linear-gradient(135deg, #8EA0B8 0%, #5F7590 55%, #435770 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
+  gray: { bg: 'linear-gradient(135deg, #A9A9BC 0%, #7C7C93 55%, #5A5A70 100%)', shadow: '0 12px 24px rgba(26,21,48,.22)', text: 'light' },
 };
 
 export const toneText = (tone: GradientTone) => (gradient[tone].text === 'light' ? 'text-white' : 'text-ink');

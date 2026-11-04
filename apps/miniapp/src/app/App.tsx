@@ -13,7 +13,8 @@ import { TimeUpScreen } from '../screens/TimeUpScreen';
 import { ResultScreen } from '../screens/ResultScreen';
 import { ReviewScreen } from '../screens/ReviewScreen';
 import { RatingScreen } from '../screens/RatingScreen';
-import { ProfileScreen } from '../screens/ProfileScreen';
+import { HistoryScreen, ProfileScreen } from '../screens/ProfileScreen';
+import { BookScreen, BooksScreen } from '../screens/BooksScreens';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { ShareResultScreen } from '../screens/ShareResultScreen';
 import { GroupHubScreen, GroupJoinScreen, GroupResultScreen } from '../screens/GroupScreens';
@@ -58,8 +59,11 @@ function Shell() {
         <Route path="/group" element={<GroupHubScreen />} />
         <Route path="/group/:aid" element={<GroupJoinScreen />} />
         <Route path="/group/:aid/result" element={<GroupResultScreen />} />
+        <Route path="/books" element={<BooksScreen />} />
+        <Route path="/books/:id" element={<BookScreen />} />
         <Route path="/rating" element={<RatingScreen />} />
         <Route path="/profile" element={<ProfileScreen />} />
+        <Route path="/profile/history" element={<HistoryScreen />} />
         <Route path="/notifications" element={<NotificationsScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

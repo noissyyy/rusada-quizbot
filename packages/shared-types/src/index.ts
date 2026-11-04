@@ -7,7 +7,8 @@
 export type ID = string;
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type QuizMode = 'individual' | 'live' | 'group';
-export type TopicColor = 'blue' | 'violet' | 'mint' | 'peach' | 'pink' | 'yellow';
+export const TOPIC_COLORS = ['blue', 'violet', 'mint', 'peach', 'pink', 'yellow', 'sky', 'indigo', 'lavender', 'plum', 'rose', 'coral', 'orange', 'sand', 'lime', 'green', 'teal', 'olive', 'slate', 'gray'] as const;
+export type TopicColor = (typeof TOPIC_COLORS)[number];
 
 export type Role = 'student' | 'host' | 'admin' | 'superadmin';
 
@@ -198,6 +199,16 @@ export interface AppNotification {
 /* ---------- Group mode ---------- */
 
 export interface GroupBoardEntry { rank: number; name: string; points: number; me: boolean }
+
+export interface Book {
+  id: ID;
+  title: string;
+  author: string;
+  description: string;
+  price: string;
+  link: string;
+  coverUrl: string | null;
+}
 
 export interface GroupHubItem {
   id: ID;

@@ -2,6 +2,12 @@ import type { SVGProps } from 'react';
 
 /** Single-stroke 24px icon set (1.8px stroke, round caps). Add icons here, never inline ad-hoc SVGs in screens. */
 const paths = {
+  book: (
+    <>
+      <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z" />
+      <path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7h6" />
+    </>
+  ),
   home: <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z" />,
   grid: (
     <>

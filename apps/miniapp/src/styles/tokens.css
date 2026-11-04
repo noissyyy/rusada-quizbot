@@ -41,6 +41,20 @@
   --color-topic-peach: #FFEBDD;
   --color-topic-pink: #FDE6EB;
   --color-topic-yellow: #FFF3D1;
+  --color-topic-sky: #DDF3FB;
+  --color-topic-indigo: #E4E7FD;
+  --color-topic-lavender: #F3E8FD;
+  --color-topic-plum: #F8E3F5;
+  --color-topic-rose: #FFE4E1;
+  --color-topic-coral: #FFE8E0;
+  --color-topic-orange: #FFEFD9;
+  --color-topic-sand: #F6EEDF;
+  --color-topic-lime: #EEF7D6;
+  --color-topic-green: #DDF3E0;
+  --color-topic-teal: #DCF4F1;
+  --color-topic-olive: #EEF0DC;
+  --color-topic-slate: #E7EBF0;
+  --color-topic-gray: #EEEEF2;
 
   /* Radii: 12 chip · 16 control · 24 card · 32 hero/sheet */
   --radius-sm: 12px;
