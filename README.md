@@ -38,7 +38,7 @@ Kerak: Linux server (2 GB RAM yetadi), Docker, ikkita domen nomi (masalan `quiz.
 4. Telegram'da botga `/start` yozing → ilova ochiladi. `SUPERADMIN_TELEGRAM_IDS` ga yozilgan odam botga `/admin` yozsa, admin panelga kirish havolasi keladi.
 5. Botni guruhga qo‘shing va **administrator** qiling — guruh admin panelning «Группы» bo‘limida paydo bo‘ladi.
 
-Zaxira nusxa: har kuni 03:00 da `./backups/` papkasiga (14 kun saqlanadi).
+Zaxira nusxa: har kuni 03:00 da `./backups/` papkasiga (14 kun saqlanadi) va nusxasi Telegram orqali super-adminlarga yuboriladi. Disk 80% to‘lsa, bot ogohlantiradi.
 Yangilash: `cd /opt/rusada && git pull && docker compose pull && docker compose up -d` (baza migratsiyasi avtomatik).
 
 ## Dasturchi uchun

@@ -1,6 +1,12 @@
 # Two HTTPS sites; certificates are issued automatically (Let's Encrypt).
 {$MINIAPP_DOMAIN} {
 	encode zstd gzip
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	@media path /3d/* /brand/* /fonts/*
+	header @media Cache-Control "public, max-age=2592000"
+	@html path / /index.html
+	header @html Cache-Control "no-cache"
 	handle /api/* {
 		reverse_proxy api:8000
 	}
@@ -18,6 +24,12 @@
 
 {$ADMIN_DOMAIN} {
 	encode zstd gzip
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	@media path /3d/* /brand/* /fonts/*
+	header @media Cache-Control "public, max-age=2592000"
+	@html path / /index.html
+	header @html Cache-Control "no-cache"
 	handle /api/* {
 		reverse_proxy api:8000
 	}
