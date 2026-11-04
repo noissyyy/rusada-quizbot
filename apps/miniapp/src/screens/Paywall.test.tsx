@@ -6,11 +6,11 @@ import type { AccessInfo } from '@rq/shared-types';
 import { I18nProvider } from '../lib/i18n';
 import { setApi } from '../data/api';
 import { mockApi } from '../data/mock';
-import { PaywallScreen } from './PaywallScreen';
+import { PaywallScreen, roundDown } from './PaywallScreen';
 
 const closed: AccessInfo = {
   telegramId: 123456789, username: null, hasAccess: false, reason: null, mode: 'closed', subscriptionEndsAt: null, priceUzs: 100000, days: 30,
-  cardNumber: '8600 1234 5678 9012', cardHolder: 'RUSADA', note: '', supportUsername: 'rusada_admin', pending: null, rejectedComment: null,
+  cardNumber: '8600 1234 5678 9012', cardHolder: 'RUSADA', note: '', supportUsername: 'rusada_admin', pending: null, rejectedComment: null, questionsCount: 10432, booksCount: 4,
 };
 
 function renderPaywall(access: AccessInfo, onChanged = () => undefined) {
@@ -22,6 +22,8 @@ describe('PaywallScreen', () => {
     renderPaywall(closed);
     expect(screen.getByText('Что входит')).toBeInTheDocument();
     expect(screen.getByText('Библиотека')).toBeInTheDocument();
+    expect(screen.getByText('Сборник из 10 000+ вопросов')).toBeInTheDocument(); // rounded down, never overstated
+    expect(screen.getByText('Командные турниры')).toBeInTheDocument();
     expect(screen.getByText('8600 1234 5678 9012')).toBeInTheDocument();
     expect(screen.getAllByText(/@rusada_admin/).length).toBeGreaterThan(0);
     expect(screen.getByText('123456789')).toBeInTheDocument(); // own Telegram ID to send to the admin
@@ -40,5 +42,11 @@ describe('PaywallScreen', () => {
     renderPaywall({ ...closed, pending: { id: 'p', createdAt: new Date().toISOString() } });
     expect(screen.getByText('Чек на проверке')).toBeInTheDocument();
     expect(screen.queryByText('Загрузить чек')).not.toBeInTheDocument();
+  });
+});
+
+describe('roundDown', () => {
+  it('never shows more than there really is', () => {
+    expect([roundDown(7), roundDown(118), roundDown(2450), roundDown(10432)]).toEqual([7, 100, 2000, 10000]);
   });
 });

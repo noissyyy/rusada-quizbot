@@ -228,6 +228,9 @@ export interface AccessInfo {
   supportUsername: string;
   pending: { id: ID; createdAt: string } | null;
   rejectedComment: string | null;
+  /** real counts for the subscription page */
+  questionsCount: number;
+  booksCount: number;
 }
 
 export interface GroupHubItem {

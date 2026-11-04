@@ -4,7 +4,7 @@ import { blobUrl, del, get, post, put } from '../lib/api';
 import { fmtDate, useLoad, useToast } from '../lib/hooks';
 import { Button, Card, Empty, ErrorBox, Field, Input, Modal, PageHeader, Pill, Segmented, Spinner, Table, Textarea } from '../components/ui';
 
-interface AccessSettings { mode: 'open' | 'closed'; priceUzs: number; days: number; cardNumber: string; cardHolder: string; note: string; supportUsername: string }
+interface AccessSettings { mode: 'open' | 'closed'; questionsClaim: number; priceUzs: number; days: number; cardNumber: string; cardHolder: string; note: string; supportUsername: string }
 interface Stats { pending: number; activeSubscribers: number; members: number }
 interface Payment { id: string; userId: string; name: string; username: string | null; status: 'pending' | 'approved' | 'rejected'; amount: number; days: number; comment: string; createdAt: string; decidedAt: string | null; subscriptionEndsAt: string | null }
 interface MemberRow { id: string; username: string | null; telegramId: number | null; note: string; seen: boolean; name: string | null; addedAt: string }
@@ -78,6 +78,9 @@ function SettingsCard() {
             <Field label="Номер карты" className="col-span-2 lg:col-span-1"><Input value={s.cardNumber} placeholder="8600 0000 0000 0000" onChange={(e) => setS({ ...s, cardNumber: e.target.value })} /></Field>
             <Field label="Владелец карты" className="col-span-2 lg:col-span-1"><Input value={s.cardHolder} placeholder="Как на карте" onChange={(e) => setS({ ...s, cardHolder: e.target.value })} /></Field>
           </div>
+          <Field label="Сколько вопросов писать на странице оплаты" hint="будет «3 000+ вопросов»; когда настоящих вопросов станет больше, покажется настоящее число. 0 — только настоящее число">
+            <Input type="number" min={0} step={100} value={s.questionsClaim} onChange={(e) => setS({ ...s, questionsClaim: Number(e.target.value) })} />
+          </Field>
           <Field label="Подсказка ученику" hint="необязательно"><Textarea value={s.note} placeholder="Например: в комментарии к переводу укажите ваш @username" onChange={(e) => setS({ ...s, note: e.target.value })} /></Field>
           <Field label="Кому писать ученикам Rusada" hint="@username администратора"><Input value={s.supportUsername} placeholder="@rusada_admin" onChange={(e) => setS({ ...s, supportUsername: e.target.value })} /></Field>
           {err && <p role="alert" className="text-[13px] font-semibold text-error-ink">{err}</p>}

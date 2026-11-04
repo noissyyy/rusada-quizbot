@@ -24,6 +24,7 @@ export function DashboardPage() {
       <PageHeader title={`${hello}, ${me.name.split(' ')[0]}`} sub={`Сводка по платформе за последние ${days} дней`}>
         {can(me, 'admin') && <Link to="/questions/new" className="inline-flex h-11 items-center gap-2 rounded-[14px] bg-primary px-4 text-[14px] font-bold text-white shadow-[0_8px_18px_rgba(106,61,240,.28)]"><Icon name="plus" size={18} />Новый вопрос</Link>}
       </PageHeader>
+      {can(me, 'admin') && <SalesCard />}
       {state.status === 'loading' && <Spinner />}
       {state.status === 'error' && <ErrorBox error={state.error} onRetry={reload} />}
       {state.status === 'ok' && <Body d={state.data} days={days} setDays={setDays} />}
@@ -105,3 +106,67 @@ function Body({ d, days, setDays }: { d: Dash; days: '7' | '30'; setDays: (v: '7
     </>
   );
 }
+
+interface Sales {
+  totalCount: number; totalRevenue: number; monthCount: number; monthRevenue: number; activeSubscribers: number; pending: number;
+  manualGrants: number; months: { month: string; count: number; revenue: number }[];
+  recent: { name: string; username: string | null; amount: number; at: string | null }[];
+}
+const sumFmt = (n: number) => `${n.toLocaleString('ru-RU')} сум`;
+const monthName = (ym: string) => new Date(`${ym}-01T12:00:00`).toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '');
+
+/** Money from confirmed card payments — admins only. */
+function SalesCard() {
+  const { state } = useLoad(() => get<Sales>('/api/admin/sales'));
+  if (state.status !== 'ok') return null;
+  const s = state.data;
+  const max = Math.max(1, ...s.months.map((m) => m.revenue));
+  const tiles: [string, string, string][] = [
+    ['Выручка за месяц', sumFmt(s.monthRevenue), `${s.monthCount} оплат`],
+    ['Выручка всего', sumFmt(s.totalRevenue), `${s.totalCount} подтверждённых оплат`],
+    ['Активные подписчики', fmtNum(s.activeSubscribers), s.manualGrants ? `ещё ${s.manualGrants} выдано вручную` : 'с действующей подпиской'],
+    ['Чеки на проверке', fmtNum(s.pending), s.pending ? 'ждут подтверждения' : 'всё проверено'],
+  ];
+  return (
+    <Card title="Продажи подписки" action={<Link to="/access" className="text-[13px] font-bold text-primary">Доступ и оплата →</Link>}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+        {tiles.map(([l, v, sub], i) => (
+          <div key={l} className={clsx('rounded-[18px] p-4', i === 3 && s.pending ? 'bg-warning-50' : 'bg-canvas')}>
+            <div className="text-[13px] font-semibold text-muted">{l}</div>
+            <div className="mt-1 font-display text-[24px] font-extrabold tabular-nums">{v}</div>
+            <div className="text-[12px] text-muted">{sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <div>
+          <div className="mb-2 text-[13px] font-bold text-ink-2">Выручка по месяцам</div>
+          <div className="flex h-[140px] items-end gap-3">
+            {s.months.map((m) => (
+              <div key={m.month} className="flex flex-1 flex-col items-center gap-1.5" title={`${sumFmt(m.revenue)} · ${m.count} оплат`}>
+                <span className="text-[11px] font-bold tabular-nums text-muted">{m.revenue ? `${Math.round(m.revenue / 1000)}k` : ''}</span>
+                <span className="w-full max-w-[44px] rounded-t-[8px] bg-primary" style={{ height: `${Math.max(3, (m.revenue / max) * 96)}px`, opacity: m.revenue ? 1 : 0.15 }} />
+                <span className="text-[12px] font-semibold text-muted">{monthName(m.month)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="mb-2 text-[13px] font-bold text-ink-2">Последние оплаты</div>
+          {s.recent.length === 0 ? <p className="text-[13px] text-muted">Подтверждённых оплат пока нет.</p> : (
+            <ul className="flex flex-col divide-y divide-line">
+              {s.recent.map((r, i) => (
+                <li key={i} className="flex items-center justify-between gap-3 py-2 text-[14px]">
+                  <span className="min-w-0"><span className="block truncate font-semibold">{r.name}</span><span className="text-[12px] text-muted">{r.username ? `@${r.username} · ` : ''}{r.at ? ago(r.at) : ''}</span></span>
+                  <span className="shrink-0 font-bold tabular-nums">{sumFmt(r.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+      <p className="mt-4 text-[12px] text-muted">Считаются только подтверждённые чеки. Это выручка, а не чистая прибыль: расходы (сервер, налоги, комиссии) здесь не учтены.</p>
+    </Card>
+  );
+}
+

@@ -4,19 +4,16 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../data/api';
 import { useI18n } from '../lib/i18n';
-import type { MessageKey } from '../lib/i18n/dict';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
 import { GradientDecor, Icon, toneStyle } from '../components/ui';
 import { langCode } from '../components/brand/Flag';
 
-const BENEFITS: [string, MessageKey, MessageKey][] = [
-  ['T01', 'pay.b.tests', 'pay.b.testsText'],
-  ['T09', 'pay.b.library', 'pay.b.libraryText'],
-  ['M02', 'pay.b.live', 'pay.b.liveText'],
-  ['E01', 'pay.b.review', 'pay.b.reviewText'],
-  ['R01', 'pay.b.rating', 'pay.b.ratingText'],
-  ['M03', 'pay.b.group', 'pay.b.groupText'],
-];
+/** 118 → «100», 10 432 → «10 000»: a round number that never overstates the real count. */
+export function roundDown(n: number): number {
+  if (n < 10) return n;
+  const step = n < 100 ? 10 : n < 1000 ? 100 : 1000;
+  return Math.floor(n / step) * step;
+}
 
 const fmtSum = (n: number) => n.toLocaleString('ru-RU').replace(/ /g, ' ');
 
@@ -75,12 +72,15 @@ export function PaywallScreen({ access, onChanged }: { access: AccessInfo; onCha
 
       <section className="flex flex-col gap-2.5" aria-labelledby="benefits">
         <h2 id="benefits" className="font-display text-title font-bold tracking-tight">{t('pay.whatYouGet')}</h2>
-        <ul className="grid grid-cols-2 gap-2.5">
-          {BENEFITS.map(([art, title, text]) => (
-            <li key={art} className="flex flex-col gap-1 rounded-[20px] bg-surface p-3.5 shadow-card">
-              <img src={`/3d/rq-3d-${art}.webp`} alt="" className="size-12 object-contain" />
-              <span className="text-[15px] font-bold leading-5">{t(title)}</span>
-              <span className="text-[12px] leading-4 text-muted">{t(text)}</span>
+        <ul className="flex flex-col gap-2.5">
+          {([
+            ['H02', access.questionsCount >= 10 ? t('pay.b.testsN', { n: fmtSum(roundDown(access.questionsCount)) }) : t('pay.b.tests'), t('pay.b.testsText')],
+            ['T09', t('pay.b.library'), access.booksCount > 0 ? `${t('pay.b.libraryText')} · ${t('pay.b.booksN', { n: access.booksCount })}` : t('pay.b.libraryText')],
+            ['R01', t('pay.b.tournaments'), t('pay.b.tournamentsText')],
+          ] as const).map(([art, title, text]) => (
+            <li key={art} className="flex items-center gap-3.5 rounded-[22px] bg-surface p-3.5 shadow-card">
+              <span className="grid size-16 shrink-0 place-items-center rounded-[18px] bg-canvas"><img src={`/3d/rq-3d-${art}.webp`} alt="" className="size-14 object-contain" /></span>
+              <span className="flex flex-col gap-0.5"><span className="font-display text-[17px] font-bold leading-[22px]">{title}</span><span className="text-[13px] leading-[18px] text-ink-2">{text}</span></span>
             </li>
           ))}
         </ul>
