@@ -12,6 +12,7 @@ import { QuizBuilderPage } from './pages/QuizBuilder';
 import { TopicsPage } from './pages/Topics';
 import { TopicDetailPage } from './pages/TopicDetail';
 import { BooksPage } from './pages/Books';
+import { AccessPage } from './pages/Access';
 import { LivePage, LiveControlPage } from './pages/Live';
 import { GroupsPage } from './pages/Groups';
 import { UsersPage } from './pages/Users';
@@ -28,6 +29,7 @@ const NAV: { to: string; label: string; icon: IconName; role: Role }[] = [
   { to: '/live', label: 'Прямые эфиры', icon: 'live', role: 'host' },
   { to: '/groups', label: 'Группы', icon: 'groups', role: 'host' },
   { to: '/users', label: 'Пользователи', icon: 'users', role: 'admin' },
+  { to: '/access', label: 'Доступ и оплата', icon: 'lock', role: 'admin' },
   { to: '/results', label: 'Результаты', icon: 'results', role: 'host' },
   { to: '/import', label: 'Импорт Excel', icon: 'import', role: 'admin' },
   { to: '/settings', label: 'Настройки', icon: 'settings', role: 'admin' },
@@ -87,6 +89,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <Route path="/topics" element={<Guard role="admin"><TopicsPage /></Guard>} />
           <Route path="/topics/:id" element={<Guard role="admin"><TopicDetailPage /></Guard>} />
           <Route path="/books" element={<Guard role="admin"><BooksPage /></Guard>} />
+          <Route path="/access" element={<Guard role="admin"><AccessPage /></Guard>} />
           <Route path="/live" element={<LivePage />} />
           <Route path="/live/:id" element={<LiveControlPage />} />
           <Route path="/groups" element={<GroupsPage />} />

@@ -15,6 +15,8 @@ import { ReviewScreen } from '../screens/ReviewScreen';
 import { RatingScreen } from '../screens/RatingScreen';
 import { HistoryScreen, ProfileScreen } from '../screens/ProfileScreen';
 import { BookScreen, BooksScreen } from '../screens/BooksScreens';
+import { PaywallScreen } from '../screens/PaywallScreen';
+import { AccessProvider, useAccess } from '../lib/access';
 import { ReaderScreen } from '../screens/ReaderScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { ShareResultScreen } from '../screens/ShareResultScreen';
@@ -42,6 +44,9 @@ function Shell() {
   const { pathname } = useLocation();
   const { chosen } = useI18n();
   const showNav = !NAVLESS.some((r) => r.test(pathname));
+  const { access, reload } = useAccess();
+  // closed for this person: only the subscription page (and the language switch) is available
+  if (chosen && access && !access.hasAccess && pathname !== '/language') return <PaywallScreen access={access} onChanged={reload} />;
   return (
     <>
       <Routes>
@@ -82,7 +87,9 @@ export function App() {
   if (booting) return <SplashScreen />;
   return (
     <BrowserRouter>
-      <Shell />
+      <AccessProvider>
+        <Shell />
+      </AccessProvider>
     </BrowserRouter>
   );
 }

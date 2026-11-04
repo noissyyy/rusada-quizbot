@@ -45,10 +45,13 @@ async def client():
         yield c
 
 
-def tma(user_id: int, first_name: str = "Алексей", last_name: str = "Иванов", auth_date: int | None = None) -> dict:
+def tma(user_id: int, first_name: str = "Алексей", last_name: str = "Иванов", auth_date: int | None = None,
+        username: str | None = None) -> dict:
+    u = {"id": user_id, "first_name": first_name, "last_name": last_name, "language_code": "ru"}
+    if username:
+        u["username"] = username
     fields = {"auth_date": str(auth_date or int(time.time())), "query_id": "AAE",
-              "user": json.dumps({"id": user_id, "first_name": first_name, "last_name": last_name,
-                                  "language_code": "ru"}, ensure_ascii=False)}
+              "user": json.dumps(u, ensure_ascii=False)}
     return {"Authorization": "tma " + sign_init_data(fields, os.environ["BOT_TOKEN"])}
 
 

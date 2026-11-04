@@ -1,5 +1,5 @@
 import type {
-  AnswerResult, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
+  AccessInfo, AnswerResult, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
   Rating, RatingKind, RatingPeriod, SessionResult, SessionStart, SettingsPatch, TestSummary, TopicSummary, TopicTest,
   UserProfile,
 } from '@rq/shared-types';
@@ -28,6 +28,9 @@ export interface QuizApi {
   getNotifications(): Promise<AppNotification[]>;
   readAllNotifications(): Promise<void>;
 
+  getAccess(): Promise<AccessInfo>;
+  /** sends a screenshot of the card-transfer receipt */
+  sendReceipt(file: File): Promise<{ id: string; createdAt: string }>;
   getBooks(): Promise<Book[]>;
   /** one page of a book as an image (stamped with the reader's ID on the server) */
   getBookPage(bookId: string, page: number): Promise<Blob>;

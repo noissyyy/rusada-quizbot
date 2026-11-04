@@ -15,7 +15,7 @@ from ..schemas import (AnswerBody, AnswerResult, FinishBody, GroupAssignmentView
                        HomeFeed, InProgressAttempt, LiveAnswerBody, LiveJoinBody, LiveListItem, LiveState,
                        NotificationOut, Profile, QuickStart, Rating, SessionResult, SessionStart, SettingsPatch,
                        StartBody, TestSummary, TopicSummary, TopicTest, UserProfile)
-from ..security import InitDataError, current_user, upsert_user, validate_init_data, TgUser
+from ..security import InitDataError, current_user, telegram_user, upsert_user, validate_init_data, TgUser
 from ..services import catalog, live as live_svc, quiz as quiz_svc
 from .. import telegram
 
@@ -30,7 +30,7 @@ async def _quiz(db: AsyncSession, quiz_id: str) -> Quiz:
 
 
 @router.get("/me", response_model=UserProfile)
-async def me(user: User = Depends(current_user)):
+async def me(user: User = Depends(telegram_user)):
     return catalog.user_profile(user)
 
 
@@ -155,7 +155,7 @@ async def profile(user: User = Depends(current_user), db: AsyncSession = Depends
 
 
 @router.patch("/profile/settings", response_model=UserProfile)
-async def update_settings(body: SettingsPatch, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+async def update_settings(body: SettingsPatch, user: User = Depends(telegram_user), db: AsyncSession = Depends(get_db)):
     for k, v in body.model_dump(exclude_none=True).items():
         setattr(user, k, v)
     await db.commit()

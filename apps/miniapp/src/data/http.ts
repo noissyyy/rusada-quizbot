@@ -30,6 +30,7 @@ export function createHttpApi(baseUrl: string): QuizApi {
     }
     if (res.status === 204) return undefined as T;
     const data = await res.json().catch(() => ({}));
+    if (res.status === 402) window.dispatchEvent(new Event('rq:paywall')); // access ended while using the app
     if (!res.ok) throw new ApiError(res.status, typeof data.detail === 'string' ? data.detail : res.statusText);
     return data as T;
   }
@@ -54,6 +55,20 @@ export function createHttpApi(baseUrl: string): QuizApi {
     getNotifications: () => get('/api/notifications'),
     readAllNotifications: () => post('/api/notifications/read-all'),
 
+    getAccess: () => get('/api/access'),
+    async sendReceipt(file) {
+      const fd = new FormData();
+      fd.append('file', file);
+      let res: Response;
+      try {
+        res = await fetch(`${base}/api/payments`, { method: 'POST', headers: { Authorization: authHeader() }, body: fd });
+      } catch {
+        throw new OfflineError();
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new ApiError(res.status, typeof data.detail === 'string' ? data.detail : res.statusText);
+      return data;
+    },
     getBooks: () => get('/api/books'),
     async getBookPage(bookId, page) {
       let res: Response;

@@ -12,6 +12,9 @@ export const mockTests: TestSummary[] = [
 ];
 
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
+let mockPending: { id: string; createdAt: string } | null = null;
+// demo: open the app with ?paywall=1 to see the subscription page (read once, before any redirect)
+const DEMO_PAYWALL = typeof location !== 'undefined' && new URLSearchParams(location.search).has('paywall');
 
 /** Live demo: a scripted host that opens questions and reveals answers on a timer. */
 function liveTick(): LiveState {
@@ -49,6 +52,20 @@ export const mockApi: QuizApi = {
   async getNotifications() { await wait(); return server.notifications.map((n) => ({ ...n })); },
   async readAllNotifications() { await wait(100); server.notifications.forEach((n) => { n.read = true; }); },
 
+  async getAccess() {
+    await wait();
+    const closed = DEMO_PAYWALL;
+    return {
+      hasAccess: !closed, reason: closed ? null : 'open', mode: closed ? 'closed' : 'open', subscriptionEndsAt: null,
+      priceUzs: 100000, days: 30, cardNumber: '8600 1234 5678 9012', cardHolder: 'RUSADA O‘QUV MARKAZI', note: '',
+      supportUsername: 'rusada_admin', pending: mockPending, rejectedComment: null,
+    } as const;
+  },
+  async sendReceipt() {
+    await wait(800);
+    mockPending = { id: 'p1', createdAt: new Date().toISOString() };
+    return mockPending;
+  },
   async getBooks() {
     await wait();
     return [
