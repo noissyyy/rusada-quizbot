@@ -55,6 +55,16 @@ export function createHttpApi(baseUrl: string): QuizApi {
     readAllNotifications: () => post('/api/notifications/read-all'),
 
     getBooks: () => get('/api/books'),
+    async getBookPage(bookId, page) {
+      let res: Response;
+      try {
+        res = await fetch(`${base}/api/books/${encodeURIComponent(bookId)}/pages/${page}`, { headers: { Authorization: authHeader() }, cache: 'no-store' });
+      } catch {
+        throw new OfflineError();
+      }
+      if (!res.ok) throw new ApiError(res.status, res.statusText);
+      return res.blob();
+    },
     getGroupHub: () => get('/api/group'),
     getGroupAssignment: (id) => get(`/api/group/${id}`),
     getGroupResult: (id) => get(`/api/group/${id}/result`),

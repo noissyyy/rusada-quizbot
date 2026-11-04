@@ -6,7 +6,7 @@ import { useI18n } from '../lib/i18n';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
 import { Screen } from '../components/Screen';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { Skeleton } from '../components/ui';
+import { Icon, Skeleton } from '../components/ui';
 import { ErrorView } from '../components/states/StateViews';
 import { BookCover } from '../components/books/BookCover';
 
@@ -66,10 +66,18 @@ export function BookScreen() {
             {book.price && <span className="mt-1 font-display text-[20px] font-extrabold text-primary">{book.price}</span>}
           </section>
           {book.description && <p className="whitespace-pre-line rounded-card bg-surface p-4 text-body leading-6 text-ink-2 shadow-card">{book.description}</p>}
-          {book.link && (
-            <button type="button" onClick={() => { haptic.tap(); openExternal(book.link); }}
-              className="h-14 rounded-control bg-primary text-[16px] font-bold text-white shadow-primary">{t('books.buy')}</button>
-          )}
+          <div className="flex flex-col gap-2.5">
+            {book.pages > 0 && (
+              <Link to={`/books/${book.id}/read`} onClick={() => haptic.tap()}
+                className="flex h-14 items-center justify-center gap-2 rounded-control bg-primary text-[16px] font-bold text-white shadow-primary">
+                <Icon name="book" size={20} />{t('books.read')} · {t('books.pages', { n: book.pages })}
+              </Link>
+            )}
+            {book.link && (
+              <button type="button" onClick={() => { haptic.tap(); openExternal(book.link); }}
+                className={book.pages > 0 ? 'h-[52px] rounded-control bg-surface text-[16px] font-bold text-ink shadow-card' : 'h-14 rounded-control bg-primary text-[16px] font-bold text-white shadow-primary'}>{t('books.buy')}</button>
+            )}
+          </div>
         </>
       )}
     </Screen>

@@ -7,7 +7,7 @@ import { Icon, type IconName } from './ui';
 
 const items: { to: string; label: MessageKey; icon: IconName }[] = [
   { to: '/', label: 'nav.home', icon: 'home' },
-  { to: '/tests', label: 'nav.tests', icon: 'grid' },
+  { to: '/tests', label: 'nav.tests', icon: 'tests' },
   { to: '/books', label: 'nav.books', icon: 'book' },
   { to: '/rating', label: 'nav.rating', icon: 'trophy' },
   { to: '/profile', label: 'nav.profile', icon: 'user' },

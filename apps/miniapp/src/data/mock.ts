@@ -52,12 +52,17 @@ export const mockApi: QuizApi = {
   async getBooks() {
     await wait();
     return [
-      { id: 'b1', title: 'Тесты по литературе', author: 'Д. Алиева, Е. Торкунова', price: '85 000 сум', link: 'https://t.me/rusada_uz', coverUrl: null,
+      { id: 'b1', title: 'Тесты по литературе', author: 'Д. Алиева, Е. Торкунова', price: '85 000 сум', link: 'https://t.me/rusada_uz', coverUrl: null, pages: 12,
         description: 'Сборник тестов по русской литературе: от Жуковского до Булгакова. Варианты с ответами для подготовки к экзаменам.' },
-      { id: 'b2', title: 'Русский язык. Морфология', author: 'Rusada', price: '70 000 сум', link: 'https://t.me/rusada_uz', coverUrl: null,
+      { id: 'b2', title: 'Русский язык. Морфология', author: 'Rusada', price: '70 000 сум', link: 'https://t.me/rusada_uz', coverUrl: null, pages: 0,
         description: 'Правила и упражнения по частям речи с ключами.' },
-      { id: 'b3', title: 'Орфография без ошибок', author: 'Rusada', price: '', link: '', coverUrl: null, description: 'Справочник с примерами.' },
+      { id: 'b3', title: 'Орфография без ошибок', author: 'Rusada', price: '', link: '', coverUrl: null, pages: 0, description: 'Справочник с примерами.' },
     ];
+  },
+  async getBookPage(_id: string, page: number) {
+    await wait();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="600" height="800" fill="#fff"/><text x="300" y="400" font-size="48" text-anchor="middle" fill="#6A3DF0">Страница ${page}</text></svg>`;
+    return new Blob([svg], { type: 'image/svg+xml' });
   },
   async getGroupHub() {
     await wait();
