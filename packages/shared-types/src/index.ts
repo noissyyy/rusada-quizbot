@@ -76,6 +76,10 @@ export interface TopicSummary {
   /** 0..100 */
   progress: number;
   difficulties: Difficulty[];
+  /** short description shown on the topic page */
+  description?: string;
+  /** subtopics that have published tests (filter chips) */
+  subtopics?: { id: ID; title: string }[];
 }
 
 export type TestStatus =
@@ -87,6 +91,8 @@ export interface TopicTest extends TestSummary {
   description: string;
   maxPoints: number;
   status: TestStatus;
+  /** subtopics covered by the test's questions */
+  subtopicIds?: ID[];
 }
 
 /* ---------- Quiz session (server-authoritative) ---------- */

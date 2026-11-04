@@ -91,6 +91,10 @@ async def test_full_run_answer_key_never_leaks(client, auth):
     # topic shows the test as done with best percent
     topic = (await client.get("/api/topics/morphology", headers=h)).json()
     assert topic["tests"][0]["status"] == {"kind": "done", "answered": None, "bestPercent": 20}
+    # subtopic chips: only subtopics used by published tests, each test knows its subtopics
+    chips = {s["title"]: s["id"] for s in topic["topic"]["subtopics"]}
+    assert set(chips) == {"Имя существительное", "Наречие", "Глагол"}
+    assert set(topic["tests"][0]["subtopicIds"]) == set(chips.values())
 
 
 async def test_resume_unfinished_attempt(client, auth):

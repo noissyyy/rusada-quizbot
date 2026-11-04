@@ -7,7 +7,7 @@ import { useAsync } from '../lib/useAsync';
 import { useI18n } from '../lib/i18n';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { Avatar, Icon } from '../components/ui';
+import { Avatar, GradientDecor, Icon, toneStyle } from '../components/ui';
 import { ErrorView, LoadingView } from '../components/states/StateViews';
 
 const page = 'mx-auto flex min-h-dvh max-w-[480px] flex-col gap-4 px-[18px]';
@@ -49,7 +49,8 @@ export function GroupJoinScreen() {
   return (
     <main className={page} style={pad}>
       <ScreenHeader back="/" title={t('group.title')} />
-      <section className="relative overflow-hidden rounded-hero bg-mode-group p-5 text-white shadow-[0_8px_18px_rgba(11,125,120,.25)]">
+      <section style={toneStyle('teal')} className="relative overflow-hidden rounded-hero p-5 text-white">
+        <GradientDecor />
         <img src="/3d/rq-3d-M03.webp" alt="" className="absolute -right-2 top-2 size-[120px] object-contain" />
         <span className="text-[12px] font-semibold text-white/75">{g.groupTitle}</span>
         <h1 className="mt-1 max-w-[64%] font-display text-[24px] font-bold leading-7 tracking-tight">{g.quizTitle}</h1>

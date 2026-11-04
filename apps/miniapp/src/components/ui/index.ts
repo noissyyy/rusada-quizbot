@@ -7,3 +7,4 @@ export * from './IconButton';
 export * from './ProgressBar';
 export * from './SectionHeader';
 export * from './Skeleton';
+export * from './GradientSurface';

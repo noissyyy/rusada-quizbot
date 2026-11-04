@@ -50,6 +50,7 @@ class TopicTest(TestSummary):
     description: str
     max_points: int
     status: TestStatus
+    subtopic_ids: list[str] = []
 
 
 class TopicSummary(Camel):
@@ -62,6 +63,9 @@ class TopicSummary(Camel):
     questions_count: int
     progress: int
     difficulties: list[Difficulty]
+    description: str = ""
+    #: subtopics that have at least one published test (filter chips)
+    subtopics: list[dict[str, str]] = []
 
 
 class QuickStart(Camel):
