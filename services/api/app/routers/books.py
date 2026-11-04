@@ -19,7 +19,7 @@ router = APIRouter(tags=["books"])
 admin = require_role("admin")
 
 COVER_TYPES = {"image/jpeg", "image/png", "image/webp"}
-MAX_COVER = 3 * 1024 * 1024
+MAX_COVER = 10 * 1024 * 1024
 MAX_PDF = 80 * 1024 * 1024
 
 
@@ -143,8 +143,12 @@ async def upload_cover(bid: str, file: UploadFile = File(...), user: User = Depe
         raise HTTPException(422, "Обложка должна быть JPG, PNG или WebP")
     data = await file.read(MAX_COVER + 1)
     if len(data) > MAX_COVER:
-        raise HTTPException(422, "Обложка больше 3 МБ — уменьшите картинку")
-    b.cover, b.cover_type = data, file.content_type
+        raise HTTPException(422, "Обложка больше 10 МБ — уменьшите картинку")
+    try:
+        b.cover = await run_in_threadpool(pdf_pages.shrink_cover, data)
+    except ValueError:
+        raise HTTPException(422, "Не удалось прочитать картинку") from None
+    b.cover_type = "image/jpeg"
     await db.commit()
     await db.refresh(b)
     return _admin_out(b)

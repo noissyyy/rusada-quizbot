@@ -9,14 +9,18 @@ async def test_books_admin_and_app(client, auth, admin_headers):
     bad = await client.post(f"/api/admin/books/{b['id']}/cover", files={"file": ("x.txt", b"hi", "text/plain")},
                             headers=admin_headers)
     assert bad.status_code == 422
-    png = b"\x89PNG\r\n\x1a\n" + b"0" * 100
-    up = (await client.post(f"/api/admin/books/{b['id']}/cover", files={"file": ("c.png", png, "image/png")},
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new("RGBA", (1600, 2000), (200, 30, 60, 255)).save(buf, "PNG")
+    up = (await client.post(f"/api/admin/books/{b['id']}/cover", files={"file": ("c.png", buf.getvalue(), "image/png")},
                             headers=admin_headers)).json()
     assert up["coverUrl"].startswith(f"/api/books/{b['id']}/cover?v=")
     books = (await client.get("/api/books", headers=h)).json()
     assert books[0]["title"] == "Тесты по литературе" and books[0]["price"] == "85 000 сум"
     cover = await client.get(up["coverUrl"])  # public, no auth
-    assert cover.status_code == 200 and cover.content == png and cover.headers["content-type"] == "image/png"
+    assert cover.status_code == 200 and cover.headers["content-type"] == "image/jpeg"
+    assert Image.open(io.BytesIO(cover.content)).size == (800, 1000)  # big covers are shrunk on upload
     # hidden books are not listed; students cannot manage books
     await client.put(f"/api/admin/books/{b['id']}", json={"title": "Тесты по литературе", "isActive": False},
                      headers=admin_headers)
