@@ -221,47 +221,33 @@ async def reorder_topics(ids: list[str], user: User = Depends(admin), db: AsyncS
 
 @router.delete("/topics/{tid}")
 async def delete_topic(tid: str, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
-    """Deletes a section with its tests and their questions.
-    Tests students already took are archived, not deleted (results stay); if anything had to stay,
-    the section is hidden instead of removed so those results keep their section."""
+    """Deletes a section for good: its tests and all its questions.
+    Students keep their past results — attempts store their own copy of the questions."""
     t = await db.get(Topic, tid)
     if t is None:
         raise HTTPException(404)
+    quizzes = (await db.execute(select(Quiz).where(Quiz.topic_id == tid))).unique().scalars().all()
+    if [q for q in quizzes if await _is_live(db, q.id)]:
+        raise HTTPException(409, "В этом разделе сейчас идёт эфир — завершите его и удалите раздел")
     title = t.title
-    tests_deleted = tests_archived = q_deleted = 0
-    for quiz in (await db.execute(select(Quiz).where(Quiz.topic_id == tid))).unique().scalars().all():
-        reason, d, _k = await _delete_test(db, user, quiz)
-        if reason:
-            quiz.status = "archived"
-            tests_archived += 1
-        else:
-            tests_deleted, q_deleted = tests_deleted + 1, q_deleted + d
+    tests_deleted = q_deleted = 0
+    for quiz in quizzes:
+        _reason, d, _k = await _delete_test(db, user, quiz)
+        tests_deleted, q_deleted = tests_deleted + 1, q_deleted + d
     await db.flush()
-    # loose questions of this section (in no test, never answered) go too; answered ones are archived
+    other = (await db.execute(select(Quiz.id).join(QuizQuestion, QuizQuestion.quiz_id == Quiz.id)
+                              .join(Question, Question.id == QuizQuestion.question_id)
+                              .where(Question.topic_id == tid))).scalars().all()
     for q in (await db.execute(select(Question).where(Question.topic_id == tid))).unique().scalars().all():
-        used = (await db.execute(select(func.count()).select_from(QuizQuestion)
-                                 .where(QuizQuestion.question_id == q.id))).scalar_one()
-        answered = (await db.execute(select(func.count()).select_from(AttemptAnswer)
-                                     .where(AttemptAnswer.question_id == q.id))).scalar_one()
-        if used or answered:
-            if not used:
-                q.status = "archived"
-            continue
-        await db.delete(q)
+        await db.delete(q)  # also leaves other sections' tests that borrowed it
         q_deleted += 1
     await db.flush()
-    left_q = (await db.execute(select(func.count()).select_from(Question).where(Question.topic_id == tid))).scalar_one()
-    left_t = (await db.execute(select(func.count()).select_from(Quiz).where(Quiz.topic_id == tid))).scalar_one()
-    removed = not (left_q or left_t)
-    if removed:
-        await db.delete(t)
-    else:
-        t.is_active = False
-    await audit(db, user, "topic.delete" if removed else "topic.hide", tid, title=title,
-                testsDeleted=tests_deleted, testsArchived=tests_archived)
+    await sync_durations(db, set(other))
+    await db.delete(t)
+    await audit(db, user, "topic.delete", tid, title=title, testsDeleted=tests_deleted, questionsDeleted=q_deleted)
     await db.commit()
-    return {"removed": removed, "testsDeleted": tests_deleted, "testsArchived": tests_archived,
-            "questionsDeleted": q_deleted, "questionsKept": left_q}
+    return {"removed": True, "testsDeleted": tests_deleted, "testsArchived": 0,
+            "questionsDeleted": q_deleted, "questionsKept": 0}
 
 
 # ---------------- questions ----------------
@@ -363,6 +349,7 @@ async def update_question(qid: str, body: QuestionIn, user: User = Depends(admin
 async def bulk_questions(body: dict, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
     ids: list[str] = body.get("ids", [])
     action = body.get("action")
+    affected = set((await db.execute(select(QuizQuestion.quiz_id).where(QuizQuestion.question_id.in_(ids)))).scalars())
     for qid in ids:
         q = await db.get(Question, qid)
         if q is None:
@@ -370,14 +357,7 @@ async def bulk_questions(body: dict, user: User = Depends(admin), db: AsyncSessi
         if action in ("archive", "publish", "draft"):
             q.status = {"archive": "archived", "publish": "published", "draft": "draft"}[action]
         elif action == "delete":
-            used = (await db.execute(select(func.count()).select_from(QuizQuestion)
-                                     .where(QuizQuestion.question_id == qid))).scalar_one()
-            answered = (await db.execute(select(func.count()).select_from(AttemptAnswer)
-                                         .where(AttemptAnswer.question_id == qid))).scalar_one()
-            if used or answered:
-                raise HTTPException(409, f"Вопрос «{q.text[:40]}…» есть в тесте или на него уже отвечали. "
-                                         "Удалить нельзя — переведите его в архив.")
-            await db.delete(q)
+            await db.delete(q)  # removed from its tests too; past results keep their own copy
         elif action == "duplicate":
             db.add(Question(topic_id=q.topic_id, subtopic_id=q.subtopic_id, text=q.text, image_url=q.image_url,
                             difficulty=q.difficulty, points=q.points, explanation_ru=q.explanation_ru,
@@ -387,7 +367,6 @@ async def bulk_questions(body: dict, user: User = Depends(admin), db: AsyncSessi
         else:
             raise HTTPException(422, "unknown action")
     await db.flush()
-    affected = set((await db.execute(select(QuizQuestion.quiz_id).where(QuizQuestion.question_id.in_(ids)))).scalars())
     await sync_durations(db, affected)
     await audit(db, user, f"question.{action}", None, count=len(ids))
     await db.commit()
@@ -421,14 +400,12 @@ async def list_tests(status_: str | None = Query(None, alias="status"), user: Us
     rows = (await db.execute(stmt)).unique().scalars().all()
     counts = dict((await db.execute(select(Attempt.quiz_id, func.count()).group_by(Attempt.quiz_id))).all())
     live_ids = set((await db.execute(select(LiveSession.quiz_id).where(LiveSession.state.in_(live_svc.ACTIVE)))).scalars())
-    used_ids = set((await db.execute(select(LiveSession.quiz_id))).scalars()) | \
-        set((await db.execute(select(GroupAssignment.quiz_id))).scalars())
-    return [{"id": q.id, "title": q.title, "topicTitle": q.topic.title, "questionsCount": len(catalog.live_questions(q)),
+    return [{"id": q.id, "title": q.title, "topicId": q.topic_id, "topicTitle": q.topic.title, "questionsCount": len(catalog.live_questions(q)),
              "durationSec": q.duration_sec, "liveQuestionSec": q.live_question_sec,
              "modes": [m for m, on in (("individual", q.mode_individual), ("live", q.mode_live),
                                        ("group", q.mode_group)) if on],
              "attempts": counts.get(q.id, 0), "status": q.status, "isLive": q.id in live_ids,
-             "deletable": not counts.get(q.id, 0) and q.id not in used_ids,
+             "deletable": q.id not in live_ids,
              "updatedAt": q.updated_at.isoformat()} for q in rows]
 
 
@@ -494,31 +471,29 @@ async def update_test(qid: str, body: QuizIn, user: User = Depends(admin), db: A
     return await _quiz_out(db, await db.get(Quiz, qid, populate_existing=True))
 
 
+async def _is_live(db: AsyncSession, quiz_id: str) -> bool:
+    return bool((await db.execute(select(func.count()).select_from(LiveSession).where(
+        LiveSession.quiz_id == quiz_id, LiveSession.state.in_(live_svc.ACTIVE)))).scalar_one())
+
+
 async def _delete_test(db: AsyncSession, user: User, quiz: Quiz) -> tuple[str | None, int, int]:
-    """Deletes a test nobody took, together with its questions.
-    Returns (refusal reason | None, questions deleted, questions kept because another test uses them)."""
-    attempts = (await db.execute(select(func.count()).select_from(Attempt).where(Attempt.quiz_id == quiz.id))).scalar_one()
-    if attempts:
-        return f"тест уже проходили ({attempts}) — только в архив", 0, 0
-    lives = (await db.execute(select(func.count()).select_from(LiveSession).where(LiveSession.quiz_id == quiz.id))).scalar_one()
-    asg = (await db.execute(select(func.count()).select_from(GroupAssignment).where(GroupAssignment.quiz_id == quiz.id))).scalar_one()
-    if lives or asg:
-        return "тест использовался в эфире или в группе — только в архив", 0, 0
+    """Deletes a test for good, with its questions (unless another test still uses them).
+    Students keep their results: attempts store their own copy of the questions.
+    Returns (refusal reason | None, questions deleted, questions kept)."""
+    if await _is_live(db, quiz.id):
+        return "сейчас идёт эфир по этому тесту — сначала завершите его", 0, 0
     qids = [i.question_id for i in quiz.items]
     await audit(db, user, "test.delete", quiz.id, title=quiz.title)
     await db.delete(quiz)
     await db.flush()
     deleted = kept = 0
     for qid in qids:
-        # a question is removed with its test unless another test still uses it or someone answered it
         other = (await db.execute(select(func.count()).select_from(QuizQuestion)
                                   .where(QuizQuestion.question_id == qid))).scalar_one()
-        answered = (await db.execute(select(func.count()).select_from(AttemptAnswer)
-                                     .where(AttemptAnswer.question_id == qid))).scalar_one()
         q = await db.get(Question, qid)
         if q is None:
             continue
-        if other or answered:
+        if other:
             kept += 1
         else:
             await db.delete(q)

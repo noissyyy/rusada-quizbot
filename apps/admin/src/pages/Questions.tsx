@@ -11,9 +11,9 @@ export function QuestionsPage() {
   const me = useMe();
   const toast = useToast();
   const nav = useNavigate();
-  const [topic, setTopic] = useState('');
-  const [diff, setDiff] = useState('');
   const [params] = useSearchParams();
+  const [topic, setTopic] = useState(params.get('topic_id') ?? '');
+  const [diff, setDiff] = useState('');
   const [status, setStatus] = useState(params.get('status') ?? '');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -59,7 +59,7 @@ export function QuestionsPage() {
             <Button tone="ghost" className="!h-9" onClick={() => bulk('publish')}>Опубликовать</Button>
             <Button tone="ghost" className="!h-9" onClick={() => bulk('duplicate')}>Дублировать</Button>
             <Button tone="ghost" className="!h-9" onClick={() => bulk('archive')}>В архив</Button>
-            <Button tone="danger" className="!h-9" icon="trash" onClick={() => { if (confirm(`Удалить выбранные вопросы (${sel.size})? Это нельзя отменить.`)) void bulk('delete'); }}>Удалить</Button>
+            <Button tone="danger" className="!h-9" icon="trash" onClick={() => { if (confirm(`Удалить выбранные вопросы (${sel.size}) навсегда? Они уберутся и из тестов, время тестов пересчитается. Результаты учеников сохранятся.`)) void bulk('delete'); }}>Удалить</Button>
           </div>
         )}
         {state.status === 'loading' && <Spinner />}

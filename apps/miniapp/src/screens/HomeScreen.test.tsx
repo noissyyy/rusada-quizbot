@@ -56,10 +56,10 @@ describe('HomeScreen', () => {
     expect(screen.getByRole('heading', { name: 'Тестлар' })).toBeInTheDocument();
   });
 
-  it('bottom nav: Главная, Тесты, Книги, Рейтинг, Профиль', () => {
+  it('bottom nav: Главная, Тесты, Библиотека, Рейтинг, Профиль', () => {
     renderAt('/');
     const links = within(screen.getByRole('navigation', { name: 'Menu' })).getAllByRole('link');
-    expect(links.map((l) => l.getAttribute('aria-label'))).toEqual(['Главная', 'Тесты', 'Книги', 'Рейтинг', 'Профиль']);
+    expect(links.map((l) => l.getAttribute('aria-label'))).toEqual(['Главная', 'Тесты', 'Библиотека', 'Рейтинг', 'Профиль']);
   });
 });
 

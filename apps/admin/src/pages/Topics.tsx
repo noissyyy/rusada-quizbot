@@ -1,5 +1,6 @@
 import { clsx } from 'clsx';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { del, get, post, put } from '../lib/api';
 import { useLoad, useToast } from '../lib/hooks';
 import type { Topic } from '../lib/types';
@@ -13,6 +14,15 @@ export function TopicsPage() {
   const toast = useToast();
   const { state, reload, setData } = useLoad(() => get<Topic[]>('/api/admin/topics'));
   const [edit, setEdit] = useState<Edit | null>(null);
+  const [params, setParams] = useSearchParams();
+  // «Настройки» on a section page opens the editor here
+  useEffect(() => {
+    const id = params.get('edit');
+    if (!id || state.status !== 'ok') return;
+    const t = state.data.find((x) => x.id === id);
+    if (t) setEdit({ ...t });
+    setParams({}, { replace: true });
+  }, [params, state, setParams]);
   const [newSub, setNewSub] = useState('');
   const [err, setErr] = useState<string | null>(null);
 
@@ -34,12 +44,10 @@ export function TopicsPage() {
     } catch (e) { setErr((e as Error).message); }
   };
   const remove = async (t: Topic) => {
-    if (!confirm(`Удалить раздел «${t.title}» вместе со всеми его тестами и вопросами? Это нельзя отменить.\n\nТесты, которые ученики уже проходили, уйдут в архив (результаты сохранятся), а раздел тогда просто скроется.`)) return;
+    if (!confirm(`Удалить раздел «${t.title}» навсегда?\n\nВместе с ним удалятся все его тесты (${t.testsCount}) и вопросы (${t.questionsCount}). Результаты учеников сохранятся.`)) return;
     try {
-      const r = await del<{ removed: boolean; testsDeleted: number; testsArchived: number; questionsDeleted: number }>(`/api/admin/topics/${t.id}`);
-      toast(r.removed
-        ? `Раздел удалён: тестов ${r.testsDeleted}, вопросов ${r.questionsDeleted}`
-        : `Удалено тестов ${r.testsDeleted}, вопросов ${r.questionsDeleted}. ${r.testsArchived} тест(ов) уже проходили — они в архиве, раздел скрыт.`);
+      const r = await del<{ testsDeleted: number; questionsDeleted: number }>(`/api/admin/topics/${t.id}`);
+      toast(`Раздел удалён · тестов: ${r.testsDeleted}, вопросов: ${r.questionsDeleted}`);
       if (edit?.id === t.id) setEdit(null);
       reload();
     } catch (e) { toast((e as Error).message); }
@@ -47,7 +55,7 @@ export function TopicsPage() {
 
   return (
     <>
-      <PageHeader title="Разделы" sub="Порядок здесь = порядок в приложении.">
+      <PageHeader title="Разделы" sub="Нажмите на раздел, чтобы управлять его тестами. Порядок здесь = порядок в приложении.">
         <Button icon="plus" onClick={() => setEdit({ title: '', description: '', color: 'blue', illustration: '/3d/rq-3d-T01.webp', isActive: true, subtopics: [] })}>Новый раздел</Button>
       </PageHeader>
       <div className="grid items-start gap-5 xl:grid-cols-[1fr_420px]">
@@ -60,7 +68,7 @@ export function TopicsPage() {
                 <li key={t.id} className={clsx('flex items-center gap-3 rounded-[16px] border p-3', edit?.id === t.id ? 'border-primary bg-primary-50' : 'border-line')}>
                   <span className="flex flex-col"><button type="button" aria-label="Выше" onClick={() => move(state.data, i, -1)} className="text-muted hover:text-ink"><Icon name="up" size={16} /></button><button type="button" aria-label="Ниже" onClick={() => move(state.data, i, 1)} className="text-muted hover:text-ink"><Icon name="down" size={16} /></button></span>
                   <img src={t.illustration} alt="" className={clsx('size-12 rounded-[12px] object-contain p-1', COLORS.find(([c]) => c === t.color)?.[1])} />
-                  <div className="min-w-0 flex-1"><div className="font-bold">{t.title}</div><div className="text-[13px] text-muted">{t.subtopics.length} подразделов · {t.testsCount} тестов · {t.questionsCount} вопросов</div></div>
+                  <Link to={`/topics/${t.id}`} className="min-w-0 flex-1 hover:text-primary"><div className="font-bold">{t.title} <span className="text-primary">→</span></div><div className="text-[13px] text-muted">{t.subtopics.length} подразделов · {t.testsCount} тестов · {t.questionsCount} вопросов</div></Link>
                   <Pill tone={t.isActive ? 'ok' : 'neutral'}>{t.isActive ? 'Активен' : 'Скрыт'}</Pill>
                   <button type="button" aria-label={`Изменить: ${t.title}`} onClick={() => { setEdit({ ...t }); setErr(null); }} className="grid size-9 place-items-center rounded-full text-muted hover:text-primary"><Icon name="edit" size={18} /></button>
                   <button type="button" aria-label={`Удалить: ${t.title}`} onClick={() => remove(t)} className="grid size-9 place-items-center rounded-full text-muted hover:bg-error-50 hover:text-error-ink"><Icon name="trash" size={18} /></button>

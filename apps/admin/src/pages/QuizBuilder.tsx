@@ -1,6 +1,6 @@
 import { clsx } from 'clsx';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { can, get, post, put } from '../lib/api';
 import { fmtDate, fmtNum, useLoad, useMe, useToast } from '../lib/hooks';
 import type { Difficulty, Page, Question, QuizFull, Topic } from '../lib/types';
@@ -10,6 +10,8 @@ type Draft = Omit<QuizFull, 'id' | 'topicTitle' | 'questionsCount' | 'maxPoints'
 
 export function QuizBuilderPage() {
   const { id } = useParams();
+  const [sp] = useSearchParams();
+  const topicParam = sp.get('topic');
   const nav = useNavigate();
   const toast = useToast();
   const me = useMe();
@@ -29,7 +31,7 @@ export function QuizBuilderPage() {
   }, [id]);
   useEffect(() => {
     if (!id && !d && topics.state.status === 'ok') {
-      setD({ title: '', topicId: topics.state.data[0]?.id ?? '', description: '', difficulty: 'medium', durationSec: 360, liveQuestionSec: 20, modeIndividual: true, modeLive: false, modeGroup: true, isQuick: false, questions: [] });
+      setD({ title: '', topicId: (topicParam && topics.state.data.some((t) => t.id === topicParam) ? topicParam : topics.state.data[0]?.id) ?? '', description: '', difficulty: 'medium', durationSec: 360, liveQuestionSec: 20, modeIndividual: true, modeLive: false, modeGroup: true, isQuick: false, questions: [] });
     }
   }, [id, d, topics.state]);
 

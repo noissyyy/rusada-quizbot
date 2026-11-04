@@ -60,7 +60,7 @@ export function BooksPage() {
 
   return (
     <>
-      <PageHeader title="Книги" sub="Показываются в приложении во вкладке «Книги» и баннером на главной. Порядок здесь = порядок в приложении.">
+      <PageHeader title="Библиотека" sub="Книги для чтения в приложении: вкладка «Библиотека» и баннер на главной. Порядок здесь = порядок в приложении.">
         <Button icon="plus" onClick={() => open({ ...blank })}>Новая книга</Button>
       </PageHeader>
       <div className="grid items-start gap-5 xl:grid-cols-[1fr_420px]">
