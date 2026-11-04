@@ -220,6 +220,9 @@ export const ru = {
   'live.reconnecting': 'Восстанавливаем связь…',
   'result.toGroup': 'Результат в группе',
   'group.hubText': 'Преподаватель отправляет тест в вашу группу Telegram. Откройте его кнопкой «Пройти тест» в сообщении бота — у каждого одна попытка, таблица общая для группы.',
+  'group.openTests': 'Открытые тесты',
+  'group.statusDone': 'Пройден',
+  'group.statusStarted': 'Начат',
 } as const;
 
 export type MessageKey = keyof typeof ru;
@@ -441,4 +444,7 @@ export const uz: Record<MessageKey, string> = {
   'live.reconnecting': 'Aloqa tiklanmoqda…',
   'result.toGroup': 'Guruhdagi natija',
   'group.hubText': 'O‘qituvchi testni Telegramdagi guruhingizga yuboradi. Uni bot xabaridagi «Testni topshirish» tugmasi orqali oching — har kimda bitta urinish, jadval guruh uchun umumiy.',
+  'group.openTests': 'Ochiq testlar',
+  'group.statusDone': 'Topshirildi',
+  'group.statusStarted': 'Boshlangan',
 };

@@ -8,7 +8,7 @@ import csv
 import difflib
 import io
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect, status
@@ -692,7 +692,8 @@ async def list_groups(user: User = Depends(host), db: AsyncSession = Depends(get
                 Attempt.assignment_id == asg.id, Attempt.status.in_(catalog.DONE)))).scalar_one()
             current = {"id": asg.id, "quizTitle": asg.quiz.title, "passed": passed,
                        "closesAt": asg.closes_at.isoformat() if asg.closes_at else None,
-                       "open": not asg.is_closed and (asg.closes_at is None or asg.closes_at > utcnow())}
+                       "open": not asg.is_closed and (asg.closes_at is None or asg.closes_at > utcnow()),
+                       "isPublic": asg.is_public}
         out.append({"id": g.id, "title": g.title, "chatId": g.chat_id, "botIsAdmin": g.bot_is_admin,
                     "membersCount": g.members_count, "hostId": g.host_id,
                     "hostName": g.host.display_name if g.host else None, "current": current})
@@ -710,6 +711,16 @@ async def patch_group(gid: str, body: GroupPatch, user: User = Depends(admin), d
     await db.commit()
 
 
+UZ_TZ = timezone(timedelta(hours=5))  # Uzbekistan, no daylight saving
+
+
+def _local(dt: datetime) -> datetime:
+    """Times are stored in UTC; messages to people show Tashkent time."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(UZ_TZ)
+
+
 @router.post("/assignments")
 async def create_assignment(body: AssignmentIn, user: User = Depends(host), db: AsyncSession = Depends(get_db)):
     g = await db.get(Group, body.group_id)
@@ -723,11 +734,12 @@ async def create_assignment(body: AssignmentIn, user: User = Depends(host), db: 
         return {"kind": "live", "liveId": state.id, "code": state.code}
     if not quiz.mode_group:
         raise HTTPException(422, "Для этого теста групповой режим выключен")
-    a = GroupAssignment(group_id=g.id, quiz_id=quiz.id, created_by=user.id, closes_at=body.closes_at)
+    a = GroupAssignment(group_id=g.id, quiz_id=quiz.id, created_by=user.id, closes_at=body.closes_at,
+                        is_public=body.is_public)
     db.add(a)
     await db.flush()
     minutes = max(1, round(quiz.duration_sec / 60))
-    deadline = f" · до {body.closes_at.strftime('%d.%m %H:%M')}" if body.closes_at else ""
+    deadline = f" · до {_local(body.closes_at).strftime('%d.%m %H:%M')}" if body.closes_at else ""
     try:
         a.message_id = await telegram.send_message(
             g.chat_id, f"📝 <b>Новый тест:</b> {quiz.title}\n{len(catalog.live_questions(quiz))} вопросов · "
@@ -738,6 +750,17 @@ async def create_assignment(body: AssignmentIn, user: User = Depends(host), db: 
     await audit(db, user, "group.assign", a.id, group=g.title, quiz=quiz.title)
     await db.commit()
     return {"kind": "group", "assignmentId": a.id}
+
+
+@router.post("/assignments/{aid}/public", status_code=204)
+async def set_assignment_public(aid: str, body: dict, user: User = Depends(host), db: AsyncSession = Depends(get_db)):
+    """Show / hide a group test for everyone in the Mini App «Группа» section."""
+    a = await db.get(GroupAssignment, aid)
+    if a is None:
+        raise HTTPException(404)
+    a.is_public = bool(body.get("isPublic"))
+    await audit(db, user, "group.public" if a.is_public else "group.private", aid)
+    await db.commit()
 
 
 @router.post("/assignments/{aid}/close", status_code=204)

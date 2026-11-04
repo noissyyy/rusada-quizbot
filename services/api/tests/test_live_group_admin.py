@@ -328,3 +328,26 @@ async def test_delete_topic_takes_its_tests_and_questions(client, auth, admin_he
     t = next(t for t in (await client.get("/api/admin/topics", headers=admin_headers)).json() if t["id"] == seeded)
     assert t["isActive"] is False and t["testsCount"] == 0
     assert all(x["id"] != seeded for x in (await client.get("/api/topics", headers=auth(31))).json())
+
+
+async def test_public_group_test_is_open_to_everyone(client, auth, admin_headers):
+    g = (await client.post("/internal/groups", json={"chat_id": -100777, "title": "Открытая группа",
+                                                     "members_count": 5}, headers=INTERNAL)).json()
+    aid = (await client.post("/api/admin/assignments", json={"groupId": g["id"], "quizId": await _quiz_id()},
+                             headers=admin_headers)).json()["assignmentId"]
+    stranger = auth(41)
+    assert all(x["id"] != aid for x in (await client.get("/api/group", headers=stranger)).json())
+    await client.post(f"/api/admin/assignments/{aid}/public", json={"isPublic": True}, headers=admin_headers)
+    hub = (await client.get("/api/group", headers=stranger)).json()
+    item = next(x for x in hub if x["id"] == aid)
+    assert item["groupTitle"] == "Открытая группа" and item["questionsCount"] == 4 and item["myStatus"] is None
+    assert (await client.get(f"/api/group/{aid}", headers=stranger)).json()["access"] == "ok"
+    assert (await client.post("/api/sessions", json={"assignmentId": aid}, headers=stranger)).status_code == 200
+    await client.post(f"/api/admin/assignments/{aid}/close", headers=admin_headers)
+    assert all(x["id"] != aid for x in (await client.get("/api/group", headers=stranger)).json())
+
+
+def test_group_message_shows_tashkent_time():
+    from datetime import datetime, timezone
+    from app.routers.admin_api import _local
+    assert _local(datetime(2026, 11, 4, 17, 0, tzinfo=timezone.utc)).strftime("%d.%m %H:%M") == "04.11 22:00"

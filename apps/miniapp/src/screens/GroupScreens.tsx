@@ -144,9 +144,35 @@ export function AccessErrorView({ group, link, reason }: { group: string; link: 
 /** «Группа» tile on Home: explains how group tests arrive. */
 export function GroupHubScreen() {
   const { t } = useI18n();
+  const deadline = useDeadline();
+  const state = useAsync(() => api().getGroupHub(), []);
+  const items = state.status === 'success' ? state.data : [];
   return (
     <main className={page} style={pad}>
       <ScreenHeader back="/" title={t('mode.group')} />
+      {state.status === 'error' && <ErrorView error={state.error} onRetry={state.reload} />}
+      {items.length > 0 && (
+        <section className="flex flex-col gap-3" aria-labelledby="open-group-tests">
+          <h2 id="open-group-tests" className="font-display text-title font-bold tracking-tight">{t('group.openTests')}</h2>
+          {items.map((g) => {
+            const done = g.myStatus === 'finished' || g.myStatus === 'timed_out';
+            return (
+              <Link key={g.id} to={done ? `/group/${g.id}/result` : `/group/${g.id}`} style={toneStyle('teal')}
+                className="relative overflow-hidden rounded-[24px] p-4 text-white shadow-card">
+                <GradientDecor />
+                <span className="text-[12px] font-semibold text-white/75">{g.groupTitle}</span>
+                <span className="mt-0.5 block font-display text-[18px] font-bold leading-6 tracking-tight">{g.quizTitle}</span>
+                <span className="mt-2.5 flex flex-wrap gap-1.5">
+                  {[t('live.questions', { n: g.questionsCount }), t('group.minutes', { m: g.durationMinutes }), ...(g.closesAt ? [t('group.until', { d: deadline(g.closesAt) })] : []),
+                    ...(done ? [t('group.statusDone')] : g.myStatus === 'in_progress' ? [t('group.statusStarted')] : [])].map((x) => (
+                    <span key={x} className="inline-flex h-6 items-center rounded-full bg-white/15 px-2 text-[11px] font-bold">{x}</span>
+                  ))}
+                </span>
+              </Link>
+            );
+          })}
+        </section>
+      )}
       <section className="flex flex-col items-center gap-2 rounded-hero bg-surface p-6 text-center shadow-card">
         <img src="/3d/rq-3d-M03.webp" alt="" className="size-[140px] object-contain" />
         <h1 className="font-display text-title font-bold">{t('mode.group.hint')}</h1>

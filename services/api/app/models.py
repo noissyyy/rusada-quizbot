@@ -182,6 +182,8 @@ class GroupAssignment(Base):
     closes_at: Mapped[datetime | None] = mapped_column(TS)
     message_id: Mapped[int | None] = mapped_column(BigInteger)
     is_closed: Mapped[bool] = mapped_column(Boolean, default=False)
+    # shown to every student in the Mini App «Группа» section; anyone can take it, not only group members
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     group: Mapped[Group] = relationship(lazy="joined")
     quiz: Mapped[Quiz] = relationship(lazy="joined")
     author: Mapped[User | None] = relationship(lazy="joined")

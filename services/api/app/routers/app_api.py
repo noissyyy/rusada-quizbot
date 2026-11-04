@@ -11,7 +11,7 @@ from ..config import settings
 from ..db import SessionLocal, get_db
 from ..models import (Attempt, GroupAssignment, GroupMember, LiveParticipant, LiveSession, Notification,
                       NotificationRead, Quiz, Topic, User, utcnow)
-from ..schemas import (AnswerBody, AnswerResult, FinishBody, GroupAssignmentView, GroupBoardEntry, GroupResultView,
+from ..schemas import (AnswerBody, AnswerResult, FinishBody, GroupAssignmentView, GroupBoardEntry, GroupHubItem, GroupResultView,
                        HomeFeed, InProgressAttempt, LiveAnswerBody, LiveJoinBody, LiveListItem, LiveState,
                        NotificationOut, Profile, QuickStart, Rating, SessionResult, SessionStart, SettingsPatch,
                        StartBody, TestSummary, TopicSummary, TopicTest, UserProfile)
@@ -198,6 +198,8 @@ async def _assignment_for(db: AsyncSession, user: User, aid: str, require_access
 async def _access(db: AsyncSession, user: User, a: GroupAssignment) -> str:
     if a.is_closed or (a.closes_at and a.closes_at < utcnow()) or a.quiz.status != "published":
         return "closed"
+    if a.is_public:
+        return "ok"  # the teacher opened it to everyone
     member = await db.get(GroupMember, (a.group_id, user.id))
     if member is not None and member.verified_at > utcnow() - timedelta(hours=6):
         return "ok"
@@ -227,6 +229,29 @@ async def _group_board(db: AsyncSession, a: GroupAssignment, me: User, limit: in
     if mine and mine not in top:
         top.append(mine)
     return top, len(rows)
+
+
+@router.get("/group", response_model=list[GroupHubItem])
+async def group_hub(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """Open group tests the teacher made public, plus any group test this student has started."""
+    await quiz_svc.expire_overdue(db, user)
+    now = utcnow()
+    mine = {r.assignment_id: r.status for r in (await db.execute(
+        select(Attempt).where(Attempt.user_id == user.id, Attempt.assignment_id.is_not(None)))).unique().scalars()}
+    rows = (await db.execute(select(GroupAssignment).where(
+        GroupAssignment.is_closed.is_(False), GroupAssignment.is_public.is_(True))
+        .order_by(GroupAssignment.created_at.desc()))).unique().scalars().all()
+    out = []
+    for a in rows:
+        if (a.closes_at and a.closes_at < now) or a.quiz.status != "published":
+            continue
+        passed = (await db.execute(select(func.count()).select_from(Attempt).where(
+            Attempt.assignment_id == a.id, Attempt.status.in_(catalog.DONE)))).scalar_one()
+        out.append(GroupHubItem(id=a.id, group_title=a.group.title, quiz_title=a.quiz.title,
+                                questions_count=len(catalog.live_questions(a.quiz)),
+                                duration_minutes=max(1, round(a.quiz.duration_sec / 60)), closes_at=a.closes_at,
+                                passed=passed, my_status=mine.get(a.id)))
+    return out
 
 
 @router.get("/group/{aid}", response_model=GroupAssignmentView)

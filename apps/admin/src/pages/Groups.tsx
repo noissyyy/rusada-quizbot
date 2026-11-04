@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { get, post } from '../lib/api';
 import { fmtDate, useLoad, useToast } from '../lib/hooks';
 import type { QuizRow } from '../lib/types';
-import { Button, Card, Empty, ErrorBox, Field, Input, PageHeader, Pill, Segmented, Select, Spinner } from '../components/ui';
+import { Button, Card, Empty, ErrorBox, Field, Input, PageHeader, Pill, Segmented, Select, Spinner, Toggle } from '../components/ui';
 
 interface GroupRow {
   id: string; title: string; chatId: number; botIsAdmin: boolean; membersCount: number; hostName: string | null;
-  current: { id: string; quizTitle: string; passed: number; closesAt: string | null; open: boolean } | null;
+  current: { id: string; quizTitle: string; passed: number; closesAt: string | null; open: boolean; isPublic: boolean } | null;
 }
 const BOT = (import.meta.env.VITE_BOT_USERNAME as string | undefined) ?? 'Rusada_QuizBot';
 
@@ -19,7 +19,8 @@ export function GroupsPage() {
   const [groupId, setGroupId] = useState('');
   const [quizId, setQuizId] = useState('');
   const [format, setFormat] = useState<'async' | 'live'>('async');
-  const [until, setUntil] = useState(() => new Date(Date.now() + 4 * 864e5).toISOString().slice(0, 16));
+  const [until, setUntil] = useState(() => { const d = new Date(Date.now() + 4 * 864e5); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); });
+  const [isPublic, setIsPublic] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,11 +33,12 @@ export function GroupsPage() {
     if (!g || !qz) return;
     setBusy(true); setErr(null);
     try {
-      const r = await post<{ kind: string; liveId?: string }>('/api/admin/assignments', { groupId: g.id, quizId: qz.id, format, closesAt: format === 'async' && until ? new Date(until).toISOString() : null });
+      const r = await post<{ kind: string; liveId?: string }>('/api/admin/assignments', { groupId: g.id, quizId: qz.id, format, closesAt: format === 'async' && until ? new Date(until).toISOString() : null, isPublic: format === 'async' && isPublic });
       toast('Тест отправлен в группу'); reload();
       if (r.kind === 'live' && r.liveId) nav(`/live/${r.liveId}`);
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
+  const setPublic = async (id: string, v: boolean) => { await post(`/api/admin/assignments/${id}/public`, { isPublic: v }); toast(v ? 'Тест виден всем в разделе «Группа»' : 'Тест виден только участникам группы'); reload(); };
   const close = async (id: string) => { await post(`/api/admin/assignments/${id}/close`); toast('Тест закрыт'); reload(); };
 
   return (
@@ -59,6 +61,7 @@ export function GroupsPage() {
                   <Pill tone={x.current.open ? 'info' : 'neutral'}>{x.current.open ? 'Идёт' : 'Закрыт'}</Pill>
                   <span className="flex-1 text-[14px]"><b>{x.current.quizTitle}</b> · {x.current.passed} из {x.membersCount} прошли{x.current.closesAt ? ` · до ${fmtDate(x.current.closesAt)}` : ''}</span>
                   <Button tone="ghost" className="!h-9" onClick={() => nav(`/results?group_id=${x.id}`)}>Результаты</Button>
+                  {x.current.open && <Toggle label="Виден всем" checked={x.current.isPublic} onChange={(v) => setPublic(x.current!.id, v)} />}
                   {x.current.open && <Button tone="danger" className="!h-9" onClick={() => close(x.current!.id)}>Закрыть</Button>}
                 </div>
               )}
@@ -72,6 +75,7 @@ export function GroupsPage() {
               <Segmented label="Формат" value={format} onChange={setFormat} options={[['async', 'Каждый сам · до дедлайна'], ['live', 'Все вместе · как эфир']]} />
             </div>
             <Field label="Тест"><Select value={qz?.id ?? ''} onChange={(e) => setQuizId(e.target.value)}>{quizzes.map((t) => <option key={t.id} value={t.id}>{t.title} · {t.questionsCount} вопр. · {Math.round(t.durationSec / 60)} мин</option>)}</Select></Field>
+            {format === 'async' && <Toggle label="Показать всем ученикам в разделе «Группа» (не только участникам группы)" checked={isPublic} onChange={setIsPublic} />}
             {format === 'async' && <Field label="Открыт до"><Input type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)} /></Field>}
             {g && qz && (
               <div className="rounded-[16px] bg-[#E7F0FB] p-3.5 text-[14px]">
