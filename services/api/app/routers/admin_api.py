@@ -322,6 +322,15 @@ async def bulk_questions(body: dict, user: User = Depends(admin), db: AsyncSessi
             continue
         if action in ("archive", "publish", "draft"):
             q.status = {"archive": "archived", "publish": "published", "draft": "draft"}[action]
+        elif action == "delete":
+            used = (await db.execute(select(func.count()).select_from(QuizQuestion)
+                                     .where(QuizQuestion.question_id == qid))).scalar_one()
+            answered = (await db.execute(select(func.count()).select_from(AttemptAnswer)
+                                         .where(AttemptAnswer.question_id == qid))).scalar_one()
+            if used or answered:
+                raise HTTPException(409, f"Вопрос «{q.text[:40]}…» есть в тесте или на него уже отвечали. "
+                                         "Удалить нельзя — переведите его в архив.")
+            await db.delete(q)
         elif action == "duplicate":
             db.add(Question(topic_id=q.topic_id, subtopic_id=q.subtopic_id, text=q.text, image_url=q.image_url,
                             difficulty=q.difficulty, points=q.points, explanation_ru=q.explanation_ru,
@@ -362,11 +371,14 @@ async def list_tests(status_: str | None = Query(None, alias="status"), user: Us
     rows = (await db.execute(stmt)).unique().scalars().all()
     counts = dict((await db.execute(select(Attempt.quiz_id, func.count()).group_by(Attempt.quiz_id))).all())
     live_ids = set((await db.execute(select(LiveSession.quiz_id).where(LiveSession.state.in_(live_svc.ACTIVE)))).scalars())
+    used_ids = set((await db.execute(select(LiveSession.quiz_id))).scalars()) | \
+        set((await db.execute(select(GroupAssignment.quiz_id))).scalars())
     return [{"id": q.id, "title": q.title, "topicTitle": q.topic.title, "questionsCount": len(catalog.live_questions(q)),
              "durationSec": q.duration_sec, "liveQuestionSec": q.live_question_sec,
              "modes": [m for m, on in (("individual", q.mode_individual), ("live", q.mode_live),
                                        ("group", q.mode_group)) if on],
              "attempts": counts.get(q.id, 0), "status": q.status, "isLive": q.id in live_ids,
+             "deletable": not counts.get(q.id, 0) and q.id not in used_ids,
              "updatedAt": q.updated_at.isoformat()} for q in rows]
 
 
@@ -414,6 +426,24 @@ async def update_test(qid: str, body: QuizIn, user: User = Depends(admin), db: A
     await audit(db, user, "test.update", quiz.id)
     await db.commit()
     return await _quiz_out(db, await db.get(Quiz, qid, populate_existing=True))
+
+
+@router.delete("/tests/{qid}", status_code=204)
+async def delete_test(qid: str, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    """Only a test nobody has taken (and not on air) can be deleted; otherwise archive it."""
+    quiz = await db.get(Quiz, qid)
+    if quiz is None:
+        raise HTTPException(404)
+    attempts = (await db.execute(select(func.count()).select_from(Attempt).where(Attempt.quiz_id == qid))).scalar_one()
+    if attempts:
+        raise HTTPException(409, f"Тест уже проходили ({attempts}). Удалить нельзя — переведите его в архив.")
+    lives = (await db.execute(select(func.count()).select_from(LiveSession).where(LiveSession.quiz_id == qid))).scalar_one()
+    asg = (await db.execute(select(func.count()).select_from(GroupAssignment).where(GroupAssignment.quiz_id == qid))).scalar_one()
+    if lives or asg:
+        raise HTTPException(409, "Тест использовался в эфире или в группе. Удалить нельзя — переведите его в архив.")
+    await audit(db, user, "test.delete", qid, title=quiz.title)
+    await db.delete(quiz)  # questions stay in the bank
+    await db.commit()
 
 
 @router.post("/tests/{qid}/status", response_model=QuizAdminOut)

@@ -24,9 +24,12 @@ export function QuestionsPage() {
   const editor = can(me, 'admin');
 
   const bulk = async (action: string) => {
-    await post('/api/admin/questions/bulk', { ids: [...sel], action });
-    toast(action === 'duplicate' ? 'Копии созданы как черновики' : 'Готово');
-    setSel(new Set()); reload();
+    try {
+      await post('/api/admin/questions/bulk', { ids: [...sel], action });
+      toast(action === 'duplicate' ? 'Копии созданы как черновики' : action === 'delete' ? 'Вопросы удалены' : 'Готово');
+      setSel(new Set());
+    } catch (e) { toast((e as Error).message, 'error'); }
+    reload();
   };
   const toggle = (id: string) => setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
@@ -55,7 +58,8 @@ export function QuestionsPage() {
             <span className="mr-2 text-[14px] font-bold text-primary">Выбрано: {sel.size}</span>
             <Button tone="ghost" className="!h-9" onClick={() => bulk('publish')}>Опубликовать</Button>
             <Button tone="ghost" className="!h-9" onClick={() => bulk('duplicate')}>Дублировать</Button>
-            <Button tone="danger" className="!h-9" onClick={() => bulk('archive')}>В архив</Button>
+            <Button tone="ghost" className="!h-9" onClick={() => bulk('archive')}>В архив</Button>
+            <Button tone="danger" className="!h-9" icon="trash" onClick={() => { if (confirm(`Удалить выбранные вопросы (${sel.size})? Это нельзя отменить.`)) void bulk('delete'); }}>Удалить</Button>
           </div>
         )}
         {state.status === 'loading' && <Spinner />}

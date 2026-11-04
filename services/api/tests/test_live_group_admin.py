@@ -230,3 +230,31 @@ async def test_notifications_and_settings(client, auth, admin_headers):
     assert s["feedbackMs"] == 2000
     sess = (await client.post("/api/sessions", json={"quizId": await _quiz_id()}, headers=h)).json()
     assert sess["feedbackMs"] == 2000 and sess["feedbackExplainMs"] == 4000
+
+
+async def test_delete_only_untaken_tests_and_unused_questions(client, auth, admin_headers):
+    topics = (await client.get("/api/admin/topics", headers=admin_headers)).json()
+    tid = topics[0]["id"]
+    q = (await client.post("/api/admin/questions", json={"topicId": tid, "text": "Удаляемый вопрос", "points": 100,
+         "options": [{"text": "a", "isCorrect": True}, {"text": "b"}, {"text": "c"}, {"text": "d"}]}, headers=admin_headers)).json()
+    t = (await client.post("/api/admin/tests", json={"title": "Черновик", "topicId": tid, "questionIds": [q["id"]]},
+                           headers=admin_headers)).json()
+    row = next(x for x in (await client.get("/api/admin/tests", headers=admin_headers)).json() if x["id"] == t["id"])
+    assert row["deletable"] is True
+    # the question is in a test → refused
+    r = await client.post("/api/admin/questions/bulk", json={"ids": [q["id"]], "action": "delete"}, headers=admin_headers)
+    assert r.status_code == 409
+    assert (await client.delete(f"/api/admin/tests/{t['id']}", headers=admin_headers)).status_code == 204
+    # now unused → can be deleted
+    assert (await client.post("/api/admin/questions/bulk", json={"ids": [q["id"]], "action": "delete"},
+                              headers=admin_headers)).status_code == 204
+    assert (await client.get(f"/api/admin/questions/{q['id']}", headers=admin_headers)).status_code == 404
+
+    # a test somebody took cannot be deleted
+    seeded = (await client.get("/api/admin/tests", headers=admin_headers)).json()[-1]
+    s = (await client.post("/api/sessions", json={"quizId": seeded["id"]}, headers=auth(61))).json()
+    assert s["sessionId"]
+    row = next(x for x in (await client.get("/api/admin/tests", headers=admin_headers)).json() if x["id"] == seeded["id"])
+    assert row["deletable"] is False
+    r = await client.delete(f"/api/admin/tests/{seeded['id']}", headers=admin_headers)
+    assert r.status_code == 409 and "архив" in r.json()["detail"]
