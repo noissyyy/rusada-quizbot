@@ -54,6 +54,26 @@ def _render(doc: pdfium.PdfDocument, index: int, width: int, quality: int) -> by
     return buf.getvalue()
 
 
+def shrink_cover(data: bytes, width: int = 800) -> bytes:
+    """Any uploaded cover → a JPEG at most `width` px wide (phones never need more)."""
+    try:
+        img = Image.open(io.BytesIO(data))
+        img.load()
+    except Exception as e:  # noqa: BLE001 — Pillow raises many kinds of errors for bad files
+        raise ValueError("not an image") from e
+    if img.mode in ("RGBA", "LA", "P"):
+        img = img.convert("RGBA")
+        bg = Image.new("RGB", img.size, (255, 255, 255))
+        bg.paste(img, mask=img.getchannel("A"))
+        img = bg
+    img = img.convert("RGB")
+    if img.width > width:
+        img = img.resize((width, round(img.height * width / img.width)), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=85, optimize=True)
+    return buf.getvalue()
+
+
 def cover_from_pdf(data: bytes) -> bytes:
     with _lock:
         doc = pdfium.PdfDocument(data)

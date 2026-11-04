@@ -29,7 +29,7 @@ export function BooksPage() {
   };
   const pick = (f: File | undefined) => {
     if (!f) return;
-    if (f.size > 3 * 1024 * 1024) { setErr('Обложка больше 3 МБ — уменьшите картинку'); return; }
+    if (f.size > 10 * 1024 * 1024) { setErr('Обложка больше 10 МБ — уменьшите картинку'); return; }
     setCover(f); setPreview(URL.createObjectURL(f)); setErr(null);
   };
   const save = async () => {
@@ -91,7 +91,7 @@ export function BooksPage() {
                 <div className="flex flex-col gap-1.5">
                   <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
                   <Button tone="ghost" icon="upload" onClick={() => fileRef.current?.click()}>{shownCover ? 'Заменить обложку' : 'Загрузить обложку'}</Button>
-                  <span className="text-[12px] text-muted">JPG, PNG или WebP · до 3 МБ · лучше 600×800</span>
+                  <span className="text-[12px] text-muted">JPG, PNG или WebP · до 10 МБ · уменьшится автоматически</span>
                 </div>
               </div>
               <div className="rounded-[14px] bg-canvas p-3">
