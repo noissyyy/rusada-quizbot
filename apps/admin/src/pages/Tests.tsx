@@ -16,8 +16,12 @@ export function TestsPage() {
   const count = (s: string) => rows.filter((r) => r.status === s).length;
   const editor = can(me, 'admin');
   const remove = async (r: QuizRow) => {
-    if (!confirm(`Удалить тест «${r.title}»? Вопросы останутся в банке.`)) return;
-    try { await del(`/api/admin/tests/${r.id}`); toast('Тест удалён'); reload(); } catch (e) { toast((e as Error).message, 'error'); }
+    if (!confirm(`Удалить тест «${r.title}» вместе с его вопросами? Это нельзя отменить.`)) return;
+    try {
+      const x = await del<{ questionsDeleted: number; questionsKept: number }>(`/api/admin/tests/${r.id}`);
+      toast(`Тест удалён, вопросов удалено: ${x.questionsDeleted}${x.questionsKept ? ` (оставлено ${x.questionsKept} — они есть в других тестах)` : ''}`);
+      reload();
+    } catch (e) { toast((e as Error).message, 'error'); }
   };
   const archive = async (r: QuizRow, status: 'archived' | 'draft') => {
     try { await post(`/api/admin/tests/${r.id}/status`, { status }); toast(status === 'archived' ? 'Тест в архиве — ученики его не видят' : 'Тест возвращён в черновики'); reload(); }
@@ -28,13 +32,15 @@ export function TestsPage() {
   const [busy, setBusy] = useState(false);
   const drafts = rows.filter((r) => r.status === 'draft');
   const toggle = (id: string) => setSel((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const bulk = async (ids: string[], action: 'publish' | 'archive' | 'draft') => {
+  const bulk = async (ids: string[], action: 'publish' | 'archive' | 'draft' | 'delete') => {
     if (!ids.length) return;
+    if (action === 'delete' && !confirm(`Удалить выбранные тесты (${ids.length}) вместе с их вопросами? Это нельзя отменить. Тесты, которые уже проходили, останутся — их можно только в архив.`)) return;
     setBusy(true);
     try {
-      const r = await post<{ done: number; failed: { title: string; reason: string }[] }>('/api/admin/tests/bulk', { ids, action });
-      const verb = action === 'publish' ? 'Опубликовано' : action === 'archive' ? 'В архиве' : 'В черновиках';
-      toast(r.failed.length ? `${verb}: ${r.done}. Не получилось: ${r.failed.map((f) => `«${f.title}» — ${f.reason}`).join('; ')}` : `${verb}: ${r.done}`, r.failed.length ? 'error' : 'ok');
+      const r = await post<{ done: number; failed: { title: string; reason: string }[]; questionsDeleted: number }>('/api/admin/tests/bulk', { ids, action });
+      const verb = action === 'publish' ? 'Опубликовано' : action === 'archive' ? 'В архиве' : action === 'delete' ? `Удалено тестов: ${r.done}, вопросов: ${r.questionsDeleted}` : 'В черновиках';
+      const head = action === 'delete' ? verb : `${verb}: ${r.done}`;
+      toast(r.failed.length ? `${head}. Не получилось: ${r.failed.map((f) => `«${f.title}» — ${f.reason}`).join('; ')}` : head, r.failed.length ? 'error' : 'ok');
       setSel(new Set());
     } catch (e) { toast((e as Error).message, 'error'); } finally { setBusy(false); reload(); }
   };
@@ -58,6 +64,7 @@ export function TestsPage() {
             <Button className="!h-9" icon="check" disabled={busy} onClick={() => bulk([...sel], 'publish')}>Опубликовать</Button>
             <Button tone="ghost" className="!h-9" disabled={busy} onClick={() => bulk([...sel], 'draft')}>В черновики</Button>
             <Button tone="ghost" className="!h-9" disabled={busy} onClick={() => bulk([...sel], 'archive')}>В архив</Button>
+            <Button tone="danger" className="!h-9" icon="trash" disabled={busy} onClick={() => bulk([...sel], 'delete')}>Удалить</Button>
             <button type="button" onClick={() => setSel(new Set())} className="ml-auto text-[13px] font-bold text-muted">Снять выбор</button>
           </div>
         )}
@@ -84,7 +91,7 @@ export function TestsPage() {
                         : <button type="button" onClick={() => archive(r, 'archived')} className="h-8 whitespace-nowrap rounded-[10px] px-2.5 text-[12px] font-bold text-ink-2 hover:bg-canvas">В архив</button>)}
                       {editor && (r.deletable
                         ? <button type="button" aria-label={`Удалить: ${r.title}`} onClick={() => remove(r)} className="grid size-8 place-items-center rounded-full text-muted hover:bg-error-50 hover:text-error-ink"><Icon name="trash" size={17} /></button>
-                        : <span title="Тест уже проходили — удалить нельзя, только в архив" className="grid size-8 place-items-center text-line"><Icon name="trash" size={17} /></span>)}
+                        : <span title="Тест уже проходили или он был в эфире/группе — удалить нельзя, только в архив" className="grid size-8 place-items-center text-line"><Icon name="trash" size={17} /></span>)}
                       <Link to={`/tests/${r.id}`} aria-label="Открыть" className="grid size-8 place-items-center rounded-full text-muted hover:text-primary"><Icon name="chevron" size={18} /></Link>
                     </div>
                   </td>
