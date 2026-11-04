@@ -38,7 +38,7 @@ export function SettingsPage() {
       <fieldset disabled={!sup} className="grid items-start gap-5 xl:grid-cols-2">
         <Card title="Тесты по умолчанию">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Время на тест для новых тестов" hint="мин"><Input type="number" min={1} value={s.defaultDurationMin} onChange={(e) => set({ defaultDurationMin: Number(e.target.value) })} /></Field>
+            <Field label="Время на один вопрос" hint="мин · время теста = вопросы × это число"><Input type="number" min={1} max={30} value={s.minutesPerQuestion} onChange={(e) => set({ minutesPerQuestion: Number(e.target.value) })} /></Field>
             <Field label="Время на вопрос в эфире" hint="сек"><Input type="number" min={5} value={s.liveQuestionSec} onChange={(e) => set({ liveQuestionSec: Number(e.target.value) })} /></Field>
             <Field label="Показ ответа без объяснения" hint="сек"><Input type="number" min={1} max={10} value={s.feedbackMs / 1000} onChange={(e) => set({ feedbackMs: Number(e.target.value) * 1000 })} /></Field>
             <Field label="Показ ответа с объяснением" hint="сек"><Input type="number" min={1} max={15} value={s.feedbackExplainMs / 1000} onChange={(e) => set({ feedbackExplainMs: Number(e.target.value) * 1000 })} /></Field>

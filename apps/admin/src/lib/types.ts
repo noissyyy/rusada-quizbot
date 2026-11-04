@@ -24,7 +24,7 @@ export interface QuizRow {
   modes: ('individual' | 'live' | 'group')[]; attempts: number; status: Status; isLive: boolean; deletable: boolean; updatedAt: string;
 }
 export interface AppSettings {
-  defaultDurationMin: number; liveQuestionSec: number; feedbackMs: number; feedbackExplainMs: number;
+  defaultDurationMin: number; minutesPerQuestion: number; liveQuestionSec: number; feedbackMs: number; feedbackExplainMs: number;
   langs: ('uz' | 'uz-cyrl' | 'ru')[]; defaultLang: 'telegram' | 'uz' | 'uz-cyrl' | 'ru'; rateLimitPerMin: number;
   botUsername?: string; miniappUrl?: string; botTokenSet?: boolean; signatureCheck?: boolean;
 }

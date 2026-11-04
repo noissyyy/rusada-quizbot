@@ -51,7 +51,7 @@ async def test_full_run_answer_key_never_leaks(client, auth):
     assert home["popularTests"][0]["title"] == "Имя существительное"
 
     quiz_id, s = await _start(client, h)
-    assert s["durationSec"] == 120 and s["remainingSec"] >= 119
+    assert s["durationSec"] == 480 and s["remainingSec"] >= 479
     assert "correct" not in str(s).lower()  # no answer key in the payload
     q1, q2 = s["questions"][0], s["questions"][1]
 
@@ -74,7 +74,7 @@ async def test_full_run_answer_key_never_leaks(client, auth):
         a = await db.get(Attempt, s["sessionId"])
         assert 5_000 <= a.paused_ms < 6_000
         assert a.feedback_until is not None
-        assert 125 <= (a.deadline_at - a.started_at).total_seconds() < 126
+        assert 485 <= (a.deadline_at - a.started_at).total_seconds() < 486
 
     res = (await client.post(f"/api/sessions/{s['sessionId']}/finish", json={"timedOut": False}, headers=h)).json()
     assert (res["points"], res["maxPoints"], res["correct"], res["wrong"], res["unanswered"]) == (100, 500, 1, 1, 2)
