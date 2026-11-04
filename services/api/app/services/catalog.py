@@ -60,7 +60,7 @@ def topic_test(quiz: Quiz, st: TestStatus | None) -> TopicTest:
     subs = list(dict.fromkeys(i.question.subtopic_id for i in qs if i.question.subtopic_id))
     return TopicTest(**summary(quiz).model_dump(), description=quiz.description,
                      max_points=sum(i.question.points for i in qs), status=st or TestStatus(kind="new"),
-                     subtopic_ids=subs)
+                     subtopic_ids=subs, work_id=quiz.subtopic_id)
 
 
 async def topics(db: AsyncSession, user: User) -> list[TopicSummary]:
@@ -77,8 +77,12 @@ async def topics(db: AsyncSession, user: User) -> list[TopicSummary]:
         out.append(TopicSummary(id=t.id, slug=t.slug, title=t.title, color=t.color, illustration=t.illustration,
                                 tests_count=len(mine), questions_count=sum(len(live_questions(q)) for q in mine),
                                 progress=round(100 * done / len(mine)) if mine else 0, difficulties=diffs,  # type: ignore[arg-type]
-                                description=t.description,
-                                subtopics=[{"id": st.id, "title": st.title} for st in t.subtopics if st.id in used]))
+                                description=t.description, layout=t.layout,
+                                subtopics=[{"id": st.id, "title": st.title} for st in t.subtopics if st.id in used],
+                                works=[{"id": st.id, "title": st.title, "author": st.author,
+                                        "coverUrl": f"/api/works/{st.id}/cover?v={st.cover_version}" if st.cover_type else None,
+                                        "testsCount": sum(1 for q in mine if q.subtopic_id == st.id and live_questions(q))}
+                                       for st in t.subtopics] if t.layout == "works" else []))
     return out
 
 

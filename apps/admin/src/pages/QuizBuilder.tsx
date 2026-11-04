@@ -31,7 +31,7 @@ export function QuizBuilderPage() {
   }, [id]);
   useEffect(() => {
     if (!id && !d && topics.state.status === 'ok') {
-      setD({ title: '', topicId: (topicParam && topics.state.data.some((t) => t.id === topicParam) ? topicParam : topics.state.data[0]?.id) ?? '', description: '', difficulty: 'medium', durationSec: 360, liveQuestionSec: 20, modeIndividual: true, modeLive: false, modeGroup: true, isQuick: false, questions: [] });
+      setD({ title: '', topicId: (topicParam && topics.state.data.some((t) => t.id === topicParam) ? topicParam : topics.state.data[0]?.id) ?? '', subtopicId: sp.get('work'), description: '', difficulty: 'medium', durationSec: 360, liveQuestionSec: 20, modeIndividual: true, modeLive: false, modeGroup: true, isQuick: false, questions: [] });
     }
   }, [id, d, topics.state]);
 
@@ -118,7 +118,19 @@ export function QuizBuilderPage() {
         <Card title="Настройки" className="xl:col-span-2 2xl:col-span-1">
           <fieldset disabled={!editor} className="flex flex-col gap-4">
             <Field label="Название"><Input value={d.title} onChange={(e) => set({ title: e.target.value })} /></Field>
-            <Field label="Раздел"><Select value={d.topicId} onChange={(e) => set({ topicId: e.target.value })}>{topics.state.data.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</Select></Field>
+            <Field label="Раздел"><Select value={d.topicId} onChange={(e) => set({ topicId: e.target.value, subtopicId: null })}>{topics.state.data.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</Select></Field>
+            {(() => {
+              const tp = topics.state.data.find((x) => x.id === d.topicId);
+              if (tp?.layout !== 'works') return null;
+              return (
+                <Field label="Произведение" hint="тест появится на обложке этого произведения">
+                  <Select value={d.subtopicId ?? ''} onChange={(e) => set({ subtopicId: e.target.value || null })}>
+                    <option value="">— не выбрано —</option>
+                    {tp.subtopics.map((s) => <option key={s.id ?? s.title} value={s.id ?? ''}>{s.author ? `${s.author} — ` : ''}{s.title}</option>)}
+                  </Select>
+                </Field>
+              );
+            })()}
             <Field label="Описание"><Textarea value={d.description} onChange={(e) => set({ description: e.target.value })} /></Field>
             <Field label="Сложность"><Select value={d.difficulty} onChange={(e) => set({ difficulty: e.target.value as Difficulty })}>{Object.entries(diffLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
             <div className="flex flex-col gap-2.5"><span className="text-[13px] font-bold text-ink-2">Доступные режимы</span>

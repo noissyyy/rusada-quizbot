@@ -81,6 +81,18 @@ export interface TopicSummary {
   description?: string;
   /** subtopics that have published tests (filter chips) */
   subtopics?: { id: ID; title: string }[];
+  /** default: tests list; works: a shelf of literary works, tests inside each */
+  layout?: 'default' | 'works';
+  works?: Work[];
+}
+
+/** A literary work in a «works» section (technically a subtopic with an author and a cover). */
+export interface Work {
+  id: ID;
+  title: string;
+  author: string;
+  coverUrl: string | null;
+  testsCount: number;
 }
 
 export type TestStatus =
@@ -94,6 +106,8 @@ export interface TopicTest extends TestSummary {
   status: TestStatus;
   /** subtopics covered by the test's questions */
   subtopicIds?: ID[];
+  /** «works» sections: the work this test belongs to */
+  workId?: ID | null;
 }
 
 /* ---------- Quiz session (server-authoritative) ---------- */

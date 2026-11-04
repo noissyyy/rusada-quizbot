@@ -17,6 +17,13 @@ export const topics: TopicSummary[] = [
   { id: 't3', slug: 'syntax', title: 'Синтаксис', color: 'mint', illustration: '/3d/rq-3d-T03.webp', testsCount: 9, questionsCount: 135, progress: 70, difficulties: ['medium'] },
   { id: 't4', slug: 'punctuation', title: 'Пунктуация', color: 'peach', illustration: '/3d/rq-3d-T04.webp', testsCount: 10, questionsCount: 150, progress: 0, difficulties: ['medium', 'hard'] },
   { id: 't5', slug: 'lexicon', title: 'Лексика', color: 'pink', illustration: '/3d/rq-3d-T05.webp', testsCount: 8, questionsCount: 120, progress: 10, difficulties: ['easy'] },
+  { id: 't7', slug: 'works', title: 'Обязательные произведения', color: 'lavender', illustration: '/3d/rq-3d-T08.webp', testsCount: 4, questionsCount: 60, progress: 25, difficulties: ['medium'], layout: 'works',
+    works: [
+      { id: 'w1', title: 'Евгений Онегин', author: 'А. С. Пушкин', coverUrl: '/3d/rq-3d-T27.webp', testsCount: 2 },
+      { id: 'w2', title: 'Герой нашего времени', author: 'М. Ю. Лермонтов', coverUrl: null, testsCount: 1 },
+      { id: 'w3', title: 'Мёртвые души', author: 'Н. В. Гоголь', coverUrl: null, testsCount: 1 },
+      { id: 'w4', title: 'Преступление и наказание', author: 'Ф. М. Достоевский', coverUrl: null, testsCount: 0 },
+    ] },
   { id: 't6', slug: 'phonetics', title: 'Фонетика', color: 'yellow', illustration: '/3d/rq-3d-T06.webp', testsCount: 6, questionsCount: 90, progress: 0, difficulties: ['easy', 'medium'] },
 ];
 
@@ -55,7 +62,9 @@ export const server = {
   async topic(slug: string) {
     await wait();
     const topic = topics.find((t) => t.slug === slug) ?? topics[0]!;
-    return { topic, tests: morphTests.map((t) => ({ ...t, topicTitle: topic.title, topicColor: topic.color, illustration: topic.illustration })) };
+    const works = ['w1', 'w1', 'w2', 'w3'];
+    return { topic, tests: morphTests.map((t, i) => ({ ...t, topicTitle: topic.title, topicColor: topic.color, illustration: topic.illustration,
+      workId: topic.layout === 'works' ? works[i] ?? null : null })) };
   },
   async search(q: string) {
     await wait(120);

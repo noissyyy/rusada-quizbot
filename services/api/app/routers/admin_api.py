@@ -155,9 +155,30 @@ async def _topic_out(db: AsyncSession, t: Topic) -> TopicAdminOut:
                                                                             Question.status != "archived"))).scalar_one()
     await db.refresh(t, ["subtopics"])
     return TopicAdminOut(id=t.id, slug=t.slug, title=t.title, description=t.description, color=t.color,
-                         illustration=t.illustration, position=t.position, is_active=t.is_active,
-                         subtopics=[{"id": s.id, "title": s.title} for s in t.subtopics], tests_count=tests,
-                         questions_count=qs)
+                         illustration=t.illustration, position=t.position, is_active=t.is_active, layout=t.layout,
+                         subtopics=[{"id": s.id, "title": s.title, "author": s.author, "cover_url": work_cover_url(s)}
+                                    for s in t.subtopics],
+                         tests_count=tests, questions_count=qs)
+
+
+def work_cover_url(s: Subtopic) -> str | None:
+    return f"/api/works/{s.id}/cover?v={s.cover_version}" if s.cover_type else None
+
+
+async def link_tests_to_works(db: AsyncSession, topic_id: str) -> int:
+    """Each test without a work gets the work most of its questions belong to. Returns how many were linked."""
+    quizzes = (await db.execute(select(Quiz).where(Quiz.topic_id == topic_id, Quiz.subtopic_id.is_(None)))).unique().scalars().all()
+    linked = 0
+    for quiz in quizzes:
+        await db.refresh(quiz, ["items"])
+        counts: dict[str, int] = {}
+        for i in quiz.items:
+            if i.question.subtopic_id:
+                counts[i.question.subtopic_id] = counts.get(i.question.subtopic_id, 0) + 1
+        if counts:
+            quiz.subtopic_id = max(counts, key=lambda k: counts[k])
+            linked += 1
+    return linked
 
 
 @router.get("/topics", response_model=list[TopicAdminOut])
@@ -175,9 +196,9 @@ async def _save_subtopics(db: AsyncSession, t: Topic, subs: list) -> None:
     existing = {s.id: s for s in t.subtopics}
     for i, s in enumerate(subs):
         if s.id and s.id in existing:
-            existing[s.id].title, existing[s.id].position = s.title, i
+            existing[s.id].title, existing[s.id].position, existing[s.id].author = s.title, i, s.author
         else:
-            t.subtopics.append(Subtopic(title=s.title, position=i))
+            t.subtopics.append(Subtopic(title=s.title, position=i, author=s.author))
 
 
 @router.post("/topics", response_model=TopicAdminOut)
@@ -187,7 +208,7 @@ async def create_topic(body: TopicIn, user: User = Depends(admin), db: AsyncSess
     if (await db.execute(select(Topic).where(Topic.slug == slug))).scalar_one_or_none():
         slug = f"{slug}-{new_id()[:4]}"
     t = Topic(slug=slug, title=body.title, description=body.description, color=body.color,
-              illustration=body.illustration, is_active=body.is_active, position=pos)
+              illustration=body.illustration, is_active=body.is_active, layout=body.layout, position=pos)
     db.add(t)
     await db.flush()
     await _save_subtopics(db, t, body.subtopics)
@@ -201,12 +222,53 @@ async def update_topic(tid: str, body: TopicIn, user: User = Depends(admin), db:
     t = await db.get(Topic, tid)
     if t is None:
         raise HTTPException(404)
-    for k in ("title", "description", "color", "illustration", "is_active"):
+    for k in ("title", "description", "color", "illustration", "is_active", "layout"):
         setattr(t, k, getattr(body, k))
     await _save_subtopics(db, t, body.subtopics)
+    await db.flush()
+    if t.layout == "works":  # switching to the shelf: existing tests find their work by their questions
+        await link_tests_to_works(db, t.id)
     await audit(db, user, "topic.update", t.id)
     await db.commit()
     return await _topic_out(db, t)
+
+
+@router.post("/works/{sid}/cover", response_model=TopicAdminOut)
+async def upload_work_cover(sid: str, file: UploadFile = File(...), user: User = Depends(admin),
+                            db: AsyncSession = Depends(get_db)):
+    from fastapi.concurrency import run_in_threadpool
+    from ..services import pdf_pages
+    s = await db.get(Subtopic, sid)
+    if s is None:
+        raise HTTPException(404)
+    data = await file.read(10 * 1024 * 1024 + 1)
+    if len(data) > 10 * 1024 * 1024:
+        raise HTTPException(422, "Обложка больше 10 МБ")
+    try:
+        s.cover = await run_in_threadpool(pdf_pages.shrink_cover, data, 600)
+    except ValueError:
+        raise HTTPException(422, "Не удалось прочитать картинку") from None
+    s.cover_type, s.cover_version = "image/jpeg", s.cover_version + 1
+    await db.commit()
+    return await _topic_out(db, await db.get(Topic, s.topic_id))
+
+
+@router.delete("/works/{sid}/cover", response_model=TopicAdminOut)
+async def delete_work_cover(sid: str, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    s = await db.get(Subtopic, sid)
+    if s is None:
+        raise HTTPException(404)
+    s.cover, s.cover_type, s.cover_version = None, None, s.cover_version + 1
+    await db.commit()
+    return await _topic_out(db, await db.get(Topic, s.topic_id))
+
+
+@router.post("/topics/{tid}/link-works")
+async def link_works(tid: str, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    """Re-run the automatic «test → work» linking for tests that still have no work."""
+    n = await link_tests_to_works(db, tid)
+    await db.commit()
+    return {"linked": n}
 
 
 @router.post("/topics/reorder", status_code=204)
@@ -384,7 +446,7 @@ async def _quiz_out(db: AsyncSession, quiz: Quiz) -> QuizAdminOut:
                         description=quiz.description, difficulty=quiz.difficulty, duration_sec=quiz.duration_sec,
                         live_question_sec=quiz.live_question_sec, mode_individual=quiz.mode_individual,
                         mode_live=quiz.mode_live, mode_group=quiz.mode_group, is_quick=quiz.is_quick,
-                        status=quiz.status, questions=[_question_out(q, rates.get(q.id)) for q in qs],
+                        subtopic_id=quiz.subtopic_id, status=quiz.status, questions=[_question_out(q, rates.get(q.id)) for q in qs],
                         questions_count=len([q for q in qs if q.status != "archived"]),
                         max_points=sum(q.points for q in qs if q.status != "archived"), attempts=attempts,
                         published_at=quiz.published_at, updated_at=quiz.updated_at,
@@ -400,7 +462,9 @@ async def list_tests(status_: str | None = Query(None, alias="status"), user: Us
     rows = (await db.execute(stmt)).unique().scalars().all()
     counts = dict((await db.execute(select(Attempt.quiz_id, func.count()).group_by(Attempt.quiz_id))).all())
     live_ids = set((await db.execute(select(LiveSession.quiz_id).where(LiveSession.state.in_(live_svc.ACTIVE)))).scalars())
-    return [{"id": q.id, "title": q.title, "topicId": q.topic_id, "topicTitle": q.topic.title, "questionsCount": len(catalog.live_questions(q)),
+    work_titles = dict((await db.execute(select(Subtopic.id, Subtopic.title))).all())
+    return [{"id": q.id, "title": q.title, "topicId": q.topic_id, "topicTitle": q.topic.title,
+             "workId": q.subtopic_id, "workTitle": work_titles.get(q.subtopic_id) if q.subtopic_id else None, "questionsCount": len(catalog.live_questions(q)),
              "durationSec": q.duration_sec, "liveQuestionSec": q.live_question_sec,
              "modes": [m for m, on in (("individual", q.mode_individual), ("live", q.mode_live),
                                        ("group", q.mode_group)) if on],
@@ -435,6 +499,10 @@ async def sync_durations(db: AsyncSession, quiz_ids: set[str] | None = None) -> 
 async def _apply_quiz(db: AsyncSession, quiz: Quiz, body: QuizIn) -> None:
     for k, v in body.model_dump(exclude={"question_ids", "duration_sec"}).items():
         setattr(quiz, k, v)
+    if body.subtopic_id:
+        sub = await db.get(Subtopic, body.subtopic_id)
+        if sub is None or sub.topic_id != body.topic_id:
+            raise HTTPException(422, "Произведение не из этого раздела")
     await db.execute(delete(QuizQuestion).where(QuizQuestion.quiz_id == quiz.id))
     seen = set()
     for i, qid in enumerate(body.question_ids):

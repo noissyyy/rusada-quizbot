@@ -8,7 +8,7 @@ import { Button, Empty, Icon, Pill, Segmented, Table, modeLabel, statusLabel } f
 type Filter = '' | 'published' | 'draft' | 'archived';
 
 /** Table of tests with filters, bulk actions and per-row actions. Used on «Тесты» and inside a section. */
-export function TestsManager({ rows, reload, showTopic = true, initialFilter = '' }: { rows: QuizRow[]; reload: () => void; showTopic?: boolean; initialFilter?: Filter }) {
+export function TestsManager({ rows, reload, showTopic = true, showWork = false, initialFilter = '' }: { rows: QuizRow[]; reload: () => void; showTopic?: boolean; showWork?: boolean; initialFilter?: Filter }) {
   const me = useMe();
   const toast = useToast();
   const editor = can(me, 'admin');
@@ -62,7 +62,7 @@ export function TestsManager({ rows, reload, showTopic = true, initialFilter = '
           <button type="button" onClick={() => setSel(new Set())} className="ml-auto text-[13px] font-bold text-muted">Снять выбор</button>
         </div>
       )}
-      <Table head={[editor ? <input key="all" type="checkbox" aria-label="Выбрать все" checked={allShownSelected} onChange={(e) => setSel(e.target.checked ? new Set(shown.map((r) => r.id)) : new Set())} /> : '', 'Тест', ...(showTopic ? ['Раздел'] : []), 'Вопросов', 'Время', 'Режимы', 'Попыток', 'Статус', '']}
+      <Table head={[editor ? <input key="all" type="checkbox" aria-label="Выбрать все" checked={allShownSelected} onChange={(e) => setSel(e.target.checked ? new Set(shown.map((r) => r.id)) : new Set())} /> : '', 'Тест', ...(showTopic ? ['Раздел'] : []), ...(showWork ? ['Произведение'] : []), 'Вопросов', 'Время', 'Режимы', 'Попыток', 'Статус', '']}
         empty={!shown.length && <Empty title={filter === 'archived' ? 'Архив пуст' : 'Тестов нет'}>Создайте тест и добавьте в него вопросы из банка.</Empty>}>
         {shown.map((r) => {
           const [tone, label] = r.isLive ? ['live', '● В эфире'] as const : statusLabel[r.status] ?? ['neutral', r.status];
@@ -71,6 +71,7 @@ export function TestsManager({ rows, reload, showTopic = true, initialFilter = '
               <td>{editor && <input type="checkbox" aria-label={`Выбрать: ${r.title}`} checked={sel.has(r.id)} onChange={() => toggle(r.id)} />}</td>
               <td className="font-bold"><Link to={`/tests/${r.id}`} className="text-ink hover:text-primary">{r.title}</Link></td>
               {showTopic && <td className="text-muted"><Link to={`/topics/${r.topicId}`} className="hover:text-primary">{r.topicTitle}</Link></td>}
+              {showWork && <td className={r.workTitle ? 'text-ink-2' : 'text-warning-ink'}>{r.workTitle ?? 'не выбрано'}</td>}
               <td className="tabular-nums">{r.questionsCount}</td>
               <td className="whitespace-nowrap">{Math.round(r.durationSec / 60)} мин</td>
               <td><div className="flex flex-wrap gap-1">{r.modes.map((m) => <Pill key={m} tone="neutral">{modeLabel[m]}</Pill>)}</div></td>

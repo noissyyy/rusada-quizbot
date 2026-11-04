@@ -51,6 +51,8 @@ class TopicTest(TestSummary):
     max_points: int
     status: TestStatus
     subtopic_ids: list[str] = []
+    #: «works» sections: the work this test belongs to
+    work_id: str | None = None
 
 
 class TopicSummary(Camel):
@@ -66,6 +68,9 @@ class TopicSummary(Camel):
     description: str = ""
     #: subtopics that have at least one published test (filter chips)
     subtopics: list[dict[str, str]] = []
+    layout: str = "default"
+    #: «works» sections: every work with author, cover and number of published tests
+    works: list[dict] = []
 
 
 class QuickStart(Camel):
@@ -375,6 +380,11 @@ class AdminSession(Camel):
 class SubtopicIn(Camel):
     id: str | None = None
     title: str
+    author: str = ""
+
+
+class SubtopicAdminOut(SubtopicIn):
+    cover_url: str | None = None
 
 
 class TopicIn(Camel):
@@ -384,6 +394,7 @@ class TopicIn(Camel):
     color: Literal["blue", "violet", "mint", "peach", "pink", "yellow", "sky", "indigo", "lavender", "plum", "rose", "coral", "orange", "sand", "lime", "green", "teal", "olive", "slate", "gray"] = "blue"
     illustration: str = "/3d/rq-3d-T01.webp"
     is_active: bool = True
+    layout: Literal["default", "works"] = "default"
     subtopics: list[SubtopicIn] = []
 
 
@@ -396,7 +407,8 @@ class TopicAdminOut(Camel):
     illustration: str
     position: int
     is_active: bool
-    subtopics: list[SubtopicIn]
+    layout: str = "default"
+    subtopics: list[SubtopicAdminOut]
     tests_count: int
     questions_count: int
 
@@ -454,6 +466,8 @@ class QuizIn(Camel):
     mode_live: bool = False
     mode_group: bool = True
     is_quick: bool = False
+    #: «works» sections: the work this test is about
+    subtopic_id: str | None = None
     question_ids: list[str] = []
 
 
@@ -470,6 +484,7 @@ class QuizAdminOut(Camel):
     mode_live: bool
     mode_group: bool
     is_quick: bool
+    subtopic_id: str | None = None
     status: str
     questions: list[QuestionAdminOut]
     questions_count: int
