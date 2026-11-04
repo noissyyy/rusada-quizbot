@@ -7,12 +7,12 @@ import { ErrorView } from '../components/states/StateViews';
 import { HomeHeader } from '../components/home/HomeHeader';
 import { StartCard } from '../components/home/StartCard';
 import { ContinueCard } from '../components/home/ContinueCard';
-import { TestRow } from '../components/home/TestRow';
+import { TopicCard } from '../components/tests/TopicCard';
 import { ModeTile } from '../components/home/ModeTile';
 import { Link } from 'react-router-dom';
 
 export function HomeScreen() {
-  const state = useAsync(() => api().getHomeFeed());
+  const state = useAsync(() => Promise.all([api().getHomeFeed(), api().getTopics()]));
   const { t } = useI18n();
 
   if (state.status === 'loading') return <HomeSkeleton label={t('loading')} />;
@@ -20,7 +20,10 @@ export function HomeScreen() {
     return <ErrorView error={state.error} onRetry={state.reload} />;
   }
 
-  const feed = state.data;
+  const [feed, allTopics] = state.data;
+  // sections that actually have tests; fall back to all of them while the catalogue is empty
+  const withTests = allTopics.filter((tp) => tp.testsCount > 0);
+  const sections = withTests.length ? withTests : allTopics;
   const fullName = [feed.user.firstName, feed.user.lastName].filter(Boolean).join(' ');
   return (
     <Screen className="flex flex-col gap-5">
@@ -33,12 +36,12 @@ export function HomeScreen() {
       {feed.quickStart && <StartCard quick={feed.quickStart} />}
       {feed.continueAttempt && <ContinueCard attempt={feed.continueAttempt} />}
 
-      <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="popular-title">
+      <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="sections-title">
         <div className="flex items-center justify-between">
-          <h2 id="popular-title" className="font-display text-title font-bold tracking-tight">{t('home.popular')}</h2>
+          <h2 id="sections-title" className="font-display text-title font-bold tracking-tight">{t('home.sections')}</h2>
           <Link to="/tests" className="text-[14px] font-bold text-primary">{t('home.allTests')}</Link>
         </div>
-        {feed.popularTests.map((test) => <TestRow key={test.id} test={test} />)}
+        <div className="grid grid-cols-2 gap-3">{sections.map((tp) => <TopicCard key={tp.id} topic={tp} />)}</div>
       </section>
 
       <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="modes-title">
@@ -61,7 +64,7 @@ function HomeSkeleton({ label }: { label: string }) {
         <div className="flex items-center gap-3"><Skeleton className="size-[52px] rounded-full" /><Skeleton className="h-8 w-52" /></div>
         <Skeleton className="h-[140px] rounded-hero" />
         <Skeleton className="h-24" />
-        <Skeleton className="h-[78px]" /><Skeleton className="h-[78px]" /><Skeleton className="h-[78px]" />
+        <div className="grid grid-cols-2 gap-3"><Skeleton className="h-[196px]" /><Skeleton className="h-[196px]" /></div>
       </div>
     </Screen>
   );

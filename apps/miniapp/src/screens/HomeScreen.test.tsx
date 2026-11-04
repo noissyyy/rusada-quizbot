@@ -27,12 +27,13 @@ function renderAt(path: string, lang: Lang = 'ru') {
 describe('HomeScreen', () => {
   beforeEach(() => { setApi(mockApi); try { localStorage.clear(); } catch { /* noop */ } });
 
-  it('renders start card, popular tests and three modes with function hints', async () => {
+  it('renders start card, test sections and three modes with function hints', async () => {
     renderAt('/');
     expect(await screen.findByText('Привет, Алексей!')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Начать тест: 4\s+вопросов · 2\s+мин/ })).toBeInTheDocument();
-    expect(screen.getByText('Популярные тесты')).toBeInTheDocument();
-    expect(screen.getByText('Имя прилагательное')).toBeInTheDocument();
+    expect(screen.getByText('Разделы')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Морфология/ })).toHaveAttribute('href', '/topics/morphology');
+    expect(screen.queryByText('Популярные тесты')).not.toBeInTheDocument();
     for (const hint of ['Тесты в своём темпе', 'Все отвечают одновременно', 'Тест для своей группы']) expect(screen.getByText(hint)).toBeInTheDocument();
     expect(screen.getByText('LIVE')).toBeInTheDocument();
   });
@@ -52,7 +53,7 @@ describe('HomeScreen', () => {
   it('renders Uzbek Cyrillic generated from Latin strings', async () => {
     renderAt('/', 'uz-cyrl');
     expect(await screen.findByText('Тестни бошлаш')).toBeInTheDocument();
-    expect(screen.getByText('Машҳур тестлар')).toBeInTheDocument();
+    expect(screen.getByText('Бўлимлар')).toBeInTheDocument();
   });
 
   it('bottom nav: Главная, Тесты, Рейтинг, Профиль', () => {

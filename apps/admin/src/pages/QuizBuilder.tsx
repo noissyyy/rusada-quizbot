@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { can, get, post, put } from '../lib/api';
 import { fmtDate, fmtNum, useLoad, useMe, useToast } from '../lib/hooks';
 import type { Difficulty, Page, Question, QuizFull, Topic } from '../lib/types';
-import { Button, Card, ErrorBox, Field, Icon, Input, PageHeader, Pill, Select, Spinner, Textarea, Toggle, diffLabel, statusLabel } from '../components/ui';
+import { Button, Card, ErrorBox, Field, Icon, Input, NumberInput, PageHeader, Pill, Select, Spinner, Textarea, Toggle, diffLabel, statusLabel } from '../components/ui';
 
 type Draft = Omit<QuizFull, 'id' | 'topicTitle' | 'questionsCount' | 'maxPoints' | 'attempts' | 'publishedAt' | 'updatedAt' | 'updatedByName' | 'status'>;
 
@@ -124,9 +124,9 @@ export function QuizBuilderPage() {
               <Toggle label="Быстрый старт на главной («Начать тест»)" checked={d.isQuick} onChange={(v) => set({ isQuick: v })} />
             </div>
             <Field label="Время на весь тест" hint={perQ ? `минут · ≈ ${perQ} с на вопрос` : 'минут'}>
-              <Input type="number" min={1} max={180} value={minutes} onChange={(e) => set({ durationSec: Math.max(1, Number(e.target.value)) * 60 })} />
+              <NumberInput aria-label="Минут на весь тест" min={1} max={180} value={minutes} onCommit={(v) => set({ durationSec: v * 60 })} />
             </Field>
-            {d.modeLive && <Field label="В прямом эфире: время на каждый вопрос" hint="секунд — одинаково для всех вопросов"><Input type="number" min={5} max={300} value={d.liveQuestionSec} onChange={(e) => set({ liveQuestionSec: Number(e.target.value) })} /></Field>}
+            {d.modeLive && <Field label="В прямом эфире: время на каждый вопрос" hint="секунд — одинаково для всех вопросов"><NumberInput aria-label="Секунд на вопрос в эфире" min={5} max={300} value={d.liveQuestionSec} onCommit={(v) => set({ liveQuestionSec: v })} /></Field>}
             <p className="rounded-[12px] bg-canvas p-3 text-[12px] text-muted">Попытки: без ограничений, в рейтинг идёт лучшая. Показ ответа после вопроса — по настройкам системы (таймер теста в это время на паузе).</p>
           </fieldset>
           {quiz && <p className="mt-4 text-[12px] text-muted">Изменено {fmtDate(quiz.updatedAt)}{quiz.updatedByName ? ` · ${quiz.updatedByName}` : ''}</p>}
