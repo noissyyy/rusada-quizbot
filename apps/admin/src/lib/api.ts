@@ -78,3 +78,9 @@ export function wsUrl(path: string) {
 export const roleName: Record<Role, string> = { student: 'Ученик', host: 'Ведущий', admin: 'Администратор', superadmin: 'Супер-администратор' };
 export const roleRank: Record<Role, number> = { student: 0, host: 1, admin: 2, superadmin: 3 };
 export const can = (u: AdminUser | null, need: Role) => Boolean(u && roleRank[u.role] >= roleRank[need]);
+
+/** An authenticated image (e.g. a payment receipt) as an object URL for <img>. Revoke it when done. */
+export async function blobUrl(path: string): Promise<string> {
+  const res = await raw('GET', path);
+  return URL.createObjectURL(await res.blob());
+}

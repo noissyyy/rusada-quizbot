@@ -9,6 +9,7 @@ import { setHapticsEnabled } from '../lib/telegram/webapp';
 import { Screen } from '../components/Screen';
 import { topicBg as topicColorBg } from '../components/home/TestRow';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { useAccess } from '../lib/access';
 import { Avatar, Icon, Skeleton } from '../components/ui';
 import { ErrorView } from '../components/states/StateViews';
 
@@ -44,6 +45,7 @@ export function ProfileScreen() {
         ))}
       </div>
 
+      <AccessRow />
       <Link to="/profile/history" className="flex items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-[15px] font-semibold text-ink shadow-card">
         <span className="grid size-9 place-items-center rounded-sm bg-primary-50 text-primary"><Icon name="clock" size={18} /></span>
         {t('profile.history')}
@@ -76,6 +78,22 @@ export function HistoryScreen() {
         </div>
       )}
     </Screen>
+  );
+}
+
+function AccessRow() {
+  const { t, lang } = useI18n();
+  const { access } = useAccess();
+  if (!access || access.reason === 'open' || !access.reason) return null;
+  const value = access.reason === 'subscription' && access.subscriptionEndsAt
+    ? t('profile.accessSub', { d: new Date(access.subscriptionEndsAt).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'long' }) })
+    : access.reason === 'member' ? t('profile.accessMember') : t('profile.accessStaff');
+  return (
+    <div className="flex items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-[15px] font-semibold shadow-card">
+      <span className="grid size-9 place-items-center rounded-sm bg-success-50 text-success-ink"><Icon name="check" size={18} /></span>
+      {t('profile.access')}
+      <span className="ml-auto text-[14px] font-medium text-muted">{value}</span>
+    </div>
   );
 }
 

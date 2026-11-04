@@ -99,7 +99,8 @@ def settings_superadmins() -> set[int]:
     return {int(x) for x in os.environ.get("SUPERADMIN_TELEGRAM_IDS", "").replace(" ", "").split(",") if x}
 
 
-async def current_user(authorization: str = Header(default=""), db: AsyncSession = Depends(get_db)) -> User:
+async def telegram_user(authorization: str = Header(default=""), db: AsyncSession = Depends(get_db)) -> User:
+    """Who is calling (Telegram initData). Does not check whether they may use the app — see current_user."""
     scheme, _, value = authorization.partition(" ")
     if scheme == "tma" and value:
         try:
@@ -113,6 +114,16 @@ async def current_user(authorization: str = Header(default=""), db: AsyncSession
     user = await upsert_user(db, tg)
     if user.is_blocked:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "blocked")
+    return user
+
+
+async def current_user(user: User = Depends(telegram_user), db: AsyncSession = Depends(get_db)) -> User:
+    """A Telegram user who may use the app right now; otherwise 402 → the app shows the subscription page."""
+    from .services.access import access_reason
+    if await access_reason(db, user) is None:
+        await db.commit()
+        raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "subscription_required")
+    await db.commit()  # a member's Telegram ID may have just been remembered
     return user
 
 

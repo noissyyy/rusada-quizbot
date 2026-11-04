@@ -345,3 +345,46 @@ class Book(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(TS, default=utcnow, onupdate=utcnow)
+
+
+class Member(Base):
+    """A Rusada student: free access while the app is closed to the public. Added by @username;
+    the Telegram ID is remembered on first visit, so a later username change does not lock them out."""
+    __tablename__ = "members"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    username: Mapped[str] = mapped_column(String(64), unique=True)  # lower-case, without @
+    telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True)
+    note: Mapped[str] = mapped_column(String(200), default="")
+    added_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+
+
+class PaymentRequest(Base):
+    """A card transfer the student reports with a receipt screenshot; an admin approves or rejects it."""
+    __tablename__ = "payment_requests"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    status: Mapped[str] = mapped_column(String(12), default="pending")  # pending | approved | rejected
+    amount: Mapped[int] = mapped_column(Integer, default=0)
+    days: Mapped[int] = mapped_column(Integer, default=30)
+    receipt: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    receipt_type: Mapped[str | None] = mapped_column(String(32))
+    comment: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    decided_at: Mapped[datetime | None] = mapped_column(TS)
+    decided_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    user: Mapped[User] = relationship(lazy="joined", foreign_keys=[user_id])
+
+
+class Subscription(Base):
+    """Paid (or granted) access for a period."""
+    __tablename__ = "subscriptions"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    starts_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    ends_at: Mapped[datetime] = mapped_column(TS)
+    source: Mapped[str] = mapped_column(String(12), default="payment")  # payment | manual
+    payment_id: Mapped[str | None] = mapped_column(ForeignKey("payment_requests.id", ondelete="SET NULL"))
+    created_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    user: Mapped[User] = relationship(lazy="joined", foreign_keys=[user_id])
+

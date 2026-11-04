@@ -212,6 +212,22 @@ export interface Book {
   pages: number;
 }
 
+/** What this person may do: everyone (open), staff, a Rusada student, a subscriber — or nothing (paywall). */
+export interface AccessInfo {
+  hasAccess: boolean;
+  reason: 'staff' | 'open' | 'member' | 'subscription' | null;
+  mode: 'open' | 'closed';
+  subscriptionEndsAt: string | null;
+  priceUzs: number;
+  days: number;
+  cardNumber: string;
+  cardHolder: string;
+  note: string;
+  supportUsername: string;
+  pending: { id: ID; createdAt: string } | null;
+  rejectedComment: string | null;
+}
+
 export interface GroupHubItem {
   id: ID;
   groupTitle: string;
