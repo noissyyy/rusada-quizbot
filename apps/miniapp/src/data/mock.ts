@@ -56,7 +56,7 @@ export const mockApi: QuizApi = {
     await wait();
     const closed = DEMO_PAYWALL;
     return {
-      hasAccess: !closed, reason: closed ? null : 'open', mode: closed ? 'closed' : 'open', subscriptionEndsAt: null,
+      telegramId: 123456789, username: null, hasAccess: !closed, reason: closed ? null : 'open', mode: closed ? 'closed' : 'open', subscriptionEndsAt: null,
       priceUzs: 100000, days: 30, cardNumber: '8600 1234 5678 9012', cardHolder: 'RUSADA O‘QUV MARKAZI', note: '',
       supportUsername: 'rusada_admin', pending: mockPending, rejectedComment: null,
     } as const;

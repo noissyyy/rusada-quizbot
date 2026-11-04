@@ -7,7 +7,7 @@ import { Button, Card, Empty, ErrorBox, Field, Input, Modal, PageHeader, Pill, S
 interface AccessSettings { mode: 'open' | 'closed'; priceUzs: number; days: number; cardNumber: string; cardHolder: string; note: string; supportUsername: string }
 interface Stats { pending: number; activeSubscribers: number; members: number }
 interface Payment { id: string; userId: string; name: string; username: string | null; status: 'pending' | 'approved' | 'rejected'; amount: number; days: number; comment: string; createdAt: string; decidedAt: string | null; subscriptionEndsAt: string | null }
-interface MemberRow { id: string; username: string; note: string; seen: boolean; name: string | null; addedAt: string }
+interface MemberRow { id: string; username: string | null; telegramId: number | null; note: string; seen: boolean; name: string | null; addedAt: string }
 interface Subscriber { userId: string; name: string; username: string | null; endsAt: string; active: boolean }
 
 const sum = (n: number) => `${n.toLocaleString('ru-RU')} сум`;
@@ -137,6 +137,8 @@ function Payments({ onChange }: { onChange: () => void }) {
   );
 }
 
+const who = (m: MemberRow) => (m.username ? `@${m.username}` : `ID ${m.telegramId}`);
+
 function Members({ onChange }: { onChange: () => void }) {
   const toast = useToast();
   const { state, reload } = useLoad(() => get<MemberRow[]>('/api/admin/members'));
@@ -145,31 +147,32 @@ function Members({ onChange }: { onChange: () => void }) {
   const add = async () => {
     try {
       const r = await post<{ added: number; already: number; invalid: string[] }>('/api/admin/members', { usernames: text });
-      toast(`Добавлено: ${r.added}${r.already ? `, уже были: ${r.already}` : ''}${r.invalid.length ? `. Не похожи на @username: ${r.invalid.join(', ')}` : ''}`, r.invalid.length ? 'error' : 'ok');
+      toast(`Добавлено: ${r.added}${r.already ? `, уже были: ${r.already}` : ''}${r.invalid.length ? `. Не похожи ни на @username, ни на ID: ${r.invalid.join(', ')}` : ''}`, r.invalid.length ? 'error' : 'ok');
       setText(''); reload(); onChange();
     } catch (e) { toast((e as Error).message, 'error'); }
   };
   const remove = async (m: MemberRow) => {
-    if (!confirm(`Убрать @${m.username} из учеников Rusada? Если бот закрыт, он увидит страницу оплаты.`)) return;
+    if (!confirm(`Убрать ${who(m)} из учеников Rusada? Если бот закрыт, он увидит страницу оплаты.`)) return;
     await del(`/api/admin/members/${m.id}`); reload(); onChange();
   };
-  const rows = state.status === 'ok' ? state.data.filter((m) => !q || m.username.includes(q.toLowerCase().replace('@', '')) || (m.name ?? '').toLowerCase().includes(q.toLowerCase())) : [];
+  const needle = q.toLowerCase().replace('@', '').trim();
+  const rows = state.status === 'ok' ? state.data.filter((m) => !needle || (m.username ?? '').includes(needle) || String(m.telegramId ?? '').includes(needle) || (m.name ?? '').toLowerCase().includes(needle)) : [];
   return (
     <>
       <div className="mb-4 flex flex-col gap-2 rounded-[16px] bg-canvas p-3">
-        <Field label="Добавить учеников" hint="вставьте @username — по одному или списком (через пробел, запятую или с новой строки)">
-          <Textarea value={text} placeholder={'@student_one\n@student_two'} onChange={(e) => setText(e.target.value)} />
+        <Field label="Добавить учеников" hint="@username или Telegram ID (цифры) — по одному или списком: через пробел, запятую или с новой строки. Свой ID ученик видит на странице оплаты.">
+          <Textarea value={text} placeholder={'@student_one\n123456789'} onChange={(e) => setText(e.target.value)} />
         </Field>
         <div className="flex items-center gap-3"><Button icon="plus" disabled={!text.trim()} onClick={add}>Добавить</Button><span className="text-[12px] text-muted">Ученики из списка пользуются ботом бесплатно, даже когда он закрыт. Если ученик сменит @username, доступ сохранится — бот запоминает его после первого входа.</span></div>
       </div>
-      <Input placeholder="Поиск по @username или имени" value={q} onChange={(e) => setQ(e.target.value)} className="mb-3 max-w-[320px]" />
+      <Input placeholder="Поиск по @username, ID или имени" value={q} onChange={(e) => setQ(e.target.value)} className="mb-3 max-w-[320px]" />
       {state.status === 'loading' && <Spinner />}
       {state.status === 'error' && <ErrorBox error={state.error} onRetry={reload} />}
       {state.status === 'ok' && (
-        <Table head={['@username', 'Имя в Telegram', 'Заходил', 'Добавлен', '']} empty={!rows.length && <Empty img="M03" title="Список пуст">Добавьте @username учеников Rusada.</Empty>}>
+        <Table head={['Ученик', 'Имя в Telegram', 'Заходил', 'Добавлен', '']} empty={!rows.length && <Empty img="M03" title="Список пуст">Добавьте @username учеников Rusada.</Empty>}>
           {rows.map((m) => (
             <tr key={m.id}>
-              <td className="font-bold">@{m.username}</td>
+              <td><div className="font-bold">{who(m)}</div>{m.username && m.telegramId && <div className="text-[12px] text-muted">ID {m.telegramId}</div>}</td>
               <td>{m.name ?? <span className="text-muted">—</span>}</td>
               <td>{m.seen ? <Pill tone="ok">Да</Pill> : <Pill tone="neutral">Ещё нет</Pill>}</td>
               <td className="whitespace-nowrap text-muted">{fmtDate(m.addedAt, false)}</td>
@@ -200,7 +203,7 @@ function Subscribers({ onChange }: { onChange: () => void }) {
   return (
     <>
       <div className="mb-4 flex flex-wrap items-end gap-2 rounded-[16px] bg-canvas p-3">
-        <Field label="Выдать или продлить доступ вручную" hint="например, оплатили наличными"><Input value={username} placeholder="@username" onChange={(e) => setUsername(e.target.value)} /></Field>
+        <Field label="Выдать или продлить доступ вручную" hint="например, оплатили наличными"><Input value={username} placeholder="@username или Telegram ID" onChange={(e) => setUsername(e.target.value)} /></Field>
         <Field label="Дней"><Input type="number" min={1} value={days} onChange={(e) => setDays(Number(e.target.value))} className="w-24" /></Field>
         <Button icon="plus" disabled={!username.trim()} onClick={grant}>Выдать</Button>
       </div>

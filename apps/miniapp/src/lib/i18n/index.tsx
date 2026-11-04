@@ -19,9 +19,9 @@ export function readStoredLang(): Lang | null {
   }
 }
 
-/** Best guess from Telegram's language_code before the user picks explicitly. */
-export function guessLang(telegramCode?: string): Lang {
-  return telegramCode?.startsWith('uz') ? 'uz' : 'ru';
+/** Language before the user picks one: always Uzbek (Latin), whatever Telegram's language is. */
+export function guessLang(_telegramCode?: string): Lang {
+  return 'uz';
 }
 
 export function format(template: string, vars?: Record<string, string | number>) {

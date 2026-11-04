@@ -27,6 +27,11 @@ export function PaywallScreen({ access, onChanged }: { access: AccessInfo; onCha
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [idCopied, setIdCopied] = useState(false);
+  const copyId = async () => {
+    try { await navigator.clipboard.writeText(String(access.telegramId)); setIdCopied(true); haptic.success(); setTimeout(() => setIdCopied(false), 2000); }
+    catch { /* the ID is on screen anyway */ }
+  };
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(access.cardNumber.replace(/\s/g, '')); setCopied(true); haptic.success(); setTimeout(() => setCopied(false), 2000); }
@@ -118,13 +123,19 @@ export function PaywallScreen({ access, onChanged }: { access: AccessInfo; onCha
         </section>
       )}
 
-      {access.supportUsername && (
-        <button type="button" onClick={support} className="flex items-center gap-3 rounded-card bg-surface p-4 text-left shadow-card">
+      <section className="flex flex-col gap-3 rounded-card bg-surface p-4 shadow-card">
+        <div className="flex items-center gap-3">
           <img src="/3d/rq-3d-T05.webp" alt="" className="size-11 object-contain" />
-          <span className="flex flex-1 flex-col"><b className="text-[15px]">{t('pay.studentQ')}</b><span className="text-[13px] text-ink-2">{t('pay.studentA', { u: access.supportUsername })}</span></span>
-          <Icon name="chevronRight" size={18} className="text-muted" />
+          <span className="flex flex-1 flex-col"><b className="text-[15px]">{t('pay.studentQ')}</b><span className="text-[13px] leading-[18px] text-ink-2">{access.supportUsername ? t('pay.studentA', { u: access.supportUsername }) : t('pay.studentNoSupport')}</span></span>
+        </div>
+        <button type="button" onClick={copyId} className="flex items-center justify-between rounded-[14px] bg-canvas px-3.5 py-2.5 text-left">
+          <span className="flex flex-col"><span className="text-[12px] font-semibold text-muted">{t('pay.yourId')}</span><span className="font-display text-[18px] font-extrabold tabular-nums">{access.telegramId}</span></span>
+          <span className={clsx('flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[12px] font-bold', idCopied ? 'bg-success-50 text-success-ink' : 'bg-primary-50 text-primary')}><Icon name={idCopied ? 'check' : 'copy'} size={14} />{idCopied ? t('pay.copied') : t('pay.copy')}</span>
         </button>
-      )}
+        {access.supportUsername && (
+          <button type="button" onClick={support} className="flex h-11 items-center justify-center gap-1.5 rounded-control bg-primary-50 text-[14px] font-bold text-primary">{t('pay.write', { u: access.supportUsername })}<Icon name="chevronRight" size={16} /></button>
+        )}
+      </section>
     </main>
   );
 }
