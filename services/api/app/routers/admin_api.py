@@ -446,6 +446,33 @@ async def delete_test(qid: str, user: User = Depends(admin), db: AsyncSession = 
     await db.commit()
 
 
+@router.post("/tests/bulk")
+async def bulk_tests(body: dict, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    """Publish / archive / return to drafts many tests at once. Tests that cannot change are reported, not fatal."""
+    action = body.get("action")
+    new = {"publish": "published", "archive": "archived", "draft": "draft"}.get(action)
+    if new is None:
+        raise HTTPException(422, "unknown action")
+    done, failed = 0, []
+    for qid in body.get("ids", []):
+        quiz = await db.get(Quiz, qid)
+        if quiz is None:
+            continue
+        if new == "published":
+            for i in quiz.items:  # publishing a test publishes its draft questions
+                if i.question.status == "draft":
+                    i.question.status = "published"
+            if not catalog.live_questions(quiz):
+                failed.append({"title": quiz.title, "reason": "В тесте нет вопросов"})
+                continue
+            quiz.published_at = quiz.published_at or utcnow()
+        quiz.status = new
+        done += 1
+    await audit(db, user, f"test.bulk.{action}", None, count=done)
+    await db.commit()
+    return {"done": done, "failed": failed}
+
+
 @router.post("/tests/{qid}/status", response_model=QuizAdminOut)
 async def set_test_status(qid: str, body: dict, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
     quiz = await db.get(Quiz, qid)

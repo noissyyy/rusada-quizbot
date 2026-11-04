@@ -258,3 +258,19 @@ async def test_delete_only_untaken_tests_and_unused_questions(client, auth, admi
     assert row["deletable"] is False
     r = await client.delete(f"/api/admin/tests/{seeded['id']}", headers=admin_headers)
     assert r.status_code == 409 and "архив" in r.json()["detail"]
+
+
+async def test_bulk_publish_tests(client, auth, admin_headers):
+    tid = (await client.get("/api/admin/topics", headers=admin_headers)).json()[0]["id"]
+    q = (await client.post("/api/admin/questions", json={"topicId": tid, "text": "Вопрос для массовой публикации",
+         "options": [{"text": "a", "isCorrect": True}, {"text": "b"}, {"text": "c"}, {"text": "d"}]}, headers=admin_headers)).json()
+    full = (await client.post("/api/admin/tests", json={"title": "С вопросом", "topicId": tid, "questionIds": [q["id"]]}, headers=admin_headers)).json()
+    empty = (await client.post("/api/admin/tests", json={"title": "Пустой", "topicId": tid}, headers=admin_headers)).json()
+    r = (await client.post("/api/admin/tests/bulk", json={"ids": [full["id"], empty["id"]], "action": "publish"},
+                           headers=admin_headers)).json()
+    assert r == {"done": 1, "failed": [{"title": "Пустой", "reason": "В тесте нет вопросов"}]}
+    rows = {x["title"]: x["status"] for x in (await client.get("/api/admin/tests", headers=admin_headers)).json()}
+    assert rows["С вопросом"] == "published" and rows["Пустой"] == "draft"
+    # the draft question went live together with its test, and students see the test
+    assert (await client.get(f"/api/admin/questions/{q['id']}", headers=admin_headers)).json()["status"] == "published"
+    assert (await client.get(f"/api/tests/{full['id']}", headers=auth(71))).status_code == 200
