@@ -31,7 +31,7 @@ describe('HomeScreen', () => {
     renderAt('/');
     expect(await screen.findByText('Привет, Алексей!')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Начать тест: 4\s+вопросов · 2\s+мин/ })).toBeInTheDocument();
-    expect(screen.getByText('Разделы')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Тесты' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Морфология/ })).toHaveAttribute('href', '/topics/morphology');
     expect(screen.queryByText('Популярные тесты')).not.toBeInTheDocument();
     for (const hint of ['Тесты в своём темпе', 'Все отвечают одновременно', 'Тест для своей группы']) expect(screen.getByText(hint)).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('HomeScreen', () => {
   it('renders Uzbek Cyrillic generated from Latin strings', async () => {
     renderAt('/', 'uz-cyrl');
     expect(await screen.findByText('Тестни бошлаш')).toBeInTheDocument();
-    expect(screen.getByText('Бўлимлар')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Тестлар' })).toBeInTheDocument();
   });
 
   it('bottom nav: Главная, Тесты, Рейтинг, Профиль', () => {
