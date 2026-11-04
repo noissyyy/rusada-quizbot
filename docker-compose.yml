@@ -1,0 +1,66 @@
+# Production: copy .env.example → .env, fill it in, then: docker compose up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rq
+      POSTGRES_USER: rq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rq -d rq"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: ./services/api
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rq:${POSTGRES_PASSWORD}@db:5432/rq
+      BOT_TOKEN: ${BOT_TOKEN:?set BOT_TOKEN in .env}
+      BOT_USERNAME: ${BOT_USERNAME:-Rusada_QuizBot}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN in .env}
+      SUPERADMIN_TELEGRAM_IDS: ${SUPERADMIN_TELEGRAM_IDS:-}
+      MINIAPP_URL: https://${MINIAPP_DOMAIN}
+      ADMIN_URL: https://${ADMIN_DOMAIN}
+      MINIAPP_SHORT_NAME: ${MINIAPP_SHORT_NAME:-}
+      CORS_ORIGINS: https://${MINIAPP_DOMAIN},https://${ADMIN_DOMAIN}
+
+  bot:
+    build: ./services/telegram-bot
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_USERNAME: ${BOT_USERNAME:-Rusada_QuizBot}
+      API_URL: http://api:8000
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+      MINIAPP_URL: https://${MINIAPP_DOMAIN}
+      MINIAPP_SHORT_NAME: ${MINIAPP_SHORT_NAME:-}
+
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/web.Dockerfile
+      args: { BOT_USERNAME: "${BOT_USERNAME:-Rusada_QuizBot}" }
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      MINIAPP_DOMAIN: ${MINIAPP_DOMAIN:?set MINIAPP_DOMAIN in .env}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?set ADMIN_DOMAIN in .env}
+    volumes: [caddy_data:/data, caddy_config:/config]
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment: { PGPASSWORD: "${POSTGRES_PASSWORD}" }
+    volumes: [./backups:/backups]
+    # every day at 03:00 (server time); keeps 14 days
+    entrypoint: ["sh", "-c", "echo '0 3 * * * pg_dump -h db -U rq -Fc rq > /backups/rq-$$(date +\\%F).dump && find /backups -name \"*.dump\" -mtime +14 -delete' | crontab - && crond -f"]
+
+volumes: { pgdata: {}, caddy_data: {}, caddy_config: {} }
