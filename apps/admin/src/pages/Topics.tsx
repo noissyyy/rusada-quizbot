@@ -1,6 +1,6 @@
 import { clsx } from 'clsx';
 import { useState } from 'react';
-import { get, post, put } from '../lib/api';
+import { del, get, post, put } from '../lib/api';
 import { useLoad, useToast } from '../lib/hooks';
 import type { Topic } from '../lib/types';
 import { Button, Card, ErrorBox, Field, Icon, Input, PageHeader, Pill, Spinner, Textarea, Toggle } from '../components/ui';
@@ -33,6 +33,17 @@ export function TopicsPage() {
       toast('Раздел сохранён'); setEdit(null); reload();
     } catch (e) { setErr((e as Error).message); }
   };
+  const remove = async (t: Topic) => {
+    if (!confirm(`Удалить раздел «${t.title}» вместе со всеми его тестами и вопросами? Это нельзя отменить.\n\nТесты, которые ученики уже проходили, уйдут в архив (результаты сохранятся), а раздел тогда просто скроется.`)) return;
+    try {
+      const r = await del<{ removed: boolean; testsDeleted: number; testsArchived: number; questionsDeleted: number }>(`/api/admin/topics/${t.id}`);
+      toast(r.removed
+        ? `Раздел удалён: тестов ${r.testsDeleted}, вопросов ${r.questionsDeleted}`
+        : `Удалено тестов ${r.testsDeleted}, вопросов ${r.questionsDeleted}. ${r.testsArchived} тест(ов) уже проходили — они в архиве, раздел скрыт.`);
+      if (edit?.id === t.id) setEdit(null);
+      reload();
+    } catch (e) { toast((e as Error).message); }
+  };
 
   return (
     <>
@@ -52,6 +63,7 @@ export function TopicsPage() {
                   <div className="min-w-0 flex-1"><div className="font-bold">{t.title}</div><div className="text-[13px] text-muted">{t.subtopics.length} подразделов · {t.testsCount} тестов · {t.questionsCount} вопросов</div></div>
                   <Pill tone={t.isActive ? 'ok' : 'neutral'}>{t.isActive ? 'Активен' : 'Скрыт'}</Pill>
                   <button type="button" aria-label={`Изменить: ${t.title}`} onClick={() => { setEdit({ ...t }); setErr(null); }} className="grid size-9 place-items-center rounded-full text-muted hover:text-primary"><Icon name="edit" size={18} /></button>
+                  <button type="button" aria-label={`Удалить: ${t.title}`} onClick={() => remove(t)} className="grid size-9 place-items-center rounded-full text-muted hover:bg-error-50 hover:text-error-ink"><Icon name="trash" size={18} /></button>
                 </li>
               ))}
             </ul>

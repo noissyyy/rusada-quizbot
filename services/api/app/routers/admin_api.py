@@ -219,6 +219,51 @@ async def reorder_topics(ids: list[str], user: User = Depends(admin), db: AsyncS
     await db.commit()
 
 
+@router.delete("/topics/{tid}")
+async def delete_topic(tid: str, user: User = Depends(admin), db: AsyncSession = Depends(get_db)):
+    """Deletes a section with its tests and their questions.
+    Tests students already took are archived, not deleted (results stay); if anything had to stay,
+    the section is hidden instead of removed so those results keep their section."""
+    t = await db.get(Topic, tid)
+    if t is None:
+        raise HTTPException(404)
+    title = t.title
+    tests_deleted = tests_archived = q_deleted = 0
+    for quiz in (await db.execute(select(Quiz).where(Quiz.topic_id == tid))).unique().scalars().all():
+        reason, d, _k = await _delete_test(db, user, quiz)
+        if reason:
+            quiz.status = "archived"
+            tests_archived += 1
+        else:
+            tests_deleted, q_deleted = tests_deleted + 1, q_deleted + d
+    await db.flush()
+    # loose questions of this section (in no test, never answered) go too; answered ones are archived
+    for q in (await db.execute(select(Question).where(Question.topic_id == tid))).unique().scalars().all():
+        used = (await db.execute(select(func.count()).select_from(QuizQuestion)
+                                 .where(QuizQuestion.question_id == q.id))).scalar_one()
+        answered = (await db.execute(select(func.count()).select_from(AttemptAnswer)
+                                     .where(AttemptAnswer.question_id == q.id))).scalar_one()
+        if used or answered:
+            if not used:
+                q.status = "archived"
+            continue
+        await db.delete(q)
+        q_deleted += 1
+    await db.flush()
+    left_q = (await db.execute(select(func.count()).select_from(Question).where(Question.topic_id == tid))).scalar_one()
+    left_t = (await db.execute(select(func.count()).select_from(Quiz).where(Quiz.topic_id == tid))).scalar_one()
+    removed = not (left_q or left_t)
+    if removed:
+        await db.delete(t)
+    else:
+        t.is_active = False
+    await audit(db, user, "topic.delete" if removed else "topic.hide", tid, title=title,
+                testsDeleted=tests_deleted, testsArchived=tests_archived)
+    await db.commit()
+    return {"removed": removed, "testsDeleted": tests_deleted, "testsArchived": tests_archived,
+            "questionsDeleted": q_deleted, "questionsKept": left_q}
+
+
 # ---------------- questions ----------------
 
 async def _correct_rates(db: AsyncSession, ids: list[str]) -> dict[str, int]:

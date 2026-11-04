@@ -300,3 +300,27 @@ async def test_test_time_is_two_minutes_per_question(client, admin_headers):
     assert (await client.get(f"/api/admin/tests/{t['id']}", headers=admin_headers)).json()["durationSec"] == 2 * 120
     await client.put("/api/admin/settings", json={"minutesPerQuestion": 3}, headers=admin_headers)
     assert (await client.get(f"/api/admin/tests/{t['id']}", headers=admin_headers)).json()["durationSec"] == 2 * 180
+
+
+async def test_delete_topic_takes_its_tests_and_questions(client, auth, admin_headers):
+    # a fresh section: test + its questions + a loose question all disappear with it
+    tp = (await client.post("/api/admin/topics", json={"title": "Удаляемый"}, headers=admin_headers)).json()
+    ids = [(await client.post("/api/admin/questions", json={"topicId": tp["id"], "text": f"Удаляемый вопрос {n}",
+            "options": [{"text": "a", "isCorrect": True}, {"text": "b"}, {"text": "c"}, {"text": "d"}]},
+            headers=admin_headers)).json()["id"] for n in range(3)]
+    await client.post("/api/admin/tests", json={"title": "Удаляемый тест", "topicId": tp["id"], "questionIds": ids[:2]},
+                      headers=admin_headers)
+    r = (await client.delete(f"/api/admin/topics/{tp['id']}", headers=admin_headers)).json()
+    assert r == {"removed": True, "testsDeleted": 1, "testsArchived": 0, "questionsDeleted": 3, "questionsKept": 0}
+    topics = (await client.get("/api/admin/topics", headers=admin_headers)).json()
+    assert all(t["id"] != tp["id"] for t in topics)
+
+    # the seeded section has a test a student already started: it is archived, the section only hidden
+    quiz_id = await _quiz_id()
+    await client.post("/api/sessions", json={"quizId": quiz_id}, headers=auth(31))
+    seeded = topics[0]["id"]
+    r = (await client.delete(f"/api/admin/topics/{seeded}", headers=admin_headers)).json()
+    assert r["removed"] is False and r["testsArchived"] == 1
+    t = next(t for t in (await client.get("/api/admin/topics", headers=admin_headers)).json() if t["id"] == seeded)
+    assert t["isActive"] is False and t["testsCount"] == 0
+    assert all(x["id"] != seeded for x in (await client.get("/api/topics", headers=auth(31))).json())
