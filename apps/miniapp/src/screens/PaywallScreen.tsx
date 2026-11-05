@@ -1,7 +1,7 @@
 import { clsx } from 'clsx';
 import type { AccessInfo } from '@rq/shared-types';
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../data/api';
 import { useI18n } from '../lib/i18n';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
@@ -18,8 +18,9 @@ export function roundDown(n: number): number {
 const fmtSum = (n: number) => n.toLocaleString('ru-RU').replace(/ /g, ' ');
 
 /** Shown instead of the app when it is closed for this person: what a subscription gives and how to pay. */
-export function PaywallScreen({ access, onChanged }: { access: AccessInfo; onChanged: () => void }) {
+export function PaywallScreen({ access, onChanged, back }: { access: AccessInfo; onChanged: () => void; back?: boolean }) {
   const { t, lang } = useI18n();
+  const nav = useNavigate();
   const file = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -54,7 +55,8 @@ export function PaywallScreen({ access, onChanged }: { access: AccessInfo; onCha
   return (
     <main className="mx-auto flex min-h-dvh max-w-[480px] flex-col gap-5 px-[18px]" style={{ paddingTop: 'calc(var(--safe-top) + 16px)', paddingBottom: 'calc(var(--safe-bottom) + 32px)' }}>
       <div className="flex items-center justify-between">
-        <img src="/brand/rusada-uc-square.png" alt="Rusada" className="size-10 rounded-[12px] object-cover" />
+        {back ? <button type="button" aria-label={t('trial.back')} onClick={() => nav(-1)} className="grid size-10 place-items-center rounded-full bg-surface shadow-card"><Icon name="chevronRight" size={20} className="rotate-180" /></button>
+          : <img src="/brand/rusada-uc-square.png" alt="Rusada" className="size-10 rounded-[12px] object-cover" />}
         <Link to="/language" aria-label={t('lang.title')} className="flex h-9 items-center gap-1.5 rounded-full bg-surface px-3 text-[13px] font-bold shadow-card"><Icon name="globe" size={16} />{langCode[lang]}</Link>
       </div>
 
@@ -70,6 +72,11 @@ export function PaywallScreen({ access, onChanged }: { access: AccessInfo; onCha
         </div>
       </section>
 
+      {access.trial && (
+        <p className="-mt-2 rounded-[16px] bg-surface px-4 py-3 text-[13px] font-semibold text-ink-2 shadow-card">
+          {t('trial.badge')} · {access.trialTestsLeft > 0 ? t('trial.left', { n: access.trialTestsLeft, t: access.trialTests }) : t('trial.none')}
+        </p>
+      )}
       <section className="flex flex-col gap-2.5" aria-labelledby="benefits">
         <h2 id="benefits" className="font-display text-title font-bold tracking-tight">{t('pay.whatYouGet')}</h2>
         <ul className="flex flex-col gap-2.5">

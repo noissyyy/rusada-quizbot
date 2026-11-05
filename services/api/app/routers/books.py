@@ -88,6 +88,10 @@ async def book_page(bid: str, n: int, user: User = Depends(current_user), db: As
         raise HTTPException(404)
     if not 1 <= n <= b.pages:
         raise HTTPException(404, "page_out_of_range")
+    from ..services.access import trial_of
+    trial = await trial_of(db, user)
+    if trial and n > trial.trial_pages:
+        raise HTTPException(402, "trial_pages")
     key = f"{b.id}-{int(b.updated_at.timestamp())}"
 
     async def load() -> bytes:

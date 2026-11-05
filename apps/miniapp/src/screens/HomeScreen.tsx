@@ -10,6 +10,7 @@ import { ContinueCard } from '../components/home/ContinueCard';
 import { TopicCard } from '../components/tests/TopicCard';
 import { ModeTile } from '../components/home/ModeTile';
 import { BooksBanner } from '../components/home/BooksBanner';
+import { TrialBanner } from '../components/trial/Trial';
 import { Link } from 'react-router-dom';
 
 export function HomeScreen() {
@@ -31,6 +32,7 @@ export function HomeScreen() {
     <Screen className="flex flex-col gap-5">
       <HomeHeader unread={feed.unreadNotifications} firstName={feed.user.firstName} fullName={fullName} photoUrl={feed.user.photoUrl} />
 
+      <TrialBanner />
       {feed.quickStart && <StartCard quick={feed.quickStart} />}
       {feed.continueAttempt && <ContinueCard attempt={feed.continueAttempt} />}
 

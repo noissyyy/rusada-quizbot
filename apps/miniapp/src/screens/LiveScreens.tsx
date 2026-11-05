@@ -8,6 +8,7 @@ import { useI18n } from '../lib/i18n';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
 import { ScreenHeader, circleBtn } from '../components/ScreenHeader';
 import { Avatar, Badge, GradientDecor, Icon, Skeleton, toneStyle } from '../components/ui';
+import { TrialLocked } from '../components/trial/Trial';
 import { ErrorView, LoadingView } from '../components/states/StateViews';
 
 const BOT = (import.meta.env.VITE_BOT_USERNAME as string | undefined) ?? 'Rusada_QuizBot';
@@ -22,11 +23,14 @@ export function LiveHubScreen() {
   const list = useAsync(() => api().listLive());
   const [code, setCode] = useState('');
   const [err, setErr] = useState(false);
+  const [locked, setLocked] = useState(false);
   const [busy, setBusy] = useState(false);
   const join = async (c: string) => {
     setBusy(true); setErr(false);
-    try { const s = await api().joinLive(c); haptic.success(); nav(`/live/${s.id}`); } catch { setErr(true); haptic.error(); } finally { setBusy(false); }
+    try { const s = await api().joinLive(c); haptic.success(); nav(`/live/${s.id}`); }
+    catch (e) { if (e instanceof ApiError && e.status === 402) { setLocked(true); return; } setErr(true); haptic.error(); } finally { setBusy(false); }
   };
+  if (locked) return <TrialLocked reason="live" />;
   return (
     <main className={page} style={pad}>
       <ScreenHeader back="/" title={t('live.title')} right={<Live />} />

@@ -15,6 +15,8 @@ const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 let mockPending: { id: string; createdAt: string } | null = null;
 // demo: open the app with ?paywall=1 to see the subscription page (read once, before any redirect)
 const DEMO_PAYWALL = typeof location !== 'undefined' && new URLSearchParams(location.search).has('paywall');
+// demo: ?trial=1 shows the trial (2 of 3 free tests left, 3 free book pages)
+const DEMO_TRIAL = typeof location !== 'undefined' && new URLSearchParams(location.search).has('trial');
 
 /** Live demo: a scripted host that opens questions and reveals answers on a timer. */
 function liveTick(): LiveState {
@@ -54,11 +56,12 @@ export const mockApi: QuizApi = {
 
   async getAccess() {
     await wait();
-    const closed = DEMO_PAYWALL;
+    const closed = DEMO_PAYWALL || DEMO_TRIAL;
     return {
       telegramId: 123456789, username: null, hasAccess: !closed, reason: closed ? null : 'open', mode: closed ? 'closed' : 'open', subscriptionEndsAt: null,
       priceUzs: 100000, days: 30, cardNumber: '8600 1234 5678 9012', cardHolder: 'RUSADA O‘QUV MARKAZI', note: '',
       supportUsername: 'rusada_admin', pending: mockPending, rejectedComment: null, questionsCount: 3000, booksCount: 4,
+      trial: DEMO_TRIAL, trialTestsLeft: DEMO_TRIAL ? 2 : 0, trialTests: 3, trialPages: 3,
     } as const;
   },
   async sendReceipt() {

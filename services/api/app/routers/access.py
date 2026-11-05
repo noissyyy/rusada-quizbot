@@ -24,7 +24,7 @@ from ..schemas import Camel
 from ..security import require_role, settings_superadmins, telegram_user
 from ..services import pdf_pages
 from ..services.access import (AccessSettings, access_reason, get_access_settings, member_of, norm_username,
-                               save_access_settings, subscription_end)
+                               save_access_settings, subscription_end, trial_tests_used)
 from .admin_api import audit
 
 log = logging.getLogger(__name__)
@@ -74,6 +74,11 @@ class AccessOut(Camel):
     support_username: str
     pending: PendingOut | None
     rejected_comment: str | None
+    #: trial: the app is usable with limits (trial_tests_left new tests, the first trial_pages pages of books)
+    trial: bool = False
+    trial_tests_left: int = 0
+    trial_tests: int = 0
+    trial_pages: int = 0
     #: for the subscription page: real counts (questions: at least the admin's figure)
     questions_count: int = 0
     books_count: int = 0
@@ -89,7 +94,11 @@ async def my_access(user: User = Depends(telegram_user), db: AsyncSession = Depe
     questions = (await db.execute(select(func.count()).select_from(Question).where(Question.status == "published"))).scalar_one()
     books = (await db.execute(select(func.count()).select_from(Book).where(Book.is_active.is_(True)))).scalar_one()
     await db.commit()
-    return AccessOut(questions_count=max(questions, cfg.questions_claim), books_count=books, telegram_id=user.telegram_id, username=user.username, has_access=reason is not None, reason=reason, mode=cfg.mode,
+    on_trial = reason is None and cfg.trial_enabled
+    used = await trial_tests_used(db, user) if on_trial else 0
+    return AccessOut(trial=on_trial, trial_tests=cfg.trial_tests, trial_pages=cfg.trial_pages,
+                     trial_tests_left=max(0, cfg.trial_tests - used) if on_trial else 0,
+                     questions_count=max(questions, cfg.questions_claim), books_count=books, telegram_id=user.telegram_id, username=user.username, has_access=reason is not None, reason=reason, mode=cfg.mode,
                      subscription_ends_at=end if end and end > utcnow() else None,
                      price_uzs=cfg.price_uzs, days=cfg.days, card_number=cfg.card_number, card_holder=cfg.card_holder,
                      note=cfg.note, support_username=cfg.support_username,

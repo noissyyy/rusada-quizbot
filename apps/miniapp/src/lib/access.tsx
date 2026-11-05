@@ -18,3 +18,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
 }
 
 export const useAccess = () => useContext(Ctx);
+
+/** Tests only: provide a fixed access value. */
+export function AccessCtxForTests({ value, children }: { value: AccessInfo | null; children: ReactNode }) {
+  return <Ctx.Provider value={{ access: value, reload: () => undefined }}>{children}</Ctx.Provider>;
+}

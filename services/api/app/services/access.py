@@ -29,6 +29,10 @@ class AccessSettings(Camel):
     note: str = Field(default="", max_length=500)
     #: «N+ savol» on the subscription page shows at least this (0 = only the real count)
     questions_claim: int = Field(default=3000, ge=0, le=1_000_000)
+    #: trial for people without access while the app is closed: a few tests and the first pages of books
+    trial_enabled: bool = True
+    trial_tests: int = Field(default=3, ge=0, le=100)
+    trial_pages: int = Field(default=10, ge=0, le=1000)
     #: @username of the person students write to (without @)
     support_username: str = Field(default="", max_length=64)
 
@@ -82,3 +86,19 @@ async def access_reason(db: AsyncSession, user: User) -> str | None:
     if end and end > utcnow():
         return "subscription"
     return None
+
+
+async def trial_of(db: AsyncSession, user: User) -> AccessSettings | None:
+    """The access settings when this person is on the trial (no access, trial on); otherwise None."""
+    if await access_reason(db, user) is not None:
+        return None
+    cfg = await get_access_settings(db)
+    return cfg if cfg.trial_enabled else None
+
+
+async def trial_tests_used(db: AsyncSession, user: User) -> int:
+    """Every own test started counts (a retake too); group tests and live are not available on the trial."""
+    from ..models import Attempt
+    return (await db.execute(select(func.count()).select_from(Attempt).where(
+        Attempt.user_id == user.id, Attempt.assignment_id.is_(None)))).scalar_one()
+

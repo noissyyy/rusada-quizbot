@@ -11,7 +11,7 @@ def _png() -> bytes:
 
 async def _close(client, admin_headers, **extra):
     body = {"mode": "closed", "priceUzs": 100000, "days": 30, "cardNumber": "8600 1234 5678 9012",
-            "cardHolder": "RUSADA", "supportUsername": "@rusada_admin", **extra}
+            "cardHolder": "RUSADA", "supportUsername": "@rusada_admin", "trialEnabled": False, **extra}
     r = await client.put("/api/admin/access", json=body, headers=admin_headers)
     assert r.status_code == 200, r.text
     return r.json()
@@ -126,3 +126,51 @@ async def test_members_and_grants_by_telegram_id(client, auth, admin_headers):
     assert (await client.get("/api/home", headers=other)).status_code == 200
     missing = await client.post("/api/admin/subscriptions", json={"username": "111222333"}, headers=admin_headers)
     assert missing.status_code == 404 and "ID 111222333" in missing.json()["detail"]
+
+
+async def test_trial_limits_tests_pages_and_locks_live_and_group(client, auth, admin_headers):
+    import io as _io
+    import pypdfium2 as pdfium
+    await _close(client, admin_headers, trialEnabled=True, trialTests=2, trialPages=1)
+    h = auth(4040, username="trial_user")
+    a = (await client.get("/api/access", headers=h)).json()
+    assert a["hasAccess"] is False and a["trial"] is True and a["trialTestsLeft"] == 2 and a["trialPages"] == 1
+    assert (await client.get("/api/home", headers=h)).status_code == 200  # the app opens on the trial
+
+    quiz_id = (await client.get("/api/tests", headers=h)).json()[0]["id"]
+    s1 = (await client.post("/api/sessions", json={"quizId": quiz_id}, headers=h)).json()
+    again = (await client.post("/api/sessions", json={"quizId": quiz_id}, headers=h)).json()
+    assert again["sessionId"] == s1["sessionId"]  # resuming does not cost a test
+    await client.post(f"/api/sessions/{s1['sessionId']}/finish", json={}, headers=h)
+    s2 = await client.post("/api/sessions", json={"quizId": quiz_id}, headers=h)  # a retake is the 2nd test
+    assert s2.status_code == 200
+    await client.post(f"/api/sessions/{s2.json()['sessionId']}/finish", json={}, headers=h)
+    third = await client.post("/api/sessions", json={"quizId": quiz_id}, headers=h)
+    assert third.status_code == 402 and third.json()["detail"] == "trial_tests_used"
+    assert (await client.get("/api/access", headers=h)).json()["trialTestsLeft"] == 0
+    # results stay readable
+    assert (await client.get(f"/api/sessions/{s1['sessionId']}/result", headers=h)).status_code == 200
+
+    # live and group tests are for subscribers
+    live = await client.post("/api/live/join", json={"code": "0000"}, headers=h)
+    assert live.status_code == 402 and live.json()["detail"] == "trial_locked"
+    grp = await client.post("/api/sessions", json={"assignmentId": "x"}, headers=h)
+    assert grp.status_code == 402 and grp.json()["detail"] == "trial_locked"
+
+    # books: only the first pages
+    doc = pdfium.PdfDocument.new()
+    for _ in range(3):
+        doc.new_page(300, 400)
+    buf = _io.BytesIO(); doc.save(buf)
+    b = (await client.post("/api/admin/books", json={"title": "Пробная книга"}, headers=admin_headers)).json()
+    await client.post(f"/api/admin/books/{b['id']}/pdf", files={"file": ("b.pdf", buf.getvalue(), "application/pdf")}, headers=admin_headers)
+    assert (await client.get(f"/api/books/{b['id']}/pages/1", headers=h)).status_code == 200
+    p2 = await client.get(f"/api/books/{b['id']}/pages/2", headers=h)
+    assert p2.status_code == 402 and p2.json()["detail"] == "trial_pages"
+
+    # a subscriber has no limits
+    await client.post("/api/admin/subscriptions", json={"username": "trial_user", "days": 30}, headers=admin_headers)
+    assert (await client.get(f"/api/books/{b['id']}/pages/2", headers=h)).status_code == 200
+    assert (await client.post("/api/sessions", json={"quizId": quiz_id}, headers=h)).status_code == 200
+    assert (await client.get("/api/access", headers=h)).json()["trial"] is False
+
