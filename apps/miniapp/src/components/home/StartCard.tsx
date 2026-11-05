@@ -1,15 +1,15 @@
-import type { QuickStart } from '@rq/shared-types';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../lib/i18n';
+import { groupDigits, roundDown } from '../../lib/numbers';
 import { haptic } from '../../lib/telegram/webapp';
 import { GradientDecor, toneStyle } from '../ui';
 
-/** One tap starts a test immediately — no intermediate screen. Gradient style (Idea · O). */
-export function StartCard({ quick }: { quick: QuickStart }) {
+/** Leads to the tests section; shows how many questions there are in total (rounded down, never overstated). */
+export function StartCard({ total }: { total: number }) {
   const { t } = useI18n();
-  const meta = t('home.startMeta', { q: quick.questionsCount, m: quick.durationMinutes });
+  const meta = total >= 10 ? t('home.startTotal', { n: groupDigits(roundDown(total)) }) : t('home.startAll');
   return (
-    <Link to={`/quiz/${quick.quizId}`} onClick={() => haptic.tap()} aria-label={`${t('home.start')}: ${meta}`}
+    <Link to="/tests" onClick={() => haptic.tap()} aria-label={`${t('home.start')}: ${meta}`}
       style={toneStyle('brand')}
       className="relative flex min-h-[150px] items-center gap-3 overflow-hidden rounded-[26px] py-5 pl-[22px] pr-[18px] text-white transition-transform duration-150 active:scale-[0.98]">
       <GradientDecor />

@@ -33,7 +33,7 @@ export function HomeScreen() {
       <HomeHeader unread={feed.unreadNotifications} firstName={feed.user.firstName} fullName={fullName} photoUrl={feed.user.photoUrl} />
 
       <TrialBanner />
-      {feed.quickStart && <StartCard quick={feed.quickStart} />}
+      <StartCard total={feed.questionsTotal ?? 0} />
       {feed.continueAttempt && <ContinueCard attempt={feed.continueAttempt} />}
 
       <section className="mt-1.5 flex flex-col gap-3" aria-labelledby="sections-title">

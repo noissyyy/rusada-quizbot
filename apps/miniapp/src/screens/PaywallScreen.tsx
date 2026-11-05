@@ -6,14 +6,10 @@ import { api, ApiError } from '../data/api';
 import { useI18n } from '../lib/i18n';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
 import { GradientDecor, Icon, toneStyle } from '../components/ui';
+import { roundDown } from '../lib/numbers';
 import { langCode } from '../components/brand/Flag';
 
-/** 118 → «100», 10 432 → «10 000»: a round number that never overstates the real count. */
-export function roundDown(n: number): number {
-  if (n < 10) return n;
-  const step = n < 100 ? 10 : n < 1000 ? 100 : 1000;
-  return Math.floor(n / step) * step;
-}
+export { roundDown };
 
 const fmtSum = (n: number) => n.toLocaleString('ru-RU').replace(/ /g, ' ');
 

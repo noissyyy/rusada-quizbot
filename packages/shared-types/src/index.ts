@@ -62,6 +62,8 @@ export interface HomeFeed {
   popularTests: TestSummary[];
   /** number of live sessions open right now; 0 hides the LIVE badge */
   liveNow: number;
+  /** questions in published tests; the start card shows it rounded down (3549 → «3 000+») */
+  questionsTotal: number;
 }
 
 /* ---------- Topics & tests ---------- */
