@@ -48,6 +48,7 @@ async def test_full_run_answer_key_never_leaks(client, auth):
     home = (await client.get("/api/home", headers=h)).json()
     assert home["user"]["firstName"] == "Алексей"
     assert home["quickStart"]["questionsCount"] == 4
+    assert home["questionsTotal"] == 4  # questions in published tests (the start card rounds it down)
     assert home["popularTests"][0]["title"] == "Имя существительное"
 
     quiz_id, s = await _start(client, h)

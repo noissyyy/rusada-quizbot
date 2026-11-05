@@ -37,6 +37,7 @@ export const mockApi: QuizApi = {
       continueAttempt: { sessionId: 's-prev', quizId: 'q-noun', quizTitle: 'Имя существительное', answered: 2, total: 4, remainingSeconds: 112 },
       popularTests: mockTests,
       liveNow: 2,
+      questionsTotal: 3549,
     };
   },
   getTopics: () => server.topics(),

@@ -17,6 +17,7 @@ function renderAt(path: string, lang: Lang = 'ru') {
           <Route path="/" element={<HomeScreen />} />
           <Route path="/language" element={<LanguageScreen />} />
           <Route path="/quiz/:id" element={<p>QUIZ_PAGE</p>} />
+          <Route path="/tests" element={<p>TESTS_PAGE</p>} />
         </Routes>
         <BottomNav />
       </MemoryRouter>
@@ -30,7 +31,8 @@ describe('HomeScreen', () => {
   it('renders start card, test sections and three modes with function hints', async () => {
     renderAt('/');
     expect(await screen.findByText('Привет, Алексей!')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Начать тест: 4\s+вопросов · 2\s+мин/ })).toBeInTheDocument();
+    // total questions, rounded down: 3549 → «3 000+»
+    expect(screen.getByRole('link', { name: 'Начать тест: 3 000+ тестов' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Тесты' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Морфология/ })).toHaveAttribute('href', '/topics/morphology');
     expect(screen.queryByText('Популярные тесты')).not.toBeInTheDocument();
@@ -38,10 +40,10 @@ describe('HomeScreen', () => {
     expect(screen.getByText('LIVE')).toBeInTheDocument();
   });
 
-  it('start card opens the quiz directly', async () => {
+  it('start card opens the tests section', async () => {
     renderAt('/');
     await userEvent.click(await screen.findByRole('link', { name: /Начать тест/ }));
-    expect(screen.getByText('QUIZ_PAGE')).toBeInTheDocument();
+    expect(screen.getByText('TESTS_PAGE')).toBeInTheDocument();
   });
 
   it('shows error state when the API fails', async () => {

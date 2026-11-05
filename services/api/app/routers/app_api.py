@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..config import settings
 from ..db import SessionLocal, get_db
 from ..models import (Attempt, GroupAssignment, GroupMember, LiveParticipant, LiveSession, Notification,
-                      NotificationRead, Quiz, Subtopic, Topic, User, utcnow)
+                      NotificationRead, Question, Quiz, QuizQuestion, Subtopic, Topic, User, utcnow)
 from ..schemas import (AnswerBody, AnswerResult, FinishBody, GroupAssignmentView, GroupBoardEntry, GroupHubItem, GroupResultView,
                        HomeFeed, InProgressAttempt, LiveAnswerBody, LiveJoinBody, LiveListItem, LiveState,
                        NotificationOut, Profile, QuickStart, Rating, SessionResult, SessionStart, SettingsPatch,
@@ -53,7 +53,11 @@ async def home(user: User = Depends(current_user), db: AsyncSession = Depends(ge
         continue_attempt=InProgressAttempt(session_id=cont.id, quiz_id=cont.quiz_id or "", quiz_title=cont.quiz_title,
                                            answered=len(cont.answers), total=len(cont.snapshot),
                                            remaining_seconds=quiz_svc.remaining_sec(cont)) if cont else None,
-        popular_tests=[catalog.summary(q) for q in pop], live_now=live_now)
+        popular_tests=[catalog.summary(q) for q in pop], live_now=live_now,
+        questions_total=(await db.execute(
+            select(func.count(func.distinct(QuizQuestion.question_id)))
+            .join(Quiz, Quiz.id == QuizQuestion.quiz_id).join(Question, Question.id == QuizQuestion.question_id)
+            .where(Quiz.status == "published", Question.status != "archived"))).scalar_one())
 
 
 @router.get("/topics", response_model=list[TopicSummary])
