@@ -242,6 +242,11 @@ export interface AccessInfo {
   supportUsername: string;
   pending: { id: ID; createdAt: string } | null;
   rejectedComment: string | null;
+  /** trial: the app works with limits — a few new tests, the first pages of books; live and group tests locked */
+  trial: boolean;
+  trialTestsLeft: number;
+  trialTests: number;
+  trialPages: number;
   /** real counts for the subscription page */
   questionsCount: number;
   booksCount: number;

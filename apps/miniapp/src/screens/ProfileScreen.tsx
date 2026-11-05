@@ -85,6 +85,16 @@ export function HistoryScreen() {
 function AccessRow() {
   const { t, lang } = useI18n();
   const { access } = useAccess();
+  if (access?.trial) {
+    return (
+      <Link to="/subscribe" className="flex items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-[15px] font-semibold text-ink shadow-card">
+        <span className="grid size-9 place-items-center rounded-sm bg-warning-50 text-warning-ink"><Icon name="lock" size={18} /></span>
+        {t('profile.access')}
+        <span className="ml-auto text-[14px] font-medium text-muted">{t('profile.accessTrial', { n: access.trialTestsLeft })}</span>
+        <Icon name="chevronRight" size={18} className="text-muted" />
+      </Link>
+    );
+  }
   if (!access || access.reason === 'open' || !access.reason) return null;
   const value = access.reason === 'subscription' && access.subscriptionEndsAt
     ? t('profile.accessSub', { d: new Date(access.subscriptionEndsAt).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'long' }) })

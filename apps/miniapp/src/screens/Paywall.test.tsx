@@ -10,7 +10,7 @@ import { PaywallScreen, roundDown } from './PaywallScreen';
 
 const closed: AccessInfo = {
   telegramId: 123456789, username: null, hasAccess: false, reason: null, mode: 'closed', subscriptionEndsAt: null, priceUzs: 100000, days: 30,
-  cardNumber: '8600 1234 5678 9012', cardHolder: 'RUSADA', note: '', supportUsername: 'rusada_admin', pending: null, rejectedComment: null, questionsCount: 10432, booksCount: 4,
+  cardNumber: '8600 1234 5678 9012', cardHolder: 'RUSADA', note: '', supportUsername: 'rusada_admin', pending: null, rejectedComment: null, questionsCount: 10432, booksCount: 4, trial: false, trialTestsLeft: 0, trialTests: 3, trialPages: 10,
 };
 
 function renderPaywall(access: AccessInfo, onChanged = () => undefined) {

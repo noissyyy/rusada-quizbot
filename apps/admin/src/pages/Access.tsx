@@ -2,9 +2,9 @@ import { clsx } from 'clsx';
 import { useEffect, useState } from 'react';
 import { blobUrl, del, get, post, put } from '../lib/api';
 import { fmtDate, useLoad, useToast } from '../lib/hooks';
-import { Button, Card, Empty, ErrorBox, Field, Input, Modal, PageHeader, Pill, Segmented, Spinner, Table, Textarea } from '../components/ui';
+import { Button, Card, Empty, ErrorBox, Field, Input, Modal, PageHeader, Pill, Segmented, Spinner, Table, Textarea, Toggle } from '../components/ui';
 
-interface AccessSettings { mode: 'open' | 'closed'; questionsClaim: number; priceUzs: number; days: number; cardNumber: string; cardHolder: string; note: string; supportUsername: string }
+interface AccessSettings { mode: 'open' | 'closed'; trialEnabled: boolean; trialTests: number; trialPages: number; questionsClaim: number; priceUzs: number; days: number; cardNumber: string; cardHolder: string; note: string; supportUsername: string }
 interface Stats { pending: number; activeSubscribers: number; members: number }
 interface Payment { id: string; userId: string; name: string; username: string | null; status: 'pending' | 'approved' | 'rejected'; amount: number; days: number; comment: string; createdAt: string; decidedAt: string | null; subscriptionEndsAt: string | null }
 interface MemberRow { id: string; username: string | null; telegramId: number | null; note: string; seen: boolean; name: string | null; addedAt: string }
@@ -54,29 +54,42 @@ function SettingsCard() {
   const setMode = (mode: AccessSettings['mode']) => {
     if (mode === s.mode) return;
     const q = mode === 'closed'
-      ? 'Закрыть бот? Пользоваться смогут только ученики из списка, сотрудники и подписчики. Остальные увидят страницу подписки.'
-      : 'Открыть бот для всех? Любой человек сможет проходить тесты бесплатно.';
+      ? 'Закрыть бот? Пользоваться смогут только ученики из списка, сотрудники и подписчики. Остальные — пробный режим (если он включён) или страница оплаты.'
+      : 'Открыть бот для всех? Любой человек сможет пользоваться всем бесплатно.';
     if (confirm(q)) void save({ ...s, mode }, mode === 'closed' ? 'Бот закрыт: только ученики и подписчики' : 'Бот открыт для всех');
   };
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,420px)_1fr]">
+    <div className="grid items-start gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
       <Card title="Режим">
         <div className="grid grid-cols-1 gap-2">
-          {([['open', 'Открыт для всех', 'Бесплатно для любого человека'], ['closed', 'Только ученики и подписчики', 'Остальные видят страницу оплаты']] as const).map(([m, t, sub]) => (
+          {([['open', 'Открыт для всех', 'Бесплатно для любого человека'], ['closed', 'Только ученики и подписчики', 'Остальные — пробный режим или страница оплаты']] as const).map(([m, t, sub]) => (
             <button key={m} type="button" aria-pressed={s.mode === m} onClick={() => setMode(m)}
               className={clsx('rounded-[16px] border-2 p-3 text-left', s.mode === m ? 'border-primary bg-primary-50' : 'border-line')}>
               <div className="font-bold">{t}</div><div className="mt-0.5 text-[12px] text-muted">{sub}</div>
             </button>
           ))}
         </div>
+        <div className="mt-4 flex flex-col gap-3 rounded-[16px] bg-canvas p-3">
+          <Toggle label="Пробный режим для тех, у кого нет доступа" checked={s.trialEnabled} onChange={(v) => save({ ...s, trialEnabled: v }, v ? 'Пробный режим включён' : 'Пробный режим выключен — сразу страница оплаты')} />
+          <p className="text-[12px] text-muted">{s.trialEnabled
+            ? 'Когда бот закрыт, человек без доступа может пройти несколько тестов и прочитать первые страницы книг. Эфиры и тесты групп — только по подписке.'
+            : 'Когда бот закрыт, человек без доступа сразу видит страницу оплаты.'}</p>
+          {s.trialEnabled && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Бесплатных тестов" hint="на человека, навсегда"><Input type="number" min={0} max={100} value={s.trialTests} onChange={(e) => setS({ ...s, trialTests: Number(e.target.value) })} /></Field>
+              <Field label="Страниц книги бесплатно" hint="в каждой книге"><Input type="number" min={0} max={1000} value={s.trialPages} onChange={(e) => setS({ ...s, trialPages: Number(e.target.value) })} /></Field>
+            </div>
+          )}
+          {s.trialEnabled && <Button tone="ghost" onClick={() => save(s, 'Пробный режим сохранён')}>Сохранить пробный режим</Button>}
+        </div>
       </Card>
       <Card title="Оплата картой">
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1fr_1.6fr_1.6fr]">
+          <div className="grid grid-cols-2 gap-3 2xl:grid-cols-[1fr_1fr_1.6fr_1.6fr]">
             <Field label="Цена, сум"><Input type="number" min={0} step={1000} value={s.priceUzs} onChange={(e) => setS({ ...s, priceUzs: Number(e.target.value) })} /></Field>
             <Field label="Дней доступа"><Input type="number" min={1} max={366} value={s.days} onChange={(e) => setS({ ...s, days: Number(e.target.value) })} /></Field>
-            <Field label="Номер карты" className="col-span-2 lg:col-span-1"><Input value={s.cardNumber} placeholder="8600 0000 0000 0000" onChange={(e) => setS({ ...s, cardNumber: e.target.value })} /></Field>
-            <Field label="Владелец карты" className="col-span-2 lg:col-span-1"><Input value={s.cardHolder} placeholder="Как на карте" onChange={(e) => setS({ ...s, cardHolder: e.target.value })} /></Field>
+            <Field label="Номер карты" className="col-span-2 sm:col-span-1 2xl:col-span-1"><Input value={s.cardNumber} placeholder="8600 0000 0000 0000" onChange={(e) => setS({ ...s, cardNumber: e.target.value })} /></Field>
+            <Field label="Владелец карты" className="col-span-2 sm:col-span-1 2xl:col-span-1"><Input value={s.cardHolder} placeholder="Как на карте" onChange={(e) => setS({ ...s, cardHolder: e.target.value })} /></Field>
           </div>
           <Field label="Сколько вопросов писать на странице оплаты" hint="будет «3 000+ вопросов»; когда настоящих вопросов станет больше, покажется настоящее число. 0 — только настоящее число">
             <Input type="number" min={0} step={100} value={s.questionsClaim} onChange={(e) => setS({ ...s, questionsClaim: Number(e.target.value) })} />

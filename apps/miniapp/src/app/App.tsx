@@ -26,7 +26,7 @@ import { OfflineBanner } from '../components/states/OfflineBanner';
 import { getStartParam, routeForStart } from '../lib/telegram/webapp';
 
 /** Screens where the floating nav is hidden (active test, live, onboarding). */
-const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/, /^\/books\/.+\/read/];
+const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/, /^\/books\/.+\/read/, /^\/subscribe/];
 // full animation; reduced-motion users get a short splash
 const SPLASH_MS = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : SPLASH_ANIMATION_MS;
 
@@ -46,12 +46,13 @@ function Shell() {
   const showNav = !NAVLESS.some((r) => r.test(pathname));
   const { access, reload } = useAccess();
   // closed for this person: only the subscription page (and the language switch) is available
-  if (chosen && access && !access.hasAccess && pathname !== '/language') return <PaywallScreen access={access} onChanged={reload} />;
+  if (chosen && access && !access.hasAccess && !access.trial && pathname !== '/language') return <PaywallScreen access={access} onChanged={reload} />;
   return (
     <>
       <Routes>
         <Route path="/" element={chosen ? <HomeScreen /> : <Navigate to="/language" replace />} />
         <Route path="/language" element={<LanguageScreen />} />
+        <Route path="/subscribe" element={access ? <PaywallScreen access={access} onChanged={reload} back /> : null} />
         <Route path="/tests" element={<TestsScreen />} />
         <Route path="/topics/:slug" element={<TopicScreen />} />
         <Route path="/topics/:slug/works/:workId" element={<WorkScreen />} />

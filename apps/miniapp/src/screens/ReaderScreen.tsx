@@ -1,11 +1,13 @@
 import { clsx } from 'clsx';
 import type { Book } from '@rq/shared-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { api } from '../data/api';
 import { useAsync } from '../lib/useAsync';
 import { useI18n } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Icon } from '../components/ui';
+import { useTrial } from '../components/trial/Trial';
 import { ErrorView, LoadingView } from '../components/states/StateViews';
 
 const ZOOMS = [1, 1.5, 2] as const;
@@ -31,6 +33,7 @@ export function ReaderScreen() {
   const [current, setCurrent] = useState(1);
   const [zoom, setZoom] = useState<(typeof ZOOMS)[number]>(1);
   const [ratio, setRatio] = useState(1.3);
+  const trial = useTrial();
   const [loading, setLoading] = useState<Set<number>>(new Set());
   const onLoading = useCallback((n: number, on: boolean) => setLoading((s) => {
     if (s.has(n) === on) return s;
@@ -54,6 +57,8 @@ export function ReaderScreen() {
   if (state.status === 'loading') return <LoadingView />;
   if (state.status === 'error') return <ErrorView error={state.error} onRetry={state.reload} />;
   if (!book || !book.pages) return <ErrorView error={new Error('not found')} onRetry={state.reload} />;
+  // trial: only the first pages; the rest is behind a lock card
+  const open = trial ? Math.min(book.pages, trial.trialPages) : book.pages;
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[480px] select-none flex-col bg-track" onContextMenu={(e) => e.preventDefault()}
@@ -79,9 +84,17 @@ export function ReaderScreen() {
       </div>
       <div ref={scroller} className="flex-1 overflow-x-auto" style={{ paddingBottom: 'calc(var(--safe-bottom) + 24px)' }}>
         <div className="flex flex-col gap-2 px-2 pt-2" style={{ width: `${zoom * 100}%` }}>
-          {Array.from({ length: book.pages }, (_, i) => (
+          {Array.from({ length: open }, (_, i) => (
             <Page key={i + 1} bookId={book.id} n={i + 1} ratio={ratio} onRatio={setRatio} onVisible={setCurrent} onLoading={onLoading} />
           ))}
+          {open < book.pages && (
+            <div className="flex flex-col items-center gap-3 rounded-[16px] bg-surface p-6 text-center shadow-card">
+              <span className="grid size-14 place-items-center rounded-full bg-night text-white"><Icon name="lock" size={24} /></span>
+              <b className="font-display text-[20px]">{t('trial.pagesTitle')}</b>
+              <p className="max-w-[280px] text-[14px] text-ink-2">{t('trial.pagesText', { n: open })}</p>
+              <Link to="/subscribe" className="flex h-12 w-full max-w-[280px] items-center justify-center rounded-control bg-primary text-[15px] font-bold text-white shadow-primary">{t('trial.see')}</Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

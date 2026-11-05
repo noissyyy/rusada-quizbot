@@ -7,6 +7,7 @@ import { useI18n } from '../lib/i18n';
 import { createTimer, formatClock, isExpired, LOW_TIME_MS, pause, remainingMs, resume, type TestTimer } from '../lib/quiz/timer';
 import { getWebApp, haptic } from '../lib/telegram/webapp';
 import { Icon, Skeleton } from '../components/ui';
+import { TrialLocked } from '../components/trial/Trial';
 import { circleBtn } from '../components/ScreenHeader';
 
 type Phase = 'loading' | 'answering' | 'submitting' | 'feedback' | 'finishing';
@@ -52,6 +53,7 @@ export function QuizScreen() {
     }, (e: unknown) => {
       if (!alive) return;
       if (e instanceof ApiError && e.detail === 'already_taken' && assignmentId) { nav(`/group/${assignmentId}/result`, { replace: true }); return; }
+      if (e instanceof ApiError && e.status === 402) { setLoadError(e.detail === 'trial_tests_used' ? 'trial:tests' : 'trial:group'); return; }
       // say why instead of silently bouncing back to the group page
       if (e instanceof ApiError && e.status === 403 && assignmentId) { setLoadError(e.detail === 'closed' ? 'access.closed' : 'access.reasonMember'); return; }
       setLoadError('error.load');
@@ -116,6 +118,7 @@ export function QuizScreen() {
     setPhase('feedback');
   }
 
+  if (loadError === 'trial:tests' || loadError === 'trial:group') return <TrialLocked reason={loadError === 'trial:tests' ? 'tests' : 'group'} />;
   if (loadError) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col items-center justify-center gap-3 px-[18px] text-center">

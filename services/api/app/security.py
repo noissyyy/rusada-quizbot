@@ -118,9 +118,10 @@ async def telegram_user(authorization: str = Header(default=""), db: AsyncSessio
 
 
 async def current_user(user: User = Depends(telegram_user), db: AsyncSession = Depends(get_db)) -> User:
-    """A Telegram user who may use the app right now; otherwise 402 → the app shows the subscription page."""
-    from .services.access import access_reason
-    if await access_reason(db, user) is None:
+    """A Telegram user who may use the app right now — or is on the trial (limits are checked where they apply);
+    otherwise 402 → the app shows the subscription page."""
+    from .services.access import access_reason, get_access_settings
+    if await access_reason(db, user) is None and not (await get_access_settings(db)).trial_enabled:
         await db.commit()
         raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "subscription_required")
     await db.commit()  # a member's Telegram ID may have just been remembered

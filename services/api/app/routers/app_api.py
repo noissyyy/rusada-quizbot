@@ -16,7 +16,7 @@ from ..schemas import (AnswerBody, AnswerResult, FinishBody, GroupAssignmentView
                        NotificationOut, Profile, QuickStart, Rating, SessionResult, SessionStart, SettingsPatch,
                        StartBody, TestSummary, TopicSummary, TopicTest, UserProfile)
 from ..security import InitDataError, current_user, telegram_user, upsert_user, validate_init_data, TgUser
-from ..services import catalog, live as live_svc, quiz as quiz_svc
+from ..services import access as access_svc, catalog, live as live_svc, quiz as quiz_svc
 from .. import telegram
 
 router = APIRouter(prefix="/api", tags=["mini app"])
@@ -105,7 +105,10 @@ async def test_details(quiz_id: str, user: User = Depends(current_user), db: Asy
 
 @router.post("/sessions", response_model=SessionStart)
 async def start_session(body: StartBody, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    trial = await access_svc.trial_of(db, user)
     if body.assignment_id:
+        if trial:
+            raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "trial_locked")
         a = await _assignment_for(db, user, body.assignment_id, require_access=False)
         ongoing = (await db.execute(select(Attempt.id).where(Attempt.assignment_id == a.id, Attempt.user_id == user.id,
                                                              Attempt.status == "in_progress"))).first()
@@ -119,6 +122,11 @@ async def start_session(body: StartBody, user: User = Depends(current_user), db:
     quiz = await _quiz(db, body.quiz_id)
     if not quiz.mode_individual:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "mode_unavailable")
+    if trial:
+        ongoing = (await db.execute(select(Attempt.id).where(Attempt.user_id == user.id, Attempt.quiz_id == quiz.id,
+                                                             Attempt.assignment_id.is_(None), Attempt.status == "in_progress"))).first()
+        if ongoing is None and await access_svc.trial_tests_used(db, user) >= trial.trial_tests:
+            raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "trial_tests_used")
     return await quiz_svc.start(db, user, quiz)
 
 
@@ -332,6 +340,8 @@ async def live_list(user: User = Depends(current_user), db: AsyncSession = Depen
 
 @router.post("/live/join", response_model=LiveState)
 async def live_join(body: LiveJoinBody, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    if await access_svc.trial_of(db, user):
+        raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "trial_locked")
     live = (await db.execute(select(LiveSession).where(LiveSession.code == body.code.strip(),
                                                        LiveSession.state.in_(live_svc.ACTIVE)))).unique().scalars().first()
     if live is None:

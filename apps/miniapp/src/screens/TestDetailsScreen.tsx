@@ -1,3 +1,4 @@
+import { useTrial } from '../components/trial/Trial';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../data/api';
 import { useAsync } from '../lib/useAsync';
@@ -10,6 +11,7 @@ export function TestDetailsScreen() {
   const nav = useNavigate();
   const { t } = useI18n();
   const state = useAsync(() => api().getTest(id), [id]);
+  const trial = useTrial();
   const close = () => (history.length > 1 ? nav(-1) : nav('/tests'));
 
   return (
@@ -40,6 +42,7 @@ export function TestDetailsScreen() {
               <li>{t('test.rule1', { m: state.data.durationMinutes })}</li><li>{t('test.rule2')}</li><li>{t('test.rule3')}</li><li>{t('test.rule4')}</li>
             </ul>
           </div>
+          {trial && trial.trialTestsLeft > 0 && <p className="-mb-1 text-center text-[12px] font-semibold text-muted">{t('trial.startHint', { n: trial.trialTestsLeft })}</p>}
           <div className="flex gap-2.5">
             <button type="button" aria-label={t('test.share')} className="grid size-14 shrink-0 place-items-center rounded-control bg-primary-50 text-primary"><Icon name="share" size={22} /></button>
             <Link to={`/quiz/${state.data.id}`} className="flex h-14 flex-1 items-center justify-center rounded-control bg-primary text-[16px] font-bold text-white shadow-primary">{t('home.start')}</Link>
