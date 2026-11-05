@@ -397,3 +397,22 @@ class Subscription(Base):
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
     user: Mapped[User] = relationship(lazy="joined", foreign_keys=[user_id])
 
+
+class ReviewItem(Base):
+    """«Xatolarim»: a question the student got wrong, repeated at growing intervals until mastered."""
+    __tablename__ = "review_items"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    question_id: Mapped[str] = mapped_column(ForeignKey("questions.id", ondelete="CASCADE"), primary_key=True)
+    #: 0..4 learning steps; 5 = mastered
+    box: Mapped[int] = mapped_column(Integer, default=0)
+    due_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
+    last_at: Mapped[datetime | None] = mapped_column(TS)
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+
+
+class ReviewState(Base):
+    """Remembers that a student's past mistakes were already loaded into «Xatolarim» once."""
+    __tablename__ = "review_state"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    seeded_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+

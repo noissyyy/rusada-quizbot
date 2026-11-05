@@ -11,6 +11,7 @@ import { TopicCard } from '../components/tests/TopicCard';
 import { ModeTile } from '../components/home/ModeTile';
 import { BooksBanner } from '../components/home/BooksBanner';
 import { TrialBanner } from '../components/trial/Trial';
+import { GamesSection } from '../components/games/GamesSection';
 import { Link } from 'react-router-dom';
 
 export function HomeScreen() {
@@ -43,6 +44,8 @@ export function HomeScreen() {
         </div>
         <div className="grid grid-cols-2 gap-3">{sections.map((tp) => <TopicCard key={tp.id} topic={tp} />)}</div>
       </section>
+
+      <GamesSection reviewDue={feed.reviewDue ?? 0} />
 
       {books.length > 0 && <BooksBanner />}
 

@@ -97,6 +97,8 @@ class HomeFeed(Camel):
     live_now: int
     #: published questions in published tests (the start card shows it rounded down: 3549 → «3 000+»)
     questions_total: int = 0
+    #: «Xatolarim»: questions to repeat today
+    review_due: int = 0
 
 
 class OptionPublic(Camel):

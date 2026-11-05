@@ -46,6 +46,10 @@ async def home(user: User = Depends(current_user), db: AsyncSession = Depends(ge
                              .order_by(Attempt.started_at.desc()))).unique().scalars().first()
     live_now = (await db.execute(select(func.count()).select_from(LiveSession)
                                  .where(LiveSession.state.in_(live_svc.ACTIVE)))).scalar_one()
+    from ..services import review
+    await review.seed_from_history(db, user)
+    review_due = (await review.counts(db, user))["due"]
+    await db.commit()
     return HomeFeed(
         user=catalog.user_profile(user), unread_notifications=await catalog.unread_count(db, user),
         quick_start=QuickStart(quiz_id=quick.id, questions_count=len(catalog.live_questions(quick)),
@@ -53,7 +57,7 @@ async def home(user: User = Depends(current_user), db: AsyncSession = Depends(ge
         continue_attempt=InProgressAttempt(session_id=cont.id, quiz_id=cont.quiz_id or "", quiz_title=cont.quiz_title,
                                            answered=len(cont.answers), total=len(cont.snapshot),
                                            remaining_seconds=quiz_svc.remaining_sec(cont)) if cont else None,
-        popular_tests=[catalog.summary(q) for q in pop], live_now=live_now,
+        popular_tests=[catalog.summary(q) for q in pop], live_now=live_now, review_due=review_due,
         questions_total=(await db.execute(
             select(func.count(func.distinct(QuizQuestion.question_id)))
             .join(Quiz, Quiz.id == QuizQuestion.quiz_id).join(Question, Question.id == QuizQuestion.question_id)

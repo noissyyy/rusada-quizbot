@@ -11,11 +11,12 @@ import { TestDetailsScreen } from '../screens/TestDetailsScreen';
 import { QuizScreen } from '../screens/QuizScreen';
 import { TimeUpScreen } from '../screens/TimeUpScreen';
 import { ResultScreen } from '../screens/ResultScreen';
-import { ReviewScreen } from '../screens/ReviewScreen';
 import { RatingScreen } from '../screens/RatingScreen';
 import { HistoryScreen, ProfileScreen } from '../screens/ProfileScreen';
 import { BookScreen, BooksScreen } from '../screens/BooksScreens';
 import { PaywallScreen } from '../screens/PaywallScreen';
+import { MistakesScreen } from '../screens/MistakesScreen';
+import { ReviewScreen } from '../screens/ReviewScreen';
 import { AccessProvider, useAccess } from '../lib/access';
 import { ReaderScreen } from '../screens/ReaderScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
@@ -26,7 +27,7 @@ import { OfflineBanner } from '../components/states/OfflineBanner';
 import { getStartParam, routeForStart } from '../lib/telegram/webapp';
 
 /** Screens where the floating nav is hidden (active test, live, onboarding). */
-const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/, /^\/books\/.+\/read/, /^\/subscribe/];
+const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/, /^\/books\/.+\/read/, /^\/subscribe/, /^\/mistakes/];
 // full animation; reduced-motion users get a short splash
 const SPLASH_MS = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : SPLASH_ANIMATION_MS;
 
@@ -52,6 +53,7 @@ function Shell() {
       <Routes>
         <Route path="/" element={chosen ? <HomeScreen /> : <Navigate to="/language" replace />} />
         <Route path="/language" element={<LanguageScreen />} />
+        <Route path="/mistakes" element={<MistakesScreen />} />
         <Route path="/subscribe" element={access ? <PaywallScreen access={access} onChanged={reload} back /> : null} />
         <Route path="/tests" element={<TestsScreen />} />
         <Route path="/topics/:slug" element={<TopicScreen />} />
