@@ -64,6 +64,25 @@ export interface HomeFeed {
   liveNow: number;
   /** questions in published tests; the start card shows it rounded down (3549 → «3 000+») */
   questionsTotal: number;
+  /** «Xatolarim»: questions to repeat today */
+  reviewDue?: number;
+}
+
+/** «Xatolarim»: mistakes repeated at growing intervals (1 → 3 → 7 → 14 days → mastered). */
+export interface ReviewDeck {
+  due: number;
+  learning: number;
+  mastered: number;
+  questions: QuestionPublic[];
+}
+
+export interface ReviewAnswer {
+  correct: boolean;
+  correctOptionId: ID | null;
+  explanation: string | null;
+  box: number;
+  mastered: boolean;
+  nextDueAt: string;
 }
 
 /* ---------- Topics & tests ---------- */

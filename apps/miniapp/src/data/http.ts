@@ -70,6 +70,8 @@ export function createHttpApi(baseUrl: string): QuizApi {
       return data;
     },
     getBooks: () => get('/api/books'),
+    getReview: (all) => get(`/api/review${all ? '?all=true' : ''}`),
+    answerReview: (qid, optionId) => post(`/api/review/${encodeURIComponent(qid)}`, { optionId }),
     async getBookPage(bookId, page) {
       let res: Response;
       try {

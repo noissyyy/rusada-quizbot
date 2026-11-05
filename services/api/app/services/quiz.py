@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
-from ..models import Attempt, AttemptAnswer, GroupAssignment, Quiz, User, utcnow
+from ..models import Attempt, AttemptAnswer, GroupAssignment, Question, Quiz, User, utcnow
 from ..schemas import AnswerResult, OptionPublic, QuestionPublic, ReviewItem, SessionResult, SessionStart
 from .settings_store import get_settings
 
@@ -155,6 +155,9 @@ async def submit(db: AsyncSession, attempt: Attempt, question_id: str, option_id
     ans = AttemptAnswer(attempt_id=attempt.id, question_id=question_id, option_id=option_id, outcome=outcome,
                         points=points, answered_at=now)
     attempt.answers.append(ans)
+    if outcome == "wrong" and await db.get(Question, question_id) is not None:
+        from .review import add_mistake  # «Xatolarim»: comes back for review
+        await add_mistake(db, attempt.user_id, question_id)
     if not late:
         # the test timer stands still while the correct answer is shown
         cfg = await get_settings(db)

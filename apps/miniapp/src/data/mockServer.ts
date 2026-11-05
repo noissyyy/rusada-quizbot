@@ -82,6 +82,11 @@ export const server = {
       questions: quiz.questions.map(publicQ), answered: [], feedbackMs: 3000, feedbackExplainMs: 5000,
     };
   },
+  /** demo «Xatolarim»: the correct option id of a sample question */
+  correctOf(questionId: string): string | null {
+    const q = nounQuiz.questions.find((x) => x.id === questionId);
+    return q ? optionId(q, q.correct) : null;
+  },
   async submit(sessionId: string, questionId: string, chosen: string | null): Promise<AnswerResult> {
     await wait(120);
     const s = sessions.get(sessionId);

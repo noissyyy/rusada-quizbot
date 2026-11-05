@@ -38,6 +38,7 @@ export const mockApi: QuizApi = {
       popularTests: mockTests,
       liveNow: 2,
       questionsTotal: 3549,
+      reviewDue: 3,
     };
   },
   getTopics: () => server.topics(),
@@ -69,6 +70,17 @@ export const mockApi: QuizApi = {
     await wait(800);
     mockPending = { id: 'p1', createdAt: new Date().toISOString() };
     return mockPending;
+  },
+  async getReview() {
+    await wait();
+    const qs = (await server.start({ quizId: 'q-noun' })).questions.slice(0, 3);
+    return { due: 3, learning: 5, mastered: 2, questions: qs };
+  },
+  async answerReview(questionId: string, optionId: string) {
+    await wait(150);
+    const correct = server.correctOf(questionId);
+    return { correct: optionId === correct, correctOptionId: correct, explanation: 'Объяснение к вопросу.', box: optionId === correct ? 1 : 0, mastered: false,
+      nextDueAt: new Date(Date.now() + 864e5).toISOString() };
   },
   async getBooks() {
     await wait();
