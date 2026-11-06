@@ -41,13 +41,15 @@ function SearchRound({ theme, onBack }: { theme: SearchTheme; onBack: () => void
   const [found, setFound] = useState<string[]>([]);
   const [start, setStart] = useState<number | null>(null);
   const [miss, setMiss] = useState<number[] | null>(null);
+  const [hint, setHint] = useState<number | null>(null);
+  const [hints, setHints] = useState(0);
   const [t0, setT0] = useState(Date.now());
   const [now, setNow] = useState(Date.now());
   const [result, setResult] = useState<GameResultOut | null>(null);
   const done = found.length === placed.length;
   useEffect(() => { if (done) return; const h = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(h); }, [done]);
   const secs = Math.round((now - t0) / 1000);
-  const score = found.length * 10 + (done ? Math.max(0, Math.round((180 - secs) / 6)) : 0);
+  const score = Math.max(0, found.length * 10 - hints * 5) + (done ? Math.max(0, Math.round((180 - secs) / 6)) : 0);
 
   useEffect(() => {
     if (!done) return;
@@ -69,7 +71,12 @@ function SearchRound({ theme, onBack }: { theme: SearchTheme; onBack: () => void
     if (hit) { setFound((f) => [...f, hit.word]); haptic.success(); }
     else { setMiss(line ?? [start, i]); haptic.error(); setTimeout(() => setMiss(null), 450); }
   };
-  const again = () => { setSeed((s) => s + 1); setFound([]); setResult(null); setT0(Date.now()); setNow(Date.now()); };
+  const showHint = (p: { word: string; cells: number[] }) => {
+    if (found.includes(p.word)) return;
+    setHint(p.cells[0]!); setHints((n) => n + 1); haptic.select();
+    setTimeout(() => setHint(null), 2500);
+  };
+  const again = () => { setSeed((s) => s + 1); setFound([]); setHints(0); setHint(null); setResult(null); setT0(Date.now()); setNow(Date.now()); };
 
   return (
     <Screen className="flex flex-col gap-4">
@@ -88,14 +95,15 @@ function SearchRound({ theme, onBack }: { theme: SearchTheme; onBack: () => void
               return (
                 <button key={i} type="button" onClick={() => tap(i)} aria-label={ch}
                   className={clsx('grid aspect-square place-items-center rounded-[8px] font-display text-[18px] font-extrabold transition-colors',
-                    c ? `${c} text-white` : miss?.includes(i) ? 'bg-error-50 text-error-ink' : start === i ? 'bg-primary text-white' : 'bg-canvas text-ink')}>{ch}</button>
+                    c ? `${c} text-white` : miss?.includes(i) ? 'bg-error-50 text-error-ink' : start === i ? 'bg-primary text-white' : hint === i ? 'animate-pulse bg-warning text-white' : 'bg-canvas text-ink')}>{ch}</button>
               );
             })}
           </div>
           <p className="text-center text-[12px] text-muted">{t('search.howTo')}</p>
           <div className="flex flex-wrap gap-1.5">
             {placed.map((p) => (
-              <span key={p.word} className={clsx('rounded-full px-3 py-1.5 text-[13px] font-bold', found.includes(p.word) ? 'bg-success-50 text-success-ink line-through' : 'bg-surface text-ink shadow-card')}>{p.word}</span>
+              <button key={p.word} type="button" onClick={() => showHint(p)} disabled={found.includes(p.word)} aria-label={found.includes(p.word) ? p.word : t('search.hintFor', { w: p.word })}
+                className={clsx('rounded-full px-3 py-1.5 text-[13px] font-bold', found.includes(p.word) ? 'bg-success-50 text-success-ink line-through' : 'bg-surface text-ink shadow-card active:scale-95')}>{p.word}</button>
             ))}
           </div>
         </>
