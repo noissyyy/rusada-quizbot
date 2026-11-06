@@ -95,7 +95,7 @@ function SearchRound({ theme, onBack }: { theme: SearchTheme; onBack: () => void
               return (
                 <button key={i} type="button" onClick={() => tap(i)} aria-label={ch}
                   className={clsx('grid aspect-square place-items-center rounded-[8px] font-display text-[18px] font-extrabold transition-colors',
-                    c ? `${c} text-white` : miss?.includes(i) ? 'bg-error-50 text-error-ink' : start === i ? 'bg-primary text-white' : hint === i ? 'animate-pulse bg-warning text-white' : 'bg-canvas text-ink')}>{ch}</button>
+                    hint === i ? 'animate-pulse bg-warning text-white ring-4 ring-warning/40' : start === i ? 'bg-primary text-white' : c ? `${c} text-white` : miss?.includes(i) ? 'bg-error-50 text-error-ink' : 'bg-canvas text-ink')}>{ch}</button>
               );
             })}
           </div>

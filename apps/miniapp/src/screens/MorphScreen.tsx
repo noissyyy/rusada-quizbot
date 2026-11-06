@@ -24,22 +24,10 @@ export function MorphScreen() {
   const { t } = useI18n();
   const [deck, setDeck] = useState<Word[]>(() => shuffle(MORPH_WORDS).slice(0, ROUNDS));
   const [i, setI] = useState(0);
-  const [pool, setPool] = useState<number[]>([]);
-  const [built, setBuilt] = useState<number[]>([]);
-  const [stage, setStage] = useState<'build' | 'root' | 'shown'>('build');
-  const [bad, setBad] = useState<number | null>(null);
-  const [slips, setSlips] = useState(0);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState<GameResultOut | null>(null);
   const word = deck[i];
   const done = i >= deck.length;
-
-  useEffect(() => {
-    if (!word) return;
-    let order = shuffle(word.map((_, k) => k));
-    if (word.length > 1 && order.every((v, k) => v === k)) order = [...order.slice(1), order[0]!];
-    setPool(order); setBuilt([]); setStage('build'); setSlips(0); setBad(null);
-  }, [word]);
 
   useEffect(() => {
     if (!done) return;
@@ -47,27 +35,6 @@ export function MorphScreen() {
     api().gameResult('morph', score).then(setResult, () => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
-
-  const wrong = (k: number) => { setBad(k); setSlips((n) => n + 1); haptic.error(); setTimeout(() => setBad(null), 450); };
-
-  const take = (k: number) => {
-    if (!word || stage !== 'build') return;
-    const need = built.length;
-    // the same text twice in one word is interchangeable
-    if (word[k]![0] !== word[need]![0]) { wrong(k); return; }
-    haptic.select();
-    const nb = [...built, need];
-    setBuilt(nb); setPool((p) => p.filter((x) => x !== k));
-    if (nb.length === word.length) setStage('root');
-  };
-
-  const pickRoot = (k: number) => {
-    if (!word || stage !== 'root') return;
-    if (word[k]![1] !== 'r') { wrong(k); return; }
-    haptic.success();
-    setScore((s) => s + Math.max(2, 10 - slips * 2));
-    setStage('shown');
-  };
 
   const again = () => { setDeck(shuffle(MORPH_WORDS).slice(0, ROUNDS)); setI(0); setScore(0); setResult(null); };
 
@@ -83,51 +50,93 @@ export function MorphScreen() {
             <span className="font-display text-[18px] font-extrabold text-ink tabular-nums">{score}</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-track"><div className="h-full bg-primary transition-[width]" style={{ width: `${(i / deck.length) * 100}%` }} /></div>
-
-          <p className="mt-2 text-center text-[14px] font-semibold text-ink-2">
-            {stage === 'build' ? t('morph.build') : stage === 'root' ? t('morph.findRoot') : t('morph.parts')}
-          </p>
-
-          <div className="flex min-h-[86px] flex-wrap items-end justify-center gap-1 rounded-card bg-surface p-4 shadow-card" aria-live="polite">
-            {built.length === 0 && <span className="self-center text-[14px] text-muted">{t('morph.empty')}</span>}
-            {built.map((k) => {
-              const [text, kind] = word[k]!;
-              const show = stage === 'shown';
-              return (
-                <button key={k} type="button" onClick={() => pickRoot(k)} disabled={stage !== 'root'}
-                  className={clsx('flex flex-col items-center gap-1 rounded-[12px] px-2 py-1.5 transition-colors',
-                    show ? KIND[kind].cls : bad === k ? 'bg-error text-white' : stage === 'root' ? 'bg-primary-50 text-ink active:scale-95' : 'text-ink')}>
-                  <span className="font-display text-[30px] font-extrabold leading-none">{text}</span>
-                  {show && <span className="text-[10px] font-bold uppercase tracking-wide">{t(KIND[kind].label)}</span>}
-                </button>
-              );
-            })}
-          </div>
-
-          {stage === 'build' && (
-            <div className="flex flex-wrap justify-center gap-2">
-              {pool.map((k) => (
-                <button key={k} type="button" onClick={() => take(k)}
-                  className={clsx('h-14 min-w-[56px] rounded-[16px] px-4 font-display text-[24px] font-extrabold shadow-card transition-colors active:scale-95',
-                    bad === k ? 'bg-error text-white' : 'bg-surface text-ink')}>{word[k]![0]}</button>
-              ))}
-            </div>
-          )}
-
-          {stage === 'shown' && (
-            <>
-              <div className="flex flex-wrap justify-center gap-1.5">
-                {(['p', 'r', 's', 'e'] as const).filter((k) => word.some((m) => m[1] === k)).map((k) => (
-                  <span key={k} className={clsx('rounded-full px-2.5 py-1 text-[12px] font-bold', KIND[k].cls)}>{t(KIND[k].label)}</span>
-                ))}
-              </div>
-              <button type="button" onClick={() => setI((n) => n + 1)} className="h-14 rounded-control bg-primary text-[16px] font-bold text-white shadow-primary">
-                {i + 1 < deck.length ? t('morph.next') : t('morph.finish')}
-              </button>
-            </>
-          )}
+          {/* keyed by round: a new word starts with fresh state, never with the previous word's indices */}
+          <MorphRound key={i} word={word} last={i + 1 >= deck.length} onScore={(n) => setScore((s) => s + n)} onNext={() => setI((n) => n + 1)} />
         </>
       )}
     </Screen>
+  );
+}
+
+function firstOrder(word: Word): number[] {
+  let order = shuffle(word.map((_, k) => k));
+  if (word.length > 1 && order.every((v, k) => v === k)) order = [...order.slice(1), order[0]!];
+  return order;
+}
+
+function MorphRound({ word, last, onScore, onNext }: { word: Word; last: boolean; onScore: (n: number) => void; onNext: () => void }) {
+  const { t } = useI18n();
+  const [pool, setPool] = useState<number[]>(() => firstOrder(word));
+  const [built, setBuilt] = useState<number[]>([]);
+  const [stage, setStage] = useState<'build' | 'root' | 'shown'>('build');
+  const [bad, setBad] = useState<string | null>(null);
+  const [slips, setSlips] = useState(0);
+
+  const wrong = (key: string) => { setBad(key); setSlips((n) => n + 1); haptic.error(); setTimeout(() => setBad(null), 450); };
+
+  const take = (k: number) => {
+    if (stage !== 'build') return;
+    const need = built.length;
+    // the same text twice in one word is interchangeable
+    if (word[k]![0] !== word[need]![0]) { wrong(`p${k}`); return; }
+    haptic.select();
+    const nb = [...built, need];
+    setBuilt(nb); setPool((p) => p.filter((x) => x !== k));
+    if (nb.length === word.length) setStage('root');
+  };
+
+  const pickRoot = (k: number) => {
+    if (stage !== 'root') return;
+    if (word[k]![1] !== 'r') { wrong(`b${k}`); return; }
+    haptic.success();
+    onScore(Math.max(2, 10 - slips * 2));
+    setStage('shown');
+  };
+
+  return (
+    <>
+      <p className="mt-2 text-center text-[14px] font-semibold text-ink-2">
+        {stage === 'build' ? t('morph.build') : stage === 'root' ? t('morph.findRoot') : t('morph.parts')}
+      </p>
+
+      <div className="flex min-h-[86px] flex-wrap items-end justify-center gap-1 rounded-card bg-surface p-4 shadow-card" aria-live="polite">
+        {built.length === 0 && <span className="self-center text-[14px] text-muted">{t('morph.empty')}</span>}
+        {built.map((k) => {
+          const [text, kind] = word[k]!;
+          const show = stage === 'shown';
+          return (
+            <button key={k} type="button" onClick={() => pickRoot(k)} disabled={stage !== 'root'}
+              className={clsx('flex flex-col items-center gap-1 rounded-[12px] px-2 py-1.5 transition-colors',
+                show ? KIND[kind].cls : bad === `b${k}` ? 'bg-error text-white' : stage === 'root' ? 'bg-primary-50 text-ink active:scale-95' : 'text-ink')}>
+              <span className="font-display text-[30px] font-extrabold leading-none">{text}</span>
+              {show && <span className="text-[10px] font-bold uppercase tracking-wide">{t(KIND[kind].label)}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {stage === 'build' && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {pool.map((k) => (
+            <button key={k} type="button" onClick={() => take(k)}
+              className={clsx('h-14 min-w-[56px] rounded-[16px] px-4 font-display text-[24px] font-extrabold shadow-card transition-colors active:scale-95',
+                bad === `p${k}` ? 'bg-error text-white' : 'bg-surface text-ink')}>{word[k]![0]}</button>
+          ))}
+        </div>
+      )}
+
+      {stage === 'shown' && (
+        <>
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {(['p', 'r', 's', 'e'] as const).filter((k) => word.some((m) => m[1] === k)).map((k) => (
+              <span key={k} className={clsx('rounded-full px-2.5 py-1 text-[12px] font-bold', KIND[k].cls)}>{t(KIND[k].label)}</span>
+            ))}
+          </div>
+          <button type="button" onClick={onNext} className="h-14 rounded-control bg-primary text-[16px] font-bold text-white shadow-primary">
+            {last ? t('morph.finish') : t('morph.next')}
+          </button>
+        </>
+      )}
+    </>
   );
 }
