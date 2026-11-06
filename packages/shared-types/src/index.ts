@@ -99,6 +99,15 @@ export interface WordStats {
   practiceWon: number;
 }
 
+/** «Urg‘u»: tap the stressed vowel. `stress` is the index of that vowel in `word`. */
+export interface StressWord { word: string; stress: number }
+export interface StressBoard {
+  best: number;
+  bestWeek: number;
+  rounds: number;
+  week: { rank: number; name: string; score: number; me: boolean }[];
+}
+
 export interface ReviewAnswer {
   correct: boolean;
   correctOptionId: ID | null;

@@ -432,3 +432,13 @@ class WordGame(Base):
 
     __table_args__ = (Index("ux_word_games_daily", "user_id", "day", unique=True, postgresql_where=text("mode = 'daily'")),)
 
+
+class StressScore(Base):
+    """«Urg‘u»: the result of one 60-second round."""
+    __tablename__ = "stress_scores"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    score: Mapped[int] = mapped_column(Integer)
+    answered: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
+

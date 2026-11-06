@@ -75,6 +75,9 @@ export function createHttpApi(baseUrl: string): QuizApi {
     wordPractice: () => post('/api/games/word/practice'),
     wordGuess: (id, word) => post(`/api/games/word/${encodeURIComponent(id)}/guess`, { word }),
     wordStats: () => get('/api/games/word/stats'),
+    stressWords: () => get('/api/games/stress/words'),
+    stressScore: (score, answered) => post('/api/games/stress/score', { score, answered }),
+    stressBoard: () => get('/api/games/stress/board'),
     answerReview: (qid, optionId) => post(`/api/review/${encodeURIComponent(qid)}`, { optionId }),
     async getBookPage(bookId, page) {
       let res: Response;

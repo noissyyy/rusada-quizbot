@@ -9,6 +9,7 @@ export function GamesSection({ reviewDue }: { reviewDue: number }) {
   const { t } = useI18n();
   const games: GameTile[] = [
     { to: '/games/word', img: 'T07', title: 'games.word', text: 'games.wordText' },
+    { to: '/games/stress', img: 'T14', title: 'games.stress', text: 'games.stressText' },
     { to: '/mistakes', img: 'T15', title: 'games.review', text: 'games.reviewText', badge: reviewDue > 0 ? t('games.reviewDue', { n: reviewDue }) : null },
   ];
   return (

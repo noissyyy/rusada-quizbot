@@ -102,3 +102,20 @@ def test_word_marks_handle_repeated_letters():
     from app.services.words import marks
     assert marks("лампа", "папка") == ["absent", "correct", "absent", "present", "correct"]
     assert marks("аааaa".replace("a", "а"), "мачта") == ["absent", "correct", "absent", "absent", "correct"]
+
+
+async def test_stress_words_scores_and_weekly_board(client, auth):
+    a, b = auth(7201, "Ali", "V"), auth(7202, "Madina", "R")
+    words = (await client.get("/api/games/stress/words", headers=a)).json()
+    assert len(words) > 100
+    w = next(x for x in words if x["word"] == "звонит")
+    assert w["stress"] == 4  # звонИт
+    assert (await client.post("/api/games/stress/score", json={"score": 500, "answered": 500}, headers=a)).status_code == 422
+    assert (await client.post("/api/games/stress/score", json={"score": 5, "answered": 3}, headers=a)).status_code == 422
+    await client.post("/api/games/stress/score", json={"score": 18, "answered": 22}, headers=a)
+    await client.post("/api/games/stress/score", json={"score": 12, "answered": 15}, headers=a)
+    board = (await client.post("/api/games/stress/score", json={"score": 25, "answered": 27}, headers=b)).json()
+    assert board["best"] == 25 and board["rounds"] == 1
+    assert [(r["name"], r["score"], r["me"]) for r in board["week"][:2]] == [("Madina R.", 25, True), ("Ali V.", 18, False)]
+    mine = (await client.get("/api/games/stress/board", headers=a)).json()
+    assert mine["best"] == 18 and mine["bestWeek"] == 18 and mine["rounds"] == 2
