@@ -16,3 +16,11 @@ describe('game content', () => {
     }
   });
 });
+
+describe('word attack', () => {
+  it('has enough plain lowercase words', async () => {
+    const { ATTACK_WORDS } = await import('./gameContent');
+    expect(ATTACK_WORDS.length).toBeGreaterThan(60);
+    for (const w of ATTACK_WORDS) expect(w).toMatch(/^[а-я]+$/);
+  });
+});

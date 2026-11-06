@@ -97,3 +97,11 @@ export function shuffle<T>(a: readonly T[]): T[] {
   for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j]!, b[i]!]; }
   return b;
 }
+
+const normWord = (w: string) => w.toLowerCase().replace(/ё/g, 'е');
+/** Every plain word the other games already use; book heroes are names, so they stay out. */
+export const ATTACK_WORDS = [...new Set([
+  ...SEARCH_THEMES.filter((th) => th.id !== 'heroes').flatMap((th) => th.words),
+  ...MEMORY_PAIRS.map(([, w]) => w),
+].map(normWord).filter((w) => /^[а-я]{3,8}$/.test(w)))];
+
