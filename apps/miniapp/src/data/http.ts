@@ -78,6 +78,12 @@ export function createHttpApi(baseUrl: string): QuizApi {
     stressWords: () => get('/api/games/stress/words'),
     stressScore: (score, answered) => post('/api/games/stress/score', { score, answered }),
     stressBoard: () => get('/api/games/stress/board'),
+    duelCreate: (topicId) => post('/api/duels', { topicId: topicId ?? null }),
+    duels: () => get('/api/duels'),
+    duel: (id) => get(`/api/duels/${encodeURIComponent(id)}`),
+    duelStart: (id) => post(`/api/duels/${encodeURIComponent(id)}/start`),
+    duelAnswer: (id, index, optionId) => post(`/api/duels/${encodeURIComponent(id)}/answer`, { index, optionId }),
+    duelFinish: (id) => post(`/api/duels/${encodeURIComponent(id)}/finish`),
     answerReview: (qid, optionId) => post(`/api/review/${encodeURIComponent(qid)}`, { optionId }),
     async getBookPage(bookId, page) {
       let res: Response;
