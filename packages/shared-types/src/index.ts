@@ -127,6 +127,16 @@ export interface DuelStart {
   answered: Record<string, { correct: boolean; correctOptionId: ID; chosen: ID }>;
 }
 
+/** XP and level (level n starts at 50·n·(n−1) XP). */
+export interface XpInfo { xp: number; level: number; levelStart: number; levelNext: number }
+export interface GamesHub {
+  xp: XpInfo;
+  /** plays this week per game key */
+  plays: Record<string, number>;
+  reviewDue: number;
+}
+export interface GameResultOut { best: number; xpEarned: number; xp: XpInfo }
+
 export interface ReviewAnswer {
   correct: boolean;
   correctOptionId: ID | null;

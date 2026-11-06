@@ -78,6 +78,8 @@ export function createHttpApi(baseUrl: string): QuizApi {
     stressWords: () => get('/api/games/stress/words'),
     stressScore: (score, answered) => post('/api/games/stress/score', { score, answered }),
     stressBoard: () => get('/api/games/stress/board'),
+    gamesHub: () => get('/api/games/hub'),
+    gameResult: (game, score) => post(`/api/games/${encodeURIComponent(game)}/result`, { score }),
     duelCreate: (topicId) => post('/api/duels', { topicId: topicId ?? null }),
     duels: () => get('/api/duels'),
     duel: (id) => get(`/api/duels/${encodeURIComponent(id)}`),

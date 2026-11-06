@@ -46,6 +46,7 @@ export function ProfileScreen() {
         ))}
       </div>
 
+      <LevelRow />
       <AccessRow />
       <Link to="/profile/history" className="flex items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-[15px] font-semibold text-ink shadow-card">
         <span className="grid size-9 place-items-center rounded-sm bg-primary-50 text-primary"><Icon name="clock" size={18} /></span>
@@ -79,6 +80,24 @@ export function HistoryScreen() {
         </div>
       )}
     </Screen>
+  );
+}
+
+function LevelRow() {
+  const { t } = useI18n();
+  const hub = useAsync(() => api().gamesHub());
+  if (hub.status !== 'success') return null;
+  const x = hub.data.xp;
+  const pct = Math.round(((x.xp - x.levelStart) / Math.max(1, x.levelNext - x.levelStart)) * 100);
+  return (
+    <Link to="/rating" className="flex items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-ink shadow-card">
+      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary font-display text-[18px] font-extrabold text-white">{x.level}</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="flex justify-between text-[14px] font-bold"><span>{t('xp.level', { n: x.level })}</span><span className="tabular-nums text-muted">{x.xp} / {x.levelNext} XP</span></span>
+        <span className="h-1.5 overflow-hidden rounded-full bg-track"><span className="block h-full bg-primary" style={{ width: `${pct}%` }} /></span>
+      </span>
+      <Icon name="trophy" size={18} className="text-muted" />
+    </Link>
   );
 }
 

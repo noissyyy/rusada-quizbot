@@ -467,3 +467,24 @@ class DuelPlay(Base):
     correct: Mapped[int] = mapped_column(Integer, default=0)
     time_ms: Mapped[int | None] = mapped_column(Integer)
 
+
+class XpEvent(Base):
+    """Experience points: earned in tests, review and games; the level is computed from the sum."""
+    __tablename__ = "xp_events"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    amount: Mapped[int] = mapped_column(Integer)
+    #: test | review | word | stress | duel | <game key>
+    source: Mapped[str] = mapped_column(String(20), index=True)
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
+
+
+class GameResult(Base):
+    """One finished round of a single-player game (word search, memory, …)."""
+    __tablename__ = "game_results"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    game: Mapped[str] = mapped_column(String(20), index=True)
+    score: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
+

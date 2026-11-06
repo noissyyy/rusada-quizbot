@@ -149,3 +149,33 @@ async def test_duel_two_players_same_questions_and_result(client, auth):
     assert {done["outcome"], other["outcome"]} in ({"win", "lose"}, {"draw"})
     assert (await client.post(f"/api/duels/{d['id']}/start", headers=a)).status_code == 409  # played already
     assert len((await client.get("/api/duels", headers=a)).json()) == 1
+
+
+async def test_xp_levels_and_game_results(client, auth):
+    from app.services.xp import level_of
+    assert [level_of(x) for x in (0, 99, 100, 300, 600, 1000)] == [1, 1, 2, 3, 4, 5]
+    h = auth(7401)
+    hub = (await client.get("/api/games/hub", headers=h)).json()
+    assert hub["xp"] == {"xp": 0, "level": 1, "levelStart": 0, "levelNext": 100}
+
+    # a finished test gives points / 10
+    quiz_id = (await client.get("/api/tests", headers=h)).json()[0]["id"]
+    s = (await client.post("/api/sessions", json={"quizId": quiz_id}, headers=h)).json()
+    q = s["questions"][0]
+    r = (await client.post(f"/api/sessions/{s['sessionId']}/answers", json={"questionId": q["id"], "optionId": q["options"][0]["id"]}, headers=h)).json()
+    if not r["outcome"] == "correct":
+        pass
+    res = (await client.post(f"/api/sessions/{s['sessionId']}/finish", json={}, headers=h)).json()
+    after_test = (await client.get("/api/games/hub", headers=h)).json()["xp"]["xp"]
+    assert after_test == round(res["points"] / 10)
+
+    # a single-player game: capped XP, best score, popularity
+    out = (await client.post("/api/games/memory/result", json={"score": 999}, headers=h)).json()
+    assert out["xpEarned"] == 40 and out["best"] == 999
+    out = (await client.post("/api/games/memory/result", json={"score": 12}, headers=h)).json()
+    assert out["xpEarned"] == 12 and out["best"] == 999 and out["xp"]["xp"] == after_test + 52
+    assert (await client.post("/api/games/nope/result", json={"score": 1}, headers=h)).status_code == 404
+    await client.post("/api/games/stress/score", json={"score": 20, "answered": 25}, headers=h)
+    hub = (await client.get("/api/games/hub", headers=h)).json()
+    assert hub["plays"]["memory"] >= 2 and hub["plays"]["stress"] >= 1 and "test" not in hub["plays"]
+    assert hub["xp"]["xp"] == after_test + 72

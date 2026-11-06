@@ -77,6 +77,8 @@ async def _finalize(db: AsyncSession, attempt: Attempt, timed_out: bool, now: da
     attempt.used_sec = int(min(attempt.duration_sec, max(0, round(used))))
     attempt.finished_at = now
     attempt.status = "timed_out" if timed_out else "finished"
+    from .xp import award
+    award(db, attempt.user_id, round(attempt.points / 10), "test")
 
 
 async def expire_overdue(db: AsyncSession, user: User | None = None) -> None:
