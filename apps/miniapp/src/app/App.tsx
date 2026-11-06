@@ -18,6 +18,8 @@ import { PaywallScreen } from '../screens/PaywallScreen';
 import { MistakesScreen } from '../screens/MistakesScreen';
 import { WordGameScreen } from '../screens/WordGameScreen';
 import { GamesHubScreen } from '../screens/GamesHubScreen';
+import { WordSearchScreen } from '../screens/WordSearchScreen';
+import { MemoryScreen } from '../screens/MemoryScreen';
 import { StressGameScreen } from '../screens/StressGameScreen';
 import { DuelHubScreen, DuelScreen } from '../screens/DuelScreens';
 import { ReviewScreen } from '../screens/ReviewScreen';
@@ -60,6 +62,8 @@ function Shell() {
         <Route path="/mistakes" element={<MistakesScreen />} />
         <Route path="/games" element={<GamesHubScreen />} />
         <Route path="/games/word" element={<WordGameScreen />} />
+        <Route path="/games/search" element={<WordSearchScreen />} />
+        <Route path="/games/memory" element={<MemoryScreen />} />
         <Route path="/games/stress" element={<StressGameScreen />} />
         <Route path="/games/duel" element={<DuelHubScreen />} />
         <Route path="/duel/:id" element={<DuelScreen />} />
