@@ -1,5 +1,5 @@
 import type {
-  AccessInfo, AnswerResult, ReviewAnswer, ReviewDeck, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
+  AccessInfo, AnswerResult, ReviewAnswer, ReviewDeck, WordGame, WordStats, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
   Rating, RatingKind, RatingPeriod, SessionResult, SessionStart, SettingsPatch, TestSummary, TopicSummary, TopicTest,
   UserProfile,
 } from '@rq/shared-types';
@@ -33,6 +33,10 @@ export interface QuizApi {
   sendReceipt(file: File): Promise<{ id: string; createdAt: string }>;
   getBooks(): Promise<Book[]>;
   getReview(all?: boolean): Promise<ReviewDeck>;
+  wordDaily(): Promise<WordGame>;
+  wordPractice(): Promise<WordGame>;
+  wordGuess(gameId: string, word: string): Promise<WordGame>;
+  wordStats(): Promise<WordStats>;
   answerReview(questionId: string, optionId: string): Promise<ReviewAnswer>;
   /** one page of a book as an image (stamped with the reader's ID on the server) */
   getBookPage(bookId: string, page: number): Promise<Blob>;

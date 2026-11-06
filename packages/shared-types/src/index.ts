@@ -76,6 +76,29 @@ export interface ReviewDeck {
   questions: QuestionPublic[];
 }
 
+/** «So‘z topish»: guess a 5-letter word in 6 tries. */
+export type LetterMark = 'correct' | 'present' | 'absent';
+export interface WordGame {
+  id: ID;
+  mode: 'daily' | 'practice';
+  /** daily only: «So‘z #12» */
+  number: number | null;
+  length: number;
+  tries: number;
+  guesses: { word: string; marks: LetterMark[] }[];
+  status: 'playing' | 'won' | 'lost';
+  /** only after the game is over */
+  answer: string | null;
+}
+export interface WordStats {
+  played: number;
+  won: number;
+  streak: number;
+  bestStreak: number;
+  distribution: number[];
+  practiceWon: number;
+}
+
 export interface ReviewAnswer {
   correct: boolean;
   correctOptionId: ID | null;

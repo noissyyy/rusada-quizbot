@@ -71,6 +71,10 @@ export function createHttpApi(baseUrl: string): QuizApi {
     },
     getBooks: () => get('/api/books'),
     getReview: (all) => get(`/api/review${all ? '?all=true' : ''}`),
+    wordDaily: () => get('/api/games/word/daily'),
+    wordPractice: () => post('/api/games/word/practice'),
+    wordGuess: (id, word) => post(`/api/games/word/${encodeURIComponent(id)}/guess`, { word }),
+    wordStats: () => get('/api/games/word/stats'),
     answerReview: (qid, optionId) => post(`/api/review/${encodeURIComponent(qid)}`, { optionId }),
     async getBookPage(bookId, page) {
       let res: Response;

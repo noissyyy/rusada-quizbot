@@ -1,6 +1,6 @@
-import type { HomeFeed, LiveState, TestSummary } from '@rq/shared-types';
+import type { HomeFeed, LetterMark, LiveState, TestSummary, WordGame } from '@rq/shared-types';
 import { getWebApp } from '../lib/telegram/webapp';
-import type { QuizApi } from './api';
+import { ApiError, type QuizApi } from './api';
 import { server } from './mockServer';
 
 /** MOCK DATA — dev/demo only. Never shown as real metrics. */
@@ -13,6 +13,21 @@ export const mockTests: TestSummary[] = [
 
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 let mockPending: { id: string; createdAt: string } | null = null;
+// demo «So‘z topish»
+const WORD_ANSWERS = { daily: 'школа', practice: 'песок' } as const;
+const wordGames = new Map<'daily' | 'practice', WordGame>();
+function newWordGame(mode: 'daily' | 'practice'): WordGame {
+  const g: WordGame = { id: `w-${mode}-${Date.now()}`, mode, number: mode === 'daily' ? 6 : null, length: 5, tries: 6, guesses: [], status: 'playing', answer: null };
+  wordGames.set(mode, g);
+  return g;
+}
+function markWord(guess: string, answer: string): LetterMark[] {
+  const out: LetterMark[] = Array(5).fill('absent');
+  const left: Record<string, number> = {};
+  [...guess].forEach((c, i) => { if (c === answer[i]) out[i] = 'correct'; else left[answer[i]!] = (left[answer[i]!] ?? 0) + 1; });
+  [...guess].forEach((c, i) => { if (out[i] !== 'correct' && (left[c] ?? 0) > 0) { out[i] = 'present'; left[c]!--; } });
+  return out;
+}
 // demo: open the app with ?paywall=1 to see the subscription page (read once, before any redirect)
 const DEMO_PAYWALL = typeof location !== 'undefined' && new URLSearchParams(location.search).has('paywall');
 // demo: ?trial=1 shows the trial (2 of 3 free tests left, 3 free book pages)
@@ -71,6 +86,24 @@ export const mockApi: QuizApi = {
     mockPending = { id: 'p1', createdAt: new Date().toISOString() };
     return mockPending;
   },
+  async wordDaily() { await wait(); return wordGames.get('daily') ?? newWordGame('daily'); },
+  async wordPractice() {
+    await wait();
+    const open = wordGames.get('practice');
+    return open && open.status === 'playing' ? open : newWordGame('practice');
+  },
+  async wordGuess(id: string, word: string) {
+    await wait(120);
+    const g = [...wordGames.values()].find((x) => x.id === id)!;
+    const answer = WORD_ANSWERS[g.mode];
+    const w = word.toLowerCase().replace(/ё/g, 'е');
+    if (!/^[а-я]{5}$/.test(w)) throw new ApiError(422, 'need_5_letters');
+    g.guesses = [...g.guesses, { word: w, marks: markWord(w, answer) }];
+    if (w === answer) g.status = 'won'; else if (g.guesses.length >= 6) g.status = 'lost';
+    if (g.status !== 'playing') g.answer = answer;
+    return { ...g };
+  },
+  async wordStats() { await wait(); return { played: 12, won: 10, streak: 4, bestStreak: 7, distribution: [0, 1, 3, 4, 2, 0], practiceWon: 23 }; },
   async getReview() {
     await wait();
     const qs = (await server.start({ quizId: 'q-noun' })).questions.slice(0, 3);
