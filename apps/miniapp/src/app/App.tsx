@@ -18,6 +18,7 @@ import { PaywallScreen } from '../screens/PaywallScreen';
 import { MistakesScreen } from '../screens/MistakesScreen';
 import { WordGameScreen } from '../screens/WordGameScreen';
 import { StressGameScreen } from '../screens/StressGameScreen';
+import { DuelHubScreen, DuelScreen } from '../screens/DuelScreens';
 import { ReviewScreen } from '../screens/ReviewScreen';
 import { AccessProvider, useAccess } from '../lib/access';
 import { ReaderScreen } from '../screens/ReaderScreen';
@@ -29,7 +30,7 @@ import { OfflineBanner } from '../components/states/OfflineBanner';
 import { getStartParam, routeForStart } from '../lib/telegram/webapp';
 
 /** Screens where the floating nav is hidden (active test, live, onboarding). */
-const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/, /^\/books\/.+\/read/, /^\/subscribe/, /^\/mistakes/, /^\/games\//];
+const NAVLESS = [/^\/quiz\//, /^\/timeup\//, /^\/result\//, /^\/tests\/./, /^\/live/, /^\/language/, /^\/group/, /^\/notifications/, /^\/books\/.+\/read/, /^\/subscribe/, /^\/mistakes/, /^\/games\//, /^\/duel\//];
 // full animation; reduced-motion users get a short splash
 const SPLASH_MS = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : SPLASH_ANIMATION_MS;
 
@@ -58,6 +59,8 @@ function Shell() {
         <Route path="/mistakes" element={<MistakesScreen />} />
         <Route path="/games/word" element={<WordGameScreen />} />
         <Route path="/games/stress" element={<StressGameScreen />} />
+        <Route path="/games/duel" element={<DuelHubScreen />} />
+        <Route path="/duel/:id" element={<DuelScreen />} />
         <Route path="/subscribe" element={access ? <PaywallScreen access={access} onChanged={reload} back /> : null} />
         <Route path="/tests" element={<TestsScreen />} />
         <Route path="/topics/:slug" element={<TopicScreen />} />

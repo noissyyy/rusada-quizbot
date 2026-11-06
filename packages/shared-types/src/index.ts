@@ -108,6 +108,25 @@ export interface StressBoard {
   week: { rank: number; name: string; score: number; me: boolean }[];
 }
 
+/** Duel: the same questions for two players; each plays when they like. */
+export interface DuelSide { name: string; finished: boolean; correct: number | null; timeMs: number | null }
+export interface Duel {
+  id: ID;
+  role: 'creator' | 'opponent' | 'new' | 'full';
+  questionsCount: number;
+  topicTitle: string | null;
+  me: DuelSide | null;
+  rival: DuelSide | null;
+  outcome: 'win' | 'lose' | 'draw' | null;
+  expired: boolean;
+  link: string;
+  createdAt: string;
+}
+export interface DuelStart {
+  questions: QuestionPublic[];
+  answered: Record<string, { correct: boolean; correctOptionId: ID; chosen: ID }>;
+}
+
 export interface ReviewAnswer {
   correct: boolean;
   correctOptionId: ID | null;

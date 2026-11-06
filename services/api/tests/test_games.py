@@ -119,3 +119,33 @@ async def test_stress_words_scores_and_weekly_board(client, auth):
     assert [(r["name"], r["score"], r["me"]) for r in board["week"][:2]] == [("Madina R.", 25, True), ("Ali V.", 18, False)]
     mine = (await client.get("/api/games/stress/board", headers=a)).json()
     assert mine["best"] == 18 and mine["bestWeek"] == 18 and mine["rounds"] == 2
+
+
+async def test_duel_two_players_same_questions_and_result(client, auth):
+    a, b, c = auth(7301, "Ali", "V"), auth(7302, "Madina", "R"), auth(7303, "Third", "P")
+    d = (await client.post("/api/duels", json={}, headers=a)).json()
+    assert d["role"] == "creator" and d["questionsCount"] == 4 and "startapp=d_" in d["link"]
+    seen = (await client.get(f"/api/duels/{d['id']}", headers=b)).json()
+    assert seen["role"] == "new" and seen["rival"]["name"] == "Ali V."
+
+    async def play(h, right: int):
+        s = (await client.post(f"/api/duels/{d['id']}/start", headers=h)).json()
+        assert "correct" not in str(s["questions"])
+        for i, q in enumerate(s["questions"]):
+            r = (await client.post(f"/api/duels/{d['id']}/answer", json={"index": i, "optionId": q["options"][0]["id"]}, headers=h)).json()
+            if i < right and not r["correct"]:
+                await client.post(f"/api/duels/{d['id']}/answer", json={"index": i, "optionId": r["correctOptionId"]}, headers=h)
+        return s["questions"]
+
+    qa = await play(a, 0)
+    mid = (await client.post(f"/api/duels/{d['id']}/finish", headers=a)).json()
+    assert mid["outcome"] is None and mid["me"]["finished"] is True
+    qb = await play(b, 0)
+    assert [q["id"] for q in qa] == [q["id"] for q in qb]  # the same questions for both
+    assert (await client.post(f"/api/duels/{d['id']}/start", headers=c)).status_code == 409  # taken
+    done = (await client.post(f"/api/duels/{d['id']}/finish", headers=b)).json()
+    assert done["outcome"] in ("win", "lose", "draw") and done["rival"]["correct"] is not None
+    other = (await client.get(f"/api/duels/{d['id']}", headers=a)).json()
+    assert {done["outcome"], other["outcome"]} in ({"win", "lose"}, {"draw"})
+    assert (await client.post(f"/api/duels/{d['id']}/start", headers=a)).status_code == 409  # played already
+    assert len((await client.get("/api/duels", headers=a)).json()) == 1

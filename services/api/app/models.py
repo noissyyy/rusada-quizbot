@@ -442,3 +442,28 @@ class StressScore(Base):
     answered: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
 
+
+class Duel(Base):
+    """A 1-on-1 challenge: the same 10 questions for both players, each plays when they like."""
+    __tablename__ = "duels"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    creator_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    opponent_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    topic_id: Mapped[str | None] = mapped_column(ForeignKey("topics.id", ondelete="SET NULL"))
+    #: frozen questions with the answers (never sent to the phone before an answer)
+    snapshot: Mapped[list] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(TS)
+
+
+class DuelPlay(Base):
+    __tablename__ = "duel_plays"
+    duel_id: Mapped[str] = mapped_column(ForeignKey("duels.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    started_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(TS)
+    #: one entry per question index: {"o": option id, "ok": bool}
+    answers: Mapped[dict] = mapped_column(JSONB, default=dict)
+    correct: Mapped[int] = mapped_column(Integer, default=0)
+    time_ms: Mapped[int | None] = mapped_column(Integer)
+

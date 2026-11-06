@@ -1,4 +1,4 @@
-import type { HomeFeed, LetterMark, LiveState, TestSummary, WordGame } from '@rq/shared-types';
+import type { Duel, HomeFeed, LetterMark, LiveState, TestSummary, WordGame } from '@rq/shared-types';
 import { getWebApp } from '../lib/telegram/webapp';
 import { ApiError, type QuizApi } from './api';
 import { server } from './mockServer';
@@ -14,6 +14,10 @@ export const mockTests: TestSummary[] = [
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 let mockPending: { id: string; createdAt: string } | null = null;
 let stressBest = 17;
+const mockDuels: Duel[] = [
+  { id: 'd-1', role: 'opponent', questionsCount: 10, topicTitle: 'Морфология', me: { name: 'Алексей И.', finished: false, correct: null, timeMs: null }, rival: { name: 'Тимур А.', finished: true, correct: null, timeMs: null }, outcome: null, expired: false, link: '', createdAt: new Date().toISOString() },
+  { id: 'd-2', role: 'creator', questionsCount: 10, topicTitle: null, me: { name: 'Алексей И.', finished: true, correct: 8, timeMs: 62000 }, rival: { name: 'Мадина Р.', finished: true, correct: 7, timeMs: 55000 }, outcome: 'win', expired: false, link: '', createdAt: new Date().toISOString() },
+];
 // demo «So‘z topish»
 const WORD_ANSWERS = { daily: 'школа', practice: 'песок' } as const;
 const wordGames = new Map<'daily' | 'practice', WordGame>();
@@ -118,6 +122,30 @@ export const mockApi: QuizApi = {
   async stressBoard() {
     await wait();
     return { best: stressBest, bestWeek: stressBest, rounds: 2, week: [{ rank: 1, name: 'Мадина Р.', score: 31, me: false }, { rank: 2, name: 'Алексей И.', score: stressBest, me: true }] };
+  },
+  async duelCreate() {
+    await wait();
+    const d: Duel = { id: `d${Date.now()}`, role: 'creator', questionsCount: 4, topicTitle: null, me: { name: 'Алексей И.', finished: false, correct: null, timeMs: null },
+      rival: null, outcome: null, expired: false, link: 'https://t.me/Rusada_QuizBot/app?startapp=d_demo', createdAt: new Date().toISOString() };
+    mockDuels.unshift(d);
+    return d;
+  },
+  async duels() { await wait(); return mockDuels; },
+  async duel(id: string) { await wait(); return mockDuels.find((d) => d.id === id) ?? mockDuels[0]!; },
+  async duelStart() { await wait(); return { questions: (await server.start({ quizId: 'q-noun' })).questions, answered: {} }; },
+  async duelAnswer(_id: string, index: number, optionId: string) {
+    await wait(120);
+    const q = (await server.start({ quizId: 'q-noun' })).questions[index]!;
+    const correct = server.correctOf(q.id)!;
+    return { correct: optionId === correct, correctOptionId: correct };
+  },
+  async duelFinish(id: string) {
+    await wait();
+    const d = mockDuels.find((x) => x.id === id) ?? mockDuels[0]!;
+    d.me = { name: 'Алексей И.', finished: true, correct: 3, timeMs: 41000 };
+    d.rival = { name: 'Мадина Р.', finished: true, correct: 2, timeMs: 38000 };
+    d.outcome = 'win';
+    return { ...d };
   },
   async getReview() {
     await wait();
