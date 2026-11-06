@@ -28,7 +28,7 @@ export function MistakesScreen() {
       {!d ? <Skeleton className="h-48 w-full" /> : (
         <>
           <section className="flex flex-col items-center gap-2 rounded-hero bg-surface p-6 text-center shadow-card">
-            <img src="/3d/rq-3d-T15.webp" alt="" className="size-24 object-contain" />
+            <img src="/3d/rq-3d-G04.webp" alt="" className="size-24 object-contain" />
             <span className="font-display text-[44px] font-extrabold leading-none tabular-nums">{d.due}</span>
             <span className="text-body font-semibold text-ink-2">{t('review.dueToday')}</span>
             <div className="mt-2 grid w-full grid-cols-2 gap-2 text-center">

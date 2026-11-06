@@ -124,11 +124,11 @@ export function LastWordScreen() {
     <Screen className="flex flex-col gap-4">
       <ScreenHeader back="/games" title={t('lastword.title')} />
       {phase === 'done' ? (
-        <GameOver title={won ? t('lastword.won') : t('lastword.lost')} score={score} detail={t('lastword.doneText', { n: mine })} result={result} onAgain={() => void start()} img={won ? 'R01' : 'T08'} />
+        <GameOver title={won ? t('lastword.won') : t('lastword.lost')} score={score} detail={t('lastword.doneText', { n: mine })} result={result} onAgain={() => void start()} img={won ? 'R01' : 'G09'} />
       ) : (
         <>
           <section className="flex flex-col items-center gap-2 rounded-hero bg-surface p-6 text-center shadow-card">
-            <img src="/3d/rq-3d-T08.webp" alt="" className="size-24 object-contain" />
+            <img src="/3d/rq-3d-G09.webp" alt="" className="size-24 object-contain" />
             <h1 className="font-display text-[22px] font-bold">{t('lastword.introTitle')}</h1>
             <p className="max-w-[300px] text-[14px] leading-5 text-ink-2">{t('lastword.introText')}</p>
             <p className="mt-1 font-display text-[18px] font-bold">кошк<span className="rounded-[6px] bg-warning px-0.5 text-white">а</span> → <span className="rounded-[6px] bg-warning px-0.5 text-white">а</span>рбуз → <span className="rounded-[6px] bg-warning px-0.5 text-white">з</span>онт</p>

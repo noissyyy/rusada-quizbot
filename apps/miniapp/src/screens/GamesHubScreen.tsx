@@ -8,6 +8,7 @@ import { useI18n } from '../lib/i18n';
 import { Screen } from '../components/Screen';
 import { GradientDecor, Icon, Skeleton, toneStyle } from '../components/ui';
 import { XpBadge } from '../components/games/XpBadge';
+import { GameCard } from '../components/games/GamesSection';
 
 /** «O‘yinlar» tab: featured banners, popular this week, solo games, with a friend, practice. */
 export function GamesHubScreen() {
@@ -21,9 +22,9 @@ export function GamesHubScreen() {
   return (
     <Screen className="flex flex-col gap-5">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-display font-bold tracking-tight">{t('nav.games')}</h1>
+        <h1 className="flex items-center gap-1.5 font-display text-display font-bold tracking-tight"><img src="/3d/rq-3d-G05.webp" alt="" className="size-10 object-contain" />{t('nav.games')}</h1>
         <div className="flex items-center gap-2">
-          <Link to="/rating" aria-label={t('nav.rating')} className="grid size-10 place-items-center rounded-full bg-surface text-ink shadow-card"><Icon name="trophy" size={20} /></Link>
+          <Link to="/rating" aria-label={t('nav.rating')} className="grid size-10 place-items-center rounded-full bg-surface shadow-card"><img src="/3d/rq-3d-G07.webp" alt="" className="size-8 object-contain" /></Link>
           {hub.status === 'success' ? <XpBadge xp={hub.data.xp} /> : <Skeleton className="h-10 w-24 rounded-full" />}
         </div>
       </header>
@@ -50,21 +51,9 @@ export function GamesHubScreen() {
         const list = GAMES.filter((g) => g.kind === kind);
         if (!list.length) return null;
         return (
-          <section key={kind} className="flex flex-col gap-1 rounded-card bg-surface p-4 shadow-card">
-            <h2 className="font-display text-title font-bold tracking-tight">{t(title)}</h2>
-            <p className="mb-1 text-caption text-muted">{t(sub)}</p>
-            {list.map((g, i) => (
-              <Link key={g.key} to={g.to} className={clsx('flex items-center gap-3.5 py-3', i > 0 && 'border-t border-line')}>
-                <span style={toneStyle(g.tone)} className="relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-[18px]">
-                  <img src={`/3d/rq-3d-${g.img}.webp`} alt="" className="relative size-14 object-contain" />
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="text-[16px] font-bold">{t(g.title)}</span>
-                  <span className="text-[12px] leading-4 text-muted">{t(g.long)}</span>
-                </span>
-                <span className="shrink-0 rounded-full bg-primary-50 px-3 py-1.5 text-[12px] font-bold text-primary">{t('games.play')}</span>
-              </Link>
-            ))}
+          <section key={kind} className="flex flex-col gap-2.5">
+            <div><h2 className="font-display text-title font-bold tracking-tight">{t(title)}</h2><p className="text-caption text-muted">{t(sub)}</p></div>
+            {list.map((g) => <GameCard key={g.key} game={g} reviewDue={hub.status === 'success' ? hub.data.reviewDue : 0} />)}
           </section>
         );
       })}

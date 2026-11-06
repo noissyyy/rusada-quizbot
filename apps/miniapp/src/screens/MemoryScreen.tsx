@@ -62,7 +62,7 @@ export function MemoryScreen() {
     <Screen className="flex flex-col gap-4">
       <ScreenHeader back="/games" title={t('memory.title')} />
       {done ? (
-        <GameOver title={t('memory.done')} score={score} detail={t('memory.doneText', { m: moves, s: secs })} result={result} onAgain={again} img="T16" />
+        <GameOver title={t('memory.done')} score={score} detail={t('memory.doneText', { m: moves, s: secs })} result={result} onAgain={again} img="G10" />
       ) : (
         <>
           <p className="text-center text-[14px] font-semibold text-ink-2">{peek ? t('memory.peek') : t('memory.find', { n: PAIRS - matched.length, m: moves })}</p>
