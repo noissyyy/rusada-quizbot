@@ -19,6 +19,7 @@ import { MistakesScreen } from '../screens/MistakesScreen';
 import { WordGameScreen } from '../screens/WordGameScreen';
 import { GamesHubScreen } from '../screens/GamesHubScreen';
 import { WordSearchScreen } from '../screens/WordSearchScreen';
+import { GameRules } from '../components/games/GameRules';
 import { MemoryScreen } from '../screens/MemoryScreen';
 import { MorphScreen } from '../screens/MorphScreen';
 import { GrammarScreen } from '../screens/GrammarScreen';
@@ -63,17 +64,17 @@ function Shell() {
       <Routes>
         <Route path="/" element={chosen ? <HomeScreen /> : <Navigate to="/language" replace />} />
         <Route path="/language" element={<LanguageScreen />} />
-        <Route path="/mistakes" element={<MistakesScreen />} />
+        <Route path="/mistakes" element={<GameRules game="review"><MistakesScreen /></GameRules>} />
         <Route path="/games" element={<GamesHubScreen />} />
-        <Route path="/games/word" element={<WordGameScreen />} />
-        <Route path="/games/search" element={<WordSearchScreen />} />
-        <Route path="/games/memory" element={<MemoryScreen />} />
-        <Route path="/games/morph" element={<MorphScreen />} />
-        <Route path="/games/grammar" element={<GrammarScreen />} />
-        <Route path="/games/attack" element={<WordAttackScreen />} />
-        <Route path="/games/lastword" element={<LastWordScreen />} />
-        <Route path="/games/stress" element={<StressGameScreen />} />
-        <Route path="/games/duel" element={<DuelHubScreen />} />
+        <Route path="/games/word" element={<GameRules game="word"><WordGameScreen /></GameRules>} />
+        <Route path="/games/search" element={<GameRules game="wordsearch"><WordSearchScreen /></GameRules>} />
+        <Route path="/games/memory" element={<GameRules game="memory"><MemoryScreen /></GameRules>} />
+        <Route path="/games/morph" element={<GameRules game="morph"><MorphScreen /></GameRules>} />
+        <Route path="/games/grammar" element={<GameRules game="grammar"><GrammarScreen /></GameRules>} />
+        <Route path="/games/attack" element={<GameRules game="attack"><WordAttackScreen /></GameRules>} />
+        <Route path="/games/lastword" element={<GameRules game="lastword"><LastWordScreen /></GameRules>} />
+        <Route path="/games/stress" element={<GameRules game="stress"><StressGameScreen /></GameRules>} />
+        <Route path="/games/duel" element={<GameRules game="duel"><DuelHubScreen /></GameRules>} />
         <Route path="/duel/:id" element={<DuelScreen />} />
         <Route path="/subscribe" element={access ? <PaywallScreen access={access} onChanged={reload} back /> : null} />
         <Route path="/tests" element={<TestsScreen />} />
