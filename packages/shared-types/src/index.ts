@@ -115,6 +115,7 @@ export interface Duel {
   role: 'creator' | 'opponent' | 'new' | 'full';
   questionsCount: number;
   topicTitle: string | null;
+  difficulty?: Difficulty | null;
   me: DuelSide | null;
   rival: DuelSide | null;
   outcome: 'win' | 'lose' | 'draw' | null;
@@ -136,6 +137,19 @@ export interface GamesHub {
   reviewDue: number;
 }
 export interface GameResultOut { best: number; xpEarned: number; xp: XpInfo }
+export interface LastWordMatch {
+  id: ID;
+  role: 'creator' | 'opponent' | 'new' | 'full';
+  rival: string | null;
+  words: { by: 'start' | 'me' | 'rival'; word: string }[];
+  myTurn: boolean;
+  need: string | null;
+  status: 'playing' | 'waiting' | 'won' | 'lost';
+  endReason: 'timeout' | 'resign' | null;
+  moveDeadline: string;
+  myWords: number;
+  link: string;
+}
 export interface LastWordMove { ok: boolean; word: string; error: 'not_word' | 'not_noun' | 'wrong_letter' | 'used' | null; bot: string | null; botGaveUp: boolean; need: string | null }
 
 export interface ReviewAnswer {

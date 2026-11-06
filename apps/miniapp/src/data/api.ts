@@ -1,5 +1,5 @@
 import type {
-  AccessInfo, AnswerResult, Duel, DuelStart, GameResultOut, GamesHub, LastWordMove, ReviewAnswer, ReviewDeck, StressBoard, StressWord, WordGame, WordStats, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
+  AccessInfo, AnswerResult, Duel, DuelStart, GameResultOut, GamesHub, LastWordMatch, LastWordMove, Difficulty, ReviewAnswer, ReviewDeck, StressBoard, StressWord, WordGame, WordStats, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
   Rating, RatingKind, RatingPeriod, SessionResult, SessionStart, SettingsPatch, TestSummary, TopicSummary, TopicTest,
   UserProfile,
 } from '@rq/shared-types';
@@ -44,7 +44,12 @@ export interface QuizApi {
   gameResult(game: string, score: number): Promise<GameResultOut>;
   lastWordStart(): Promise<LastWordMove>;
   lastWordTurn(word: string, used: string[]): Promise<LastWordMove>;
-  duelCreate(topicId?: string | null): Promise<Duel>;
+  matchCreate(): Promise<LastWordMatch>;
+  matches(): Promise<LastWordMatch[]>;
+  match(id: string): Promise<LastWordMatch>;
+  matchMove(id: string, word: string): Promise<LastWordMatch>;
+  matchResign(id: string): Promise<LastWordMatch>;
+  duelCreate(topicId?: string | null, difficulty?: Difficulty | null): Promise<Duel>;
   duels(): Promise<Duel[]>;
   duel(id: string): Promise<Duel>;
   duelStart(id: string): Promise<DuelStart>;

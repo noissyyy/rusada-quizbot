@@ -48,7 +48,7 @@ export function GamesHubScreen() {
       </section>
 
       {sections.map(([title, sub, kind]) => {
-        const list = GAMES.filter((g) => g.kind === kind);
+        const list = GAMES.filter((g) => g.kind === kind || g.also === kind);
         if (!list.length) return null;
         return (
           <section key={kind} className="flex flex-col gap-2.5">

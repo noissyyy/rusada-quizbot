@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import type { Duel, DuelStart } from '@rq/shared-types';
+import type { Difficulty, Duel, DuelStart } from '@rq/shared-types';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../data/api';
@@ -22,6 +22,8 @@ function shareDuel(d: Duel, text: string) {
 type T = ReturnType<typeof useI18n>['t'];
 const OUTCOME = { win: 'duel.win', lose: 'duel.lose', draw: 'duel.draw' } as const;
 
+const LEVEL_DOT: Record<Difficulty, string> = { easy: 'bg-success', medium: 'bg-warning', hard: 'bg-error' };
+
 function statusOf(d: Duel, t: T) {
   if (d.outcome) return { text: t(OUTCOME[d.outcome]), tone: d.outcome === 'win' ? 'bg-success-50 text-success-ink' : d.outcome === 'lose' ? 'bg-error-50 text-error-ink' : 'bg-track text-ink-2' };
   if (d.expired) return { text: t('duel.expired'), tone: 'bg-track text-muted' };
@@ -37,12 +39,13 @@ export function DuelHubScreen() {
   const topics = useAsync(() => api().getTopics());
   const duels = useAsync(() => api().duels());
   const [topic, setTopic] = useState<string | null>(null);
+  const [level, setLevel] = useState<Difficulty | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const create = async () => {
     setBusy(true); setErr(null);
-    try { const d = await api().duelCreate(topic); haptic.success(); nav(`/duel/${d.id}`); }
-    catch (e) { setErr(e instanceof ApiError && e.detail === 'not_enough_questions' ? t('duel.fewQuestions') : t('error.load')); }
+    try { const d = await api().duelCreate(topic, level); haptic.success(); nav(`/duel/${d.id}`); }
+    catch (e) { setErr(e instanceof ApiError && e.detail === 'not_enough_questions' ? t(level ? 'duel.fewLevel' : 'duel.fewQuestions') : t('error.load')); }
     finally { setBusy(false); }
   };
   return (
@@ -62,6 +65,15 @@ export function DuelHubScreen() {
               className={clsx('h-[38px] shrink-0 whitespace-nowrap rounded-full border px-4 text-[14px] font-semibold', topic === x.id ? 'border-primary bg-primary text-white' : 'border-line bg-surface text-ink')}>{x.title}</button>
           ))}
         </div>
+        <b className="mt-1 text-[15px]">{t('duel.pickLevel')}</b>
+        <div role="radiogroup" aria-label={t('duel.pickLevel')} className="grid grid-cols-4 gap-1.5 rounded-[16px] bg-track p-1">
+          {([null, 'easy', 'medium', 'hard'] as const).map((l) => (
+            <button key={l ?? 'any'} type="button" role="radio" aria-checked={level === l} onClick={() => { setLevel(l); setErr(null); }}
+              className={clsx('flex h-10 items-center justify-center gap-1 rounded-[12px] text-[13px] font-bold', level === l ? 'bg-surface text-ink shadow-card' : 'text-muted')}>
+              {l && <span aria-hidden className={clsx('size-2 rounded-full', LEVEL_DOT[l])} />}{l ? t(`difficulty.${l}`) : t('duel.anyLevel')}
+            </button>
+          ))}
+        </div>
         {err && <p role="alert" className="text-[13px] font-semibold text-error-ink">{err}</p>}
         <button type="button" disabled={busy} onClick={create} className="h-14 rounded-control bg-primary text-[16px] font-bold text-white shadow-primary disabled:opacity-60">{busy ? t('duel.creating') : t('duel.create')}</button>
       </section>
@@ -76,7 +88,7 @@ export function DuelHubScreen() {
               <Avatar name={d.rival?.name ?? '?'} size={42} />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-[15px] font-bold">{d.rival?.name ?? t('duel.noRivalYet')}</span>
-                <span className="truncate text-[12px] text-muted">{d.topicTitle ?? t('duel.mixed')} · {t('duel.qN', { n: d.questionsCount })}{d.me?.correct != null && d.rival?.correct != null ? ` · ${d.me.correct}:${d.rival.correct}` : ''}</span>
+                <span className="truncate text-[12px] text-muted">{d.topicTitle ?? t('duel.mixed')}{d.difficulty ? ` · ${t(`difficulty.${d.difficulty}`)}` : ''} · {t('duel.qN', { n: d.questionsCount })}{d.me?.correct != null && d.rival?.correct != null ? ` · ${d.me.correct}:${d.rival.correct}` : ''}</span>
               </span>
               <span className={clsx('shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold', st.tone)}>{st.text}</span>
             </Link>
@@ -119,7 +131,7 @@ export function DuelScreen() {
           <span className="font-display text-[26px] font-extrabold text-white/60">VS</span>
           <Side name={duel.rival?.name ?? '?'} correct={duel.rival?.correct ?? null} time={duel.rival?.timeMs ?? null} waiting={!duel.rival || !duel.rival.finished} />
         </div>
-        <p className="relative mt-3 text-center text-[12px] text-white/70">{duel.topicTitle ?? t('duel.mixed')} · {t('duel.qN', { n: duel.questionsCount })}</p>
+        <p className="relative mt-3 text-center text-[12px] text-white/70">{duel.topicTitle ?? t('duel.mixed')}{duel.difficulty ? ` · ${t(`difficulty.${duel.difficulty}`)}` : ''} · {t('duel.qN', { n: duel.questionsCount })}</p>
       </section>
 
       {duel.outcome ? (

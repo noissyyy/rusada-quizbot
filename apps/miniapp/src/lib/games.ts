@@ -11,6 +11,8 @@ export interface GameInfo {
   short: MessageKey;
   long: MessageKey;
   kind: 'solo' | 'friend' | 'practice';
+  /** also listed under another section */
+  also?: 'solo' | 'friend' | 'practice';
   badge?: MessageKey;
 }
 
@@ -23,6 +25,6 @@ export const GAMES: GameInfo[] = [
   { key: 'morph', to: '/games/morph', img: 'T13', tone: 'violet', title: 'games.morph', short: 'games.morphShort', long: 'games.morphText', kind: 'solo', badge: 'games.badgeNew' },
   { key: 'grammar', to: '/games/grammar', img: 'T10', tone: 'mint', title: 'games.grammar', short: 'games.grammarShort', long: 'games.grammarText', kind: 'solo', badge: 'games.badgeNew' },
   { key: 'attack', to: '/games/attack', img: 'T11', tone: 'coral', title: 'games.attack', short: 'games.attackShort', long: 'games.attackText', kind: 'solo', badge: 'games.badgeNew' },
-  { key: 'lastword', to: '/games/lastword', img: 'G09', tone: 'sky', title: 'games.lastword', short: 'games.lastwordShort', long: 'games.lastwordText', kind: 'solo', badge: 'games.badgeNew' },
+  { key: 'lastword', to: '/games/lastword', img: 'G09', tone: 'sky', title: 'games.lastword', short: 'games.lastwordShort', long: 'games.lastwordText', kind: 'solo', also: 'friend', badge: 'games.badgeNew' },
   { key: 'review', to: '/mistakes', img: 'G04', tone: 'pink', title: 'games.review', short: 'games.reviewShort', long: 'games.reviewText', kind: 'practice' },
 ];

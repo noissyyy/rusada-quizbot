@@ -216,3 +216,65 @@ def test_last_word_skips_soft_sign():
     from app.services import lastword
     assert lastword.last_letter("тетрадь") == "д" and lastword.last_letter("сыры") == "р"
     assert lastword.check("дом", ["тетрадь"]) == ("дом", None)
+
+
+async def test_duel_with_difficulty(client, auth):
+    h = auth(7601)
+    d = (await client.post("/api/duels", json={"difficulty": "easy"}, headers=h)).json()
+    assert d["difficulty"] == "easy" and d["questionsCount"] >= 3
+    # the seeded questions are all easy: a hard duel cannot be made
+    r = await client.post("/api/duels", json={"difficulty": "hard"}, headers=h)
+    assert r.status_code == 409 and r.json()["detail"] == "not_enough_questions"
+    r = await client.post("/api/duels", json={"difficulty": "extreme"}, headers=h)
+    assert r.status_code == 422
+
+
+async def test_last_word_match_between_two_people(client, auth):
+    from datetime import timedelta
+
+    from app.db import SessionLocal
+    from app.models import LastWordMatch, utcnow
+    from app.services import lastword
+
+    a, b, c = auth(7701), auth(7702), auth(7703)
+    m = (await client.post("/api/lastword/matches", headers=a)).json()
+    assert m["role"] == "creator" and m["myTurn"] and m["status"] == "playing" and m["words"][0]["by"] == "start"
+    mid = m["id"]
+
+    # the friend cannot move before the creator; a wrong letter is refused
+    assert (await client.post(f"/api/lastword/matches/{mid}/move", json={"word": "арбуз"}, headers=b)).status_code == 409
+    need = m["need"]
+    bad = "арбуз" if need != "а" else "банан"
+    assert (await client.post(f"/api/lastword/matches/{mid}/move", json={"word": bad}, headers=a)).status_code == 422
+
+    def word_for(letter, used):
+        return next(n for n in lastword.nouns() if n[0] == letter and n not in used)
+
+    used = [w["word"] for w in m["words"]]
+    w1 = word_for(need, used)
+    m = (await client.post(f"/api/lastword/matches/{mid}/move", json={"word": w1}, headers=a)).json()
+    assert m["status"] == "waiting" and not m["myTurn"] and m["myWords"] == 1
+
+    # the friend opens the link: may join by answering
+    seen = (await client.get(f"/api/lastword/matches/{mid}", headers=b)).json()
+    assert seen["role"] == "new" and seen["myTurn"]
+    w2 = word_for(seen["need"], [w["word"] for w in seen["words"]])
+    m_b = (await client.post(f"/api/lastword/matches/{mid}/move", json={"word": w2}, headers=b)).json()
+    assert m_b["role"] == "opponent" and m_b["words"][-1] == {"by": "me", "word": w2}
+    assert (await client.get(f"/api/lastword/matches/{mid}", headers=c)).json()["role"] == "full"
+    assert (await client.post(f"/api/lastword/matches/{mid}/move", json={"word": w2}, headers=b)).status_code == 409  # not b's turn
+
+    # the creator lets the clock run out → the friend wins
+    async with SessionLocal() as db:
+        row = await db.get(LastWordMatch, mid)
+        row.move_deadline = utcnow() - timedelta(minutes=1)
+        await db.commit()
+    end_a = (await client.get(f"/api/lastword/matches/{mid}", headers=a)).json()
+    end_b = (await client.get(f"/api/lastword/matches/{mid}", headers=b)).json()
+    assert end_a["status"] == "lost" and end_b["status"] == "won" and end_a["endReason"] == "timeout"
+    assert [x["id"] for x in (await client.get("/api/lastword/matches", headers=b)).json()] == [mid]
+
+    # resigning
+    m2 = (await client.post("/api/lastword/matches", headers=a)).json()
+    r = (await client.post(f"/api/lastword/matches/{m2['id']}/resign", headers=a)).json()
+    assert r["endReason"] == "resign"
