@@ -9,7 +9,7 @@ const items: { to: string; label: MessageKey; icon: IconName }[] = [
   { to: '/', label: 'nav.home', icon: 'home' },
   { to: '/tests', label: 'nav.tests', icon: 'tests' },
   { to: '/books', label: 'nav.books', icon: 'book' },
-  { to: '/rating', label: 'nav.rating', icon: 'trophy' },
+  { to: '/games', label: 'nav.games', icon: 'gamepad' },
   { to: '/profile', label: 'nav.profile', icon: 'user' },
 ];
 

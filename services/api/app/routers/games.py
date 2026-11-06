@@ -12,7 +12,7 @@ from ..db import get_db
 from ..models import Question, ReviewItem, User, utcnow
 from ..schemas import Camel, OptionPublic, QuestionPublic
 from ..security import current_user
-from ..services import review
+from ..services import review, xp
 
 router = APIRouter(prefix="/api", tags=["games"])
 LABELS = ("A", "B", "C", "D")
@@ -70,6 +70,8 @@ async def answer_review(qid: str, body: ReviewAnswerIn, user: User = Depends(cur
     correct_opt = next((o.id for o in q.options if o.is_correct), None)
     ok = body.option_id == correct_opt
     review.next_state(item, ok)
+    if ok:
+        xp.award(db, user.id, 3, "review")
     await db.commit()
     return ReviewAnswerOut(correct=ok, correct_option_id=correct_opt, explanation=q.explanation_ru, box=item.box,
                            mastered=item.box >= review.MASTERED, next_due_at=item.due_at)
@@ -151,6 +153,8 @@ async def word_guess(gid: str, body: GuessIn, user: User = Depends(current_user)
         g.status, g.finished_at = "won", utcnow()
     elif len(g.guesses) >= words.TRIES:
         g.status, g.finished_at = "lost", utcnow()
+    if g.status != "playing":
+        xp.award(db, user.id, (30 if g.mode == "daily" else 15) if g.status == "won" else 5, "word")
     await db.commit()
     return _word_out(g)
 
@@ -232,6 +236,7 @@ async def stress_score(body: StressScoreIn, user: User = Depends(current_user), 
     if not 0 <= body.score <= body.answered <= ROUND_SEC * 2:
         raise HTTPException(422, "impossible_score")
     db.add(StressScore(user_id=user.id, score=body.score, answered=body.answered))
+    xp.award(db, user.id, body.score, "stress")
     await db.commit()
     return await stress_board(user, db)
 
@@ -433,6 +438,7 @@ async def finish_duel(did: str, user: User = Depends(current_user), db: AsyncSes
     if not play.finished_at:
         play.finished_at = utcnow()
         play.time_ms = int((play.finished_at - play.started_at).total_seconds() * 1000)
+        xp.award(db, user.id, 10 + 2 * play.correct, "duel")
         await db.commit()
         out = await _duel_out(db, d, user)
         if out.outcome and _settings.telegram_enabled:  # both have played: tell both
@@ -450,3 +456,61 @@ async def finish_duel(did: str, user: User = Depends(current_user), db: AsyncSes
                     _log.warning("duel notify failed", exc_info=True)
         return out
     return await _duel_out(db, d, user)
+
+
+# ---------------- hub, XP, results of single-player games ----------------
+
+from ..models import GameResult, XpEvent  # noqa: E402
+
+
+class XpOut(Camel):
+    xp: int
+    level: int
+    level_start: int
+    level_next: int
+
+
+class GamesHubOut(Camel):
+    xp: XpOut
+    #: plays this week per game key (word, stress, duel, review, wordsearch, memory, …)
+    plays: dict[str, int]
+    review_due: int
+
+
+@router.get("/games/hub", response_model=GamesHubOut)
+async def games_hub(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    week = utcnow() - _td(days=7)
+    rows = (await db.execute(select(XpEvent.source, _func.count()).where(XpEvent.created_at >= week)
+                             .group_by(XpEvent.source))).all()
+    await review.seed_from_history(db, user)
+    due = (await review.counts(db, user))["due"]
+    await db.commit()
+    return GamesHubOut(xp=XpOut(**await xp.summary(db, user.id)),
+                       plays={src: n for src, n in rows if src != "test"}, review_due=due)
+
+
+class GameResultIn(Camel):
+    score: int
+
+
+class GameResultOut(Camel):
+    best: int
+    xp_earned: int
+    xp: XpOut
+
+
+@router.post("/games/{game}/result", response_model=GameResultOut)
+async def game_result(game: str, body: GameResultIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """A finished round of a single-player game: stored for the best score and turned into XP (capped)."""
+    cap = xp.GAME_XP_CAP.get(game)
+    if cap is None:
+        raise HTTPException(404, "unknown_game")
+    if not 0 <= body.score <= 10_000:
+        raise HTTPException(422, "impossible_score")
+    db.add(GameResult(user_id=user.id, game=game, score=body.score))
+    earned = min(cap, body.score)
+    xp.award(db, user.id, earned, game)
+    await db.commit()
+    best = (await db.execute(select(_func.max(GameResult.score)).where(GameResult.user_id == user.id, GameResult.game == game))).scalar_one()
+    return GameResultOut(best=best or 0, xp_earned=earned, xp=XpOut(**await xp.summary(db, user.id)))
+

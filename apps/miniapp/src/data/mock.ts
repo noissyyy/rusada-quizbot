@@ -14,6 +14,7 @@ export const mockTests: TestSummary[] = [
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 let mockPending: { id: string; createdAt: string } | null = null;
 let stressBest = 17;
+const mockXp = { xp: 340, level: 3, levelStart: 300, levelNext: 600 };
 const mockDuels: Duel[] = [
   { id: 'd-1', role: 'opponent', questionsCount: 10, topicTitle: 'Морфология', me: { name: 'Алексей И.', finished: false, correct: null, timeMs: null }, rival: { name: 'Тимур А.', finished: true, correct: null, timeMs: null }, outcome: null, expired: false, link: '', createdAt: new Date().toISOString() },
   { id: 'd-2', role: 'creator', questionsCount: 10, topicTitle: null, me: { name: 'Алексей И.', finished: true, correct: 8, timeMs: 62000 }, rival: { name: 'Мадина Р.', finished: true, correct: 7, timeMs: 55000 }, outcome: 'win', expired: false, link: '', createdAt: new Date().toISOString() },
@@ -122,6 +123,16 @@ export const mockApi: QuizApi = {
   async stressBoard() {
     await wait();
     return { best: stressBest, bestWeek: stressBest, rounds: 2, week: [{ rank: 1, name: 'Мадина Р.', score: 31, me: false }, { rank: 2, name: 'Алексей И.', score: stressBest, me: true }] };
+  },
+  async gamesHub() {
+    await wait();
+    return { xp: { ...mockXp }, plays: { word: 41, duel: 28, stress: 19, review: 12 }, reviewDue: 3 };
+  },
+  async gameResult(_game: string, score: number) {
+    await wait();
+    const earned = Math.min(50, score);
+    mockXp.xp += earned;
+    return { best: Math.max(score, 20), xpEarned: earned, xp: { ...mockXp } };
   },
   async duelCreate() {
     await wait();

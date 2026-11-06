@@ -17,6 +17,7 @@ import { BookScreen, BooksScreen } from '../screens/BooksScreens';
 import { PaywallScreen } from '../screens/PaywallScreen';
 import { MistakesScreen } from '../screens/MistakesScreen';
 import { WordGameScreen } from '../screens/WordGameScreen';
+import { GamesHubScreen } from '../screens/GamesHubScreen';
 import { StressGameScreen } from '../screens/StressGameScreen';
 import { DuelHubScreen, DuelScreen } from '../screens/DuelScreens';
 import { ReviewScreen } from '../screens/ReviewScreen';
@@ -57,6 +58,7 @@ function Shell() {
         <Route path="/" element={chosen ? <HomeScreen /> : <Navigate to="/language" replace />} />
         <Route path="/language" element={<LanguageScreen />} />
         <Route path="/mistakes" element={<MistakesScreen />} />
+        <Route path="/games" element={<GamesHubScreen />} />
         <Route path="/games/word" element={<WordGameScreen />} />
         <Route path="/games/stress" element={<StressGameScreen />} />
         <Route path="/games/duel" element={<DuelHubScreen />} />

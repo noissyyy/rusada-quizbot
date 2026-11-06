@@ -1,5 +1,5 @@
 import type {
-  AccessInfo, AnswerResult, Duel, DuelStart, ReviewAnswer, ReviewDeck, StressBoard, StressWord, WordGame, WordStats, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
+  AccessInfo, AnswerResult, Duel, DuelStart, GameResultOut, GamesHub, ReviewAnswer, ReviewDeck, StressBoard, StressWord, WordGame, WordStats, AppNotification, Book, GroupAssignmentView, GroupHubItem, GroupResultView, HomeFeed, LiveListItem, LiveState, Profile,
   Rating, RatingKind, RatingPeriod, SessionResult, SessionStart, SettingsPatch, TestSummary, TopicSummary, TopicTest,
   UserProfile,
 } from '@rq/shared-types';
@@ -40,6 +40,8 @@ export interface QuizApi {
   stressWords(): Promise<StressWord[]>;
   stressScore(score: number, answered: number): Promise<StressBoard>;
   stressBoard(): Promise<StressBoard>;
+  gamesHub(): Promise<GamesHub>;
+  gameResult(game: string, score: number): Promise<GameResultOut>;
   duelCreate(topicId?: string | null): Promise<Duel>;
   duels(): Promise<Duel[]>;
   duel(id: string): Promise<Duel>;
