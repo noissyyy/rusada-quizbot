@@ -9,10 +9,10 @@ current question bank.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 
-from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Integer, LargeBinary, String, Text,
+from sqlalchemy import (BigInteger, Boolean, Date, DateTime, ForeignKey, Integer, LargeBinary, String, Text, text,
                         Index, func)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -415,4 +415,20 @@ class ReviewState(Base):
     __tablename__ = "review_state"
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     seeded_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+
+
+class WordGame(Base):
+    """«So‘z topish»: one game — the daily word (one per day per person) or a practice word."""
+    __tablename__ = "word_games"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    mode: Mapped[str] = mapped_column(String(10))  # daily | practice
+    day: Mapped[date | None] = mapped_column(Date)
+    answer: Mapped[str] = mapped_column(String(16))
+    guesses: Mapped[list] = mapped_column(JSONB, default=list)
+    status: Mapped[str] = mapped_column(String(10), default="playing")  # playing | won | lost
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(TS)
+
+    __table_args__ = (Index("ux_word_games_daily", "user_id", "day", unique=True, postgresql_where=text("mode = 'daily'")),)
 

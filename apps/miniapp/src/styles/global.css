@@ -88,3 +88,6 @@ button { font: inherit; color: inherit; }
   --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.5);
   --shadow-primary: 0 8px 20px rgba(139, 107, 255, 0.28);
 }
+
+/* «So‘z topish»: a too-short word shakes the row */
+@keyframes word-shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }

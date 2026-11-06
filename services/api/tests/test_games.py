@@ -65,3 +65,40 @@ async def test_past_mistakes_are_loaded_once(client, auth):
 
 async def _uid(client, h) -> str:
     return (await client.get("/api/me", headers=h)).json()["id"]
+
+
+async def test_word_game_daily_practice_and_stats(client, auth):
+    from app.services import words
+    h = auth(7101)
+    d = (await client.get("/api/games/word/daily", headers=h)).json()
+    assert d["mode"] == "daily" and d["status"] == "playing" and d["answer"] is None and d["number"] >= 1
+    same = (await client.get("/api/games/word/daily", headers=h)).json()
+    assert same["id"] == d["id"]  # one daily game per day
+
+    bad = await client.post(f"/api/games/word/{d['id']}/guess", json={"word": "abcde"}, headers=h)
+    assert bad.status_code == 422
+    answer = words.daily_word(words.today())
+    wrong = "лампа" if answer != "лампа" else "песок"
+    g1 = (await client.post(f"/api/games/word/{d['id']}/guess", json={"word": wrong.upper()}, headers=h)).json()
+    assert g1["guesses"][0]["word"] == wrong and len(g1["guesses"][0]["marks"]) == 5 and g1["answer"] is None
+    g2 = (await client.post(f"/api/games/word/{d['id']}/guess", json={"word": answer}, headers=h)).json()
+    assert g2["status"] == "won" and g2["answer"] == answer and g2["guesses"][1]["marks"] == ["correct"] * 5
+    assert (await client.post(f"/api/games/word/{d['id']}/guess", json={"word": answer}, headers=h)).status_code == 409
+
+    # practice: as many as you like; an unfinished one is continued
+    p = (await client.post("/api/games/word/practice", headers=h)).json()
+    assert p["mode"] == "practice" and p["number"] is None
+    assert (await client.post("/api/games/word/practice", headers=h)).json()["id"] == p["id"]
+    for _ in range(6):
+        last = (await client.post(f"/api/games/word/{p['id']}/guess", json={"word": "ъъъъъ"}, headers=h)).json()
+    assert last["status"] == "lost" and last["answer"]
+    assert (await client.post("/api/games/word/practice", headers=h)).json()["id"] != p["id"]
+
+    st = (await client.get("/api/games/word/stats", headers=h)).json()
+    assert st == {"played": 1, "won": 1, "streak": 1, "bestStreak": 1, "distribution": [0, 1, 0, 0, 0, 0], "practiceWon": 0}
+
+
+def test_word_marks_handle_repeated_letters():
+    from app.services.words import marks
+    assert marks("лампа", "папка") == ["absent", "correct", "absent", "present", "correct"]
+    assert marks("аааaa".replace("a", "а"), "мачта") == ["absent", "correct", "absent", "absent", "correct"]
