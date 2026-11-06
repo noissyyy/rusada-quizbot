@@ -514,3 +514,45 @@ async def game_result(game: str, body: GameResultIn, user: User = Depends(curren
     best = (await db.execute(select(_func.max(GameResult.score)).where(GameResult.user_id == user.id, GameResult.game == game))).scalar_one()
     return GameResultOut(best=best or 0, xp_earned=earned, xp=XpOut(**await xp.summary(db, user.id)))
 
+
+
+# ---------------------------------------------------------------- «Последнее слово»
+
+from ..services import lastword  # noqa: E402
+
+
+class LastWordIn(Camel):
+    word: str
+    used: list[str] = []
+
+
+class LastWordOut(Camel):
+    ok: bool
+    word: str
+    error: str | None = None
+    bot: str | None = None
+    bot_gave_up: bool = False
+    need: str | None = None
+
+
+@router.get("/games/lastword/start", response_model=LastWordOut)
+async def lastword_start(user: User = Depends(current_user)):
+    """The bot opens the game with a common noun."""
+    w = lastword.bot_move([], 0)
+    assert w
+    return LastWordOut(ok=True, word=w, bot=w, need=lastword.last_letter(w))
+
+
+@router.post("/games/lastword/turn", response_model=LastWordOut)
+async def lastword_turn(body: LastWordIn, user: User = Depends(current_user)):
+    """Checks the player's word against the chain so far and returns the bot's answer."""
+    if len(body.used) > 400:
+        raise HTTPException(422, "too_long")
+    word, err = lastword.check(body.word, body.used)
+    if err:
+        return LastWordOut(ok=False, word=word, error=err, need=lastword.last_letter(body.used[-1]) if body.used else None)
+    chain = [*body.used, word]
+    bot = lastword.bot_move(chain, len(chain) // 2)
+    if bot is None:
+        return LastWordOut(ok=True, word=word, bot_gave_up=True)
+    return LastWordOut(ok=True, word=word, bot=bot, need=lastword.last_letter(bot))
