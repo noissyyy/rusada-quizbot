@@ -86,7 +86,7 @@ function SearchRound({ theme, onBack }: { theme: SearchTheme; onBack: () => void
         <span className="rounded-full bg-surface px-3 py-1 font-display text-[14px] font-bold tabular-nums shadow-card">{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}</span>
       </header>
       {done ? (
-        <GameOver title={t('search.done')} score={score} detail={t('search.doneText', { s: secs })} result={result} onAgain={again} img="T12" />
+        <GameOver title={t('search.done')} score={score} detail={t('search.doneText', { s: secs })} result={result} onAgain={again} img="G11" />
       ) : (
         <>
           <div className="grid select-none grid-cols-8 gap-1 rounded-[20px] bg-surface p-2 shadow-card">

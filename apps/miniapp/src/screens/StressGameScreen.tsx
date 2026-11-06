@@ -118,7 +118,7 @@ export function StressGameScreen() {
         </section>
       ) : (
         <section className="flex flex-col items-center gap-2 rounded-hero bg-surface p-6 text-center shadow-card">
-          <img src="/3d/rq-3d-T14.webp" alt="" className="size-24 object-contain" />
+          <img src="/3d/rq-3d-G03.webp" alt="" className="size-24 object-contain" />
           <h1 className="font-display text-[22px] font-bold">{t('stress.introTitle')}</h1>
           <p className="max-w-[300px] text-[14px] leading-5 text-ink-2">{t('stress.introText')}</p>
           <p className="mt-1 font-display text-[20px] font-bold tracking-[0.04em]">звон<span className="rounded-[6px] bg-success px-1 text-white">И</span>т · т<span className="rounded-[6px] bg-success px-1 text-white">О</span>рты</p>

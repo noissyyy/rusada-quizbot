@@ -50,7 +50,7 @@ export function DuelHubScreen() {
       <ScreenHeader back="/" title={t('duel.title')} />
       <section style={toneStyle('ink')} className="relative overflow-hidden rounded-hero p-5 text-white">
         <GradientDecor />
-        <img src="/3d/rq-3d-M02.webp" alt="" className="absolute -right-2 -top-1 size-[110px] object-contain" />
+        <img src="/3d/rq-3d-G01.webp" alt="" className="absolute -right-2 -top-1 size-[110px] object-contain" />
         <h1 className="max-w-[70%] font-display text-[22px] font-bold leading-7">{t('duel.heroTitle')}</h1>
         <p className="mt-1 max-w-[72%] text-[13px] leading-[18px] text-white/80">{t('duel.heroText')}</p>
       </section>
