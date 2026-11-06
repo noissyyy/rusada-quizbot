@@ -55,7 +55,7 @@ export function getStartParam(): string | null {
 /** Route for a start parameter: g_<assignment> → group test, l_<live> → live lobby, t_<test> → test details. */
 export function routeForStart(param: string | null): string | null {
   if (param === 'word') return '/games/word';
-  if (!param || !/^[gltd]_[A-Za-z0-9]{1,60}$/.test(param)) return null;
+  if (!param || !/^[gltdw]_[A-Za-z0-9]{1,60}$/.test(param)) return null;
   const id = param.slice(2);
-  return { g: `/group/${id}`, l: `/live/${id}`, t: `/tests/${id}`, d: `/duel/${id}` }[param[0] as 'g' | 'l' | 't' | 'd'];
+  return { g: `/group/${id}`, l: `/live/${id}`, t: `/tests/${id}`, d: `/duel/${id}`, w: `/games/lastword/${id}` }[param[0] as 'g' | 'l' | 't' | 'd' | 'w'];
 }

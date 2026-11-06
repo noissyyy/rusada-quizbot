@@ -452,6 +452,8 @@ class Duel(Base):
     topic_id: Mapped[str | None] = mapped_column(ForeignKey("topics.id", ondelete="SET NULL"))
     #: frozen questions with the answers (never sent to the phone before an answer)
     snapshot: Mapped[list] = mapped_column(JSONB)
+    #: easy | medium | hard; None = any level
+    difficulty: Mapped[str | None] = mapped_column(String(8))
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(TS)
 
@@ -488,3 +490,22 @@ class GameResult(Base):
     score: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
 
+
+
+class LastWordMatch(Base):
+    """«Последнее слово» between two people: turn by turn, each move has a deadline."""
+    __tablename__ = "lastword_matches"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    creator_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    opponent_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    #: [{"by": "start" | "creator" | "opponent", "word": "..."}]
+    words: Mapped[list] = mapped_column(JSONB, default=list)
+    #: whose move: creator | opponent; None once finished
+    turn: Mapped[str | None] = mapped_column(String(8), default="creator")
+    winner_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    finished_at: Mapped[datetime | None] = mapped_column(TS)
+    #: why it ended: timeout | resign
+    end_reason: Mapped[str | None] = mapped_column(String(10))
+    move_deadline: Mapped[datetime] = mapped_column(TS)
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(TS, default=utcnow)

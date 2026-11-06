@@ -1,6 +1,7 @@
 import { clsx } from 'clsx';
-import type { GameResultOut } from '@rq/shared-types';
+import type { GameResultOut, LastWordMatch } from '@rq/shared-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../data/api';
 import { useI18n } from '../lib/i18n';
 import type { MessageKey } from '../lib/i18n/dict';
@@ -27,6 +28,14 @@ export function LastWordScreen() {
   const [won, setWon] = useState(false);
   const [result, setResult] = useState<GameResultOut | null>(null);
   const endAt = useRef(0);
+  const nav = useNavigate();
+  const [matches, setMatches] = useState<LastWordMatch[] | null>(null);
+  useEffect(() => { api().matches().then(setMatches, () => setMatches([])); }, []);
+  const withFriend = async () => {
+    setBusy(true); setMsg(null);
+    try { const x = await api().matchCreate(); haptic.tap(); nav(`/games/lastword/${x.id}`); }
+    catch { setMsg(t('error.load')); } finally { setBusy(false); }
+  };
   const list = useRef<HTMLOListElement>(null);
   const mine = chain.filter((m) => m.who === 'me').length;
   const score = mine * 5 + (won ? 20 : 0);
@@ -134,7 +143,33 @@ export function LastWordScreen() {
             <p className="mt-1 font-display text-[18px] font-bold">кошк<span className="rounded-[6px] bg-warning px-0.5 text-white">а</span> → <span className="rounded-[6px] bg-warning px-0.5 text-white">а</span>рбуз → <span className="rounded-[6px] bg-warning px-0.5 text-white">з</span>онт</p>
           </section>
           {msg && <p role="alert" className="text-center text-[13px] font-bold text-error-ink">{msg}</p>}
-          <button type="button" disabled={busy} onClick={() => void start()} className="h-14 rounded-control bg-primary text-[16px] font-bold text-white shadow-primary disabled:opacity-50">{t('lastword.start')}</button>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button type="button" disabled={busy} onClick={() => void start()} className="flex h-[88px] flex-col items-center justify-center gap-1 rounded-[22px] bg-primary text-white shadow-primary disabled:opacity-50">
+              <span aria-hidden className="text-[26px] leading-none">🤖</span><span className="text-[15px] font-bold">{t('lastword.withBot')}</span>
+            </button>
+            <button type="button" disabled={busy} onClick={() => void withFriend()} className="flex h-[88px] flex-col items-center justify-center gap-1 rounded-[22px] bg-surface text-primary shadow-card disabled:opacity-50">
+              <span aria-hidden className="text-[26px] leading-none">👥</span><span className="text-[15px] font-bold">{t('lastword.withFriend')}</span>
+            </button>
+          </div>
+          {matches && matches.length > 0 && (
+            <section className="flex flex-col gap-2">
+              <b className="text-[15px]">{t('lastword.f.mine')}</b>
+              {matches.map((x) => {
+                const st = x.status === 'won' ? ['lastword.f.st.won', 'bg-success-50 text-success-ink'] : x.status === 'lost' ? ['lastword.f.st.lost', 'bg-error-50 text-error-ink']
+                  : x.status === 'waiting' ? ['lastword.f.st.waiting', 'bg-warning-50 text-warning-ink'] : x.myTurn ? ['lastword.f.st.my', 'bg-primary text-white'] : ['lastword.f.st.their', 'bg-track text-ink-2'];
+                const last = x.words[x.words.length - 1]?.word ?? '';
+                return (
+                  <Link key={x.id} to={`/games/lastword/${x.id}`} className="flex items-center gap-3 rounded-[20px] bg-surface p-3.5 shadow-card">
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <b className="truncate text-[15px]">{x.rival ?? t('lastword.f.st.waiting')}</b>
+                      <span className="truncate text-[12px] text-muted">{x.words.length - 1} · …{last}</span>
+                    </span>
+                    <span className={clsx('shrink-0 rounded-full px-2.5 py-1 text-[12px] font-bold', st[1])}>{t(st[0] as MessageKey)}</span>
+                  </Link>
+                );
+              })}
+            </section>
+          )}
         </>
       )}
     </Screen>

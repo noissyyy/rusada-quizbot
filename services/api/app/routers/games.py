@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -274,6 +275,7 @@ DUEL_DAYS = 3
 
 class DuelCreateIn(Camel):
     topic_id: str | None = None
+    difficulty: Literal["easy", "medium", "hard"] | None = None
 
 
 class DuelSide(Camel):
@@ -288,6 +290,7 @@ class DuelOut(Camel):
     role: str  # creator | opponent | new (you may accept) | full
     questions_count: int
     topic_title: str | None
+    difficulty: str | None = None
     me: DuelSide | None
     rival: DuelSide | None
     #: win | lose | draw once both finished; otherwise None
@@ -323,7 +326,7 @@ async def _duel_out(db: AsyncSession, d: Duel, user: User) -> DuelOut:
         from ..models import Topic
         t = await db.get(Topic, d.topic_id)
         topic = t.title if t else None
-    return DuelOut(id=d.id, role=role, questions_count=len(d.snapshot), topic_title=topic,
+    return DuelOut(id=d.id, role=role, questions_count=len(d.snapshot), topic_title=topic, difficulty=d.difficulty,
                    me=side(mine, user.display_name, True) if role in ("creator", "opponent") else None,
                    rival=side(theirs, rival_user.display_name, me_done) if rival_user else None,
                    outcome=outcome, expired=d.expires_at < utcnow() and not outcome,
@@ -340,6 +343,10 @@ async def create_duel(body: DuelCreateIn, user: User = Depends(current_user), db
             .where(Quiz.status == "published", Question.status != "archived"))
     if body.topic_id:
         stmt = stmt.where(Quiz.topic_id == body.topic_id)
+    if body.difficulty:
+        # a question's own level wins; questions left at the default take the test's level
+        stmt = stmt.where(_or(Question.difficulty == body.difficulty,
+                              (Question.difficulty == "medium") & (Quiz.difficulty == body.difficulty) if body.difficulty != "medium" else Question.difficulty == "medium"))
     qs = (await db.execute(stmt.distinct().order_by(f.random()).limit(DUEL_QUESTIONS * 3))).unique().scalars().all()
 
     class _Item:  # reuse the test snapshot format
@@ -350,7 +357,7 @@ async def create_duel(body: DuelCreateIn, user: User = Depends(current_user), db
     snap = snapshot_quiz(_Q([_Item(q) for q in qs]))[:DUEL_QUESTIONS]  # type: ignore[arg-type]
     if len(snap) < 3:
         raise HTTPException(409, "not_enough_questions")
-    d = Duel(creator_id=user.id, topic_id=body.topic_id, snapshot=snap, expires_at=utcnow() + _td(days=DUEL_DAYS))
+    d = Duel(creator_id=user.id, topic_id=body.topic_id, difficulty=body.difficulty, snapshot=snap, expires_at=utcnow() + _td(days=DUEL_DAYS))
     db.add(d)
     await db.commit()
     return await _duel_out(db, d, user)
@@ -556,3 +563,169 @@ async def lastword_turn(body: LastWordIn, user: User = Depends(current_user)):
     if bot is None:
         return LastWordOut(ok=True, word=word, bot_gave_up=True)
     return LastWordOut(ok=True, word=word, bot=bot, need=lastword.last_letter(bot))
+
+
+# ---------------------------------------------------------------- «Последнее слово» with a friend
+
+from ..models import LastWordMatch  # noqa: E402
+
+MATCH_MOVE_HOURS = 12
+MATCH_WIN_XP, MATCH_LOSS_XP = 30, 10
+
+
+class MatchWord(Camel):
+    by: str  # start | me | rival
+    word: str
+
+
+class MatchOut(Camel):
+    id: str
+    role: str  # creator | opponent | new (may join) | full
+    rival: str | None
+    words: list[MatchWord]
+    my_turn: bool
+    need: str | None
+    #: playing | waiting (no rival yet) | won | lost
+    status: str
+    end_reason: str | None
+    move_deadline: datetime
+    my_words: int
+    link: str
+
+
+class MatchMoveIn(Camel):
+    word: str
+
+
+def _role(m: LastWordMatch, user: User) -> str:
+    if user.id == m.creator_id:
+        return "creator"
+    if user.id == m.opponent_id:
+        return "opponent"
+    return "new" if m.opponent_id is None else "full"
+
+
+async def _settle_timeout(db: AsyncSession, m: LastWordMatch) -> None:
+    """The player who let the clock run out loses (only once someone has joined)."""
+    if m.finished_at or not m.opponent_id or m.move_deadline > utcnow():
+        return
+    loser = m.creator_id if m.turn == "creator" else m.opponent_id
+    await _finish_match(db, m, winner=m.opponent_id if loser == m.creator_id else m.creator_id, reason="timeout")
+
+
+async def _finish_match(db: AsyncSession, m: LastWordMatch, winner: str | None, reason: str) -> None:
+    m.finished_at, m.winner_id, m.end_reason, m.turn = utcnow(), winner, reason, None
+    for uid in (m.creator_id, m.opponent_id):
+        if uid:
+            xp.award(db, uid, MATCH_WIN_XP if uid == winner else MATCH_LOSS_XP, "lastword")
+    await db.commit()
+    if _settings.telegram_enabled:
+        for uid in (m.creator_id, m.opponent_id):
+            u = await db.get(User, uid) if uid else None
+            if not u:
+                continue
+            head = "🏆 Вы победили в «Последнем слове»! · «Oxirgi harf»da yutdingiz!" if uid == winner else "«Последнее слово»: соперник победил · Raqib yutdi"
+            try:
+                await _tg.send_message(u.telegram_id, f"🔤 <b>{head}</b>", ("Открыть · Ochish", _tg.startapp_link(f"w_{m.id}")))
+            except Exception:  # noqa: BLE001
+                _log.warning("lastword notify failed", exc_info=True)
+
+
+async def _match_out(db: AsyncSession, m: LastWordMatch, user: User) -> MatchOut:
+    role = _role(m, user)
+    side = "creator" if role == "creator" else "opponent" if role == "opponent" else None
+    rival_id = m.opponent_id if role == "creator" else m.creator_id
+    rival = await db.get(User, rival_id) if rival_id else None
+    words = [MatchWord(by="start" if w["by"] == "start" else ("me" if w["by"] == side else "rival"), word=w["word"]) for w in m.words]
+    if m.finished_at:
+        status = "won" if m.winner_id == user.id else "lost"
+    elif role == "creator" and not m.opponent_id and m.turn == "opponent":
+        status = "waiting"
+    else:
+        status = "playing"
+    my_turn = bool(not m.finished_at and side and m.turn == side) or (role == "new" and m.turn == "opponent")
+    return MatchOut(id=m.id, role=role, rival=rival.display_name if rival else None, words=words, my_turn=my_turn,
+                    need=lastword.last_letter(m.words[-1]["word"]) if m.words and not m.finished_at else None,
+                    status=status, end_reason=m.end_reason, move_deadline=m.move_deadline,
+                    my_words=sum(1 for w in m.words if side and w["by"] == side), link=_tg.startapp_link(f"w_{m.id}"))
+
+
+async def _match(db: AsyncSession, mid: str) -> LastWordMatch:
+    m = await db.get(LastWordMatch, mid, with_for_update=True)
+    if not m:
+        raise HTTPException(404, "match_not_found")
+    await _settle_timeout(db, m)
+    return m
+
+
+@router.post("/lastword/matches", response_model=MatchOut)
+async def match_create(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    """A new chain: a common noun to start from, the creator moves first."""
+    first = lastword.bot_move([], 0)
+    m = LastWordMatch(creator_id=user.id, words=[{"by": "start", "word": first}], turn="creator",
+                      move_deadline=utcnow() + _td(hours=MATCH_MOVE_HOURS))
+    db.add(m)
+    await db.commit()
+    return await _match_out(db, m, user)
+
+
+@router.get("/lastword/matches", response_model=list[MatchOut])
+async def match_list(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    rows = (await db.execute(select(LastWordMatch).where(_or(LastWordMatch.creator_id == user.id, LastWordMatch.opponent_id == user.id))
+                             .order_by(LastWordMatch.updated_at.desc()).limit(20))).scalars().all()
+    for m in rows:
+        await _settle_timeout(db, m)
+    return [await _match_out(db, m, user) for m in rows]
+
+
+@router.get("/lastword/matches/{mid}", response_model=MatchOut)
+async def match_get(mid: str, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    m = await _match(db, mid)
+    await db.commit()
+    return await _match_out(db, m, user)
+
+
+@router.post("/lastword/matches/{mid}/move", response_model=MatchOut)
+async def match_move(mid: str, body: MatchMoveIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    m = await _match(db, mid)
+    if m.finished_at:
+        raise HTTPException(409, "match_over")
+    role = _role(m, user)
+    if role == "new" and m.turn == "opponent":
+        m.opponent_id, role = user.id, "opponent"  # the first answer to the link joins the match
+    if role not in ("creator", "opponent"):
+        raise HTTPException(409, "match_full")
+    if m.turn != role:
+        raise HTTPException(409, "not_your_turn")
+    word, err = lastword.check(body.word, [w["word"] for w in m.words])
+    if err:
+        raise HTTPException(422, err)
+    m.words = [*m.words, {"by": role, "word": word}]
+    m.turn = "opponent" if role == "creator" else "creator"
+    m.move_deadline = utcnow() + _td(hours=MATCH_MOVE_HOURS)
+    m.updated_at = utcnow()
+    await db.commit()
+    rival_id = m.opponent_id if role == "creator" else m.creator_id
+    rival = await db.get(User, rival_id) if rival_id else None
+    if rival and _settings.telegram_enabled:
+        try:
+            await _tg.send_message(rival.telegram_id, f"🔤 <b>{user.display_name}: {word}</b>\nВаш ход · Sizning navbatingiz — «{lastword.last_letter(word).upper()}»",
+                                   ("Ответить · Javob berish", _tg.startapp_link(f"w_{m.id}")))
+        except Exception:  # noqa: BLE001
+            _log.warning("lastword notify failed", exc_info=True)
+    return await _match_out(db, m, user)
+
+
+@router.post("/lastword/matches/{mid}/resign", response_model=MatchOut)
+async def match_resign(mid: str, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    m = await _match(db, mid)
+    role = _role(m, user)
+    if m.finished_at or role not in ("creator", "opponent"):
+        raise HTTPException(409, "match_over")
+    winner = m.opponent_id if role == "creator" else m.creator_id
+    if winner is None:  # nobody joined yet: just close it
+        m.finished_at, m.end_reason, m.turn = utcnow(), "resign", None
+        await db.commit()
+    else:
+        await _finish_match(db, m, winner=winner, reason="resign")
+    return await _match_out(db, m, user)

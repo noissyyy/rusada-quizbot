@@ -1,4 +1,4 @@
-import type { Duel, HomeFeed, LetterMark, LiveState, TestSummary, WordGame } from '@rq/shared-types';
+import type { Difficulty, LastWordMatch, Duel, HomeFeed, LetterMark, LiveState, TestSummary, WordGame } from '@rq/shared-types';
 import { getWebApp } from '../lib/telegram/webapp';
 import { ApiError, type QuizApi } from './api';
 import { server } from './mockServer';
@@ -15,6 +15,10 @@ const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 let mockPending: { id: string; createdAt: string } | null = null;
 let stressBest = 17;
 const mockXp = { xp: 340, level: 3, levelStart: 300, levelNext: 600 };
+const mockMatches: LastWordMatch[] = [
+  { id: 'w1', role: 'creator', rival: 'Мадина Р.', words: [{ by: 'start', word: 'кошка' }, { by: 'me', word: 'арбуз' }, { by: 'rival', word: 'зонт' }], myTurn: true, need: 'т', status: 'playing', endReason: null,
+    moveDeadline: new Date(Date.now() + 5 * 3600_000).toISOString(), myWords: 1, link: 'https://t.me/Rusada_QuizBot/app?startapp=w_w1' },
+];
 const mockDuels: Duel[] = [
   { id: 'd-1', role: 'opponent', questionsCount: 10, topicTitle: 'Морфология', me: { name: 'Алексей И.', finished: false, correct: null, timeMs: null }, rival: { name: 'Тимур А.', finished: true, correct: null, timeMs: null }, outcome: null, expired: false, link: '', createdAt: new Date().toISOString() },
   { id: 'd-2', role: 'creator', questionsCount: 10, topicTitle: null, me: { name: 'Алексей И.', finished: true, correct: 8, timeMs: 62000 }, rival: { name: 'Мадина Р.', finished: true, correct: 7, timeMs: 55000 }, outcome: 'win', expired: false, link: '', createdAt: new Date().toISOString() },
@@ -149,9 +153,34 @@ export const mockApi: QuizApi = {
     const bot = used.length > 8 ? undefined : bank.find((b) => b[0] === lastOf(w) && !used.includes(b) && b !== w);
     return bot ? { ok: true, word: w, error: null, bot, botGaveUp: false, need: lastOf(bot) } : { ok: true, word: w, error: null, bot: null, botGaveUp: true, need: null };
   },
-  async duelCreate() {
+  async matchCreate() {
     await wait();
-    const d: Duel = { id: `d${Date.now()}`, role: 'creator', questionsCount: 4, topicTitle: null, me: { name: 'Алексей И.', finished: false, correct: null, timeMs: null },
+    const m: LastWordMatch = { id: `w${Date.now()}`, role: 'creator', rival: null, words: [{ by: 'start', word: 'кошка' }], myTurn: true, need: 'а', status: 'playing', endReason: null,
+      moveDeadline: new Date(Date.now() + 12 * 3600_000).toISOString(), myWords: 0, link: 'https://t.me/Rusada_QuizBot/app?startapp=w_demo' };
+    mockMatches.unshift(m);
+    return m;
+  },
+  async matches() { await wait(); return mockMatches; },
+  async match(id: string) { await wait(); return mockMatches.find((m) => m.id === id) ?? mockMatches[0]!; },
+  async matchMove(id: string, word: string) {
+    await wait();
+    const m = mockMatches.find((x) => x.id === id) ?? mockMatches[0]!;
+    const w = word.toLowerCase().replace(/ё/g, 'е');
+    if (m.need && w[0] !== m.need) throw new ApiError(422, 'wrong_letter');
+    m.words = [...m.words, { by: 'me', word: w }];
+    m.myWords += 1; m.myTurn = false; m.status = m.rival ? 'playing' : 'waiting';
+    m.need = [...w].reverse().find((c) => !'ьъы'.includes(c)) ?? w.slice(-1);
+    return { ...m };
+  },
+  async matchResign(id: string) {
+    await wait();
+    const m = mockMatches.find((x) => x.id === id) ?? mockMatches[0]!;
+    m.status = 'lost'; m.endReason = 'resign'; m.myTurn = false; m.need = null;
+    return { ...m };
+  },
+  async duelCreate(_topic?: string | null, difficulty?: Difficulty | null) {
+    await wait();
+    const d: Duel = { id: `d${Date.now()}`, role: 'creator', questionsCount: 4, topicTitle: null, difficulty: difficulty ?? null, me: { name: 'Алексей И.', finished: false, correct: null, timeMs: null },
       rival: null, outcome: null, expired: false, link: 'https://t.me/Rusada_QuizBot/app?startapp=d_demo', createdAt: new Date().toISOString() };
     mockDuels.unshift(d);
     return d;
