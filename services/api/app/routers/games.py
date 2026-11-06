@@ -182,3 +182,70 @@ async def word_stats(user: User = Depends(current_user), db: AsyncSession = Depe
     daily = [g for g in games if g.mode == "daily"]
     return WordStatsOut(played=len(daily), won=sum(1 for g in daily if g.status == "won"), streak=streak, best_streak=best,
                         distribution=dist, practice_won=sum(1 for g in games if g.mode == "practice" and g.status == "won"))
+
+
+# ---------------- «Urg‘u» ----------------
+
+from datetime import timedelta as _td  # noqa: E402
+
+from sqlalchemy import func as _func  # noqa: E402
+
+from ..models import StressScore  # noqa: E402
+from ..services import stress  # noqa: E402
+
+ROUND_SEC = 60
+
+
+class StressWord(Camel):
+    word: str
+    stress: int  # index of the stressed vowel in the word
+
+
+@router.get("/games/stress/words", response_model=list[StressWord])
+async def stress_words(user: User = Depends(current_user)):
+    """The whole list; the app shuffles it for each round. It is practice — knowing the answers is the point."""
+    return [StressWord(word=w, stress=i) for w, i in stress.WORDS]
+
+
+class StressScoreIn(Camel):
+    score: int
+    answered: int
+
+
+class BoardRow(Camel):
+    rank: int
+    name: str
+    score: int
+    me: bool = False
+
+
+class StressBoardOut(Camel):
+    best: int
+    best_week: int
+    rounds: int
+    week: list[BoardRow]
+
+
+@router.post("/games/stress/score", response_model=StressBoardOut)
+async def stress_score(body: StressScoreIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    # a 60-second round: anything beyond ~2 answers a second is not a real round
+    if not 0 <= body.score <= body.answered <= ROUND_SEC * 2:
+        raise HTTPException(422, "impossible_score")
+    db.add(StressScore(user_id=user.id, score=body.score, answered=body.answered))
+    await db.commit()
+    return await stress_board(user, db)
+
+
+@router.get("/games/stress/board", response_model=StressBoardOut)
+async def stress_board(user: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    week_ago = utcnow() - _td(days=7)
+    mine = select(_func.coalesce(_func.max(StressScore.score), 0)).where(StressScore.user_id == user.id)
+    best = (await db.execute(mine)).scalar_one()
+    best_week = (await db.execute(mine.where(StressScore.created_at >= week_ago))).scalar_one()
+    rounds = (await db.execute(select(_func.count()).select_from(StressScore).where(StressScore.user_id == user.id))).scalar_one()
+    rows = (await db.execute(select(StressScore.user_id, _func.max(StressScore.score).label("s"))
+                             .where(StressScore.created_at >= week_ago).group_by(StressScore.user_id)
+                             .order_by(_func.max(StressScore.score).desc()).limit(10))).all()
+    names = {u.id: u.display_name for u in (await db.execute(select(User).where(User.id.in_([r[0] for r in rows])))).scalars()} if rows else {}
+    return StressBoardOut(best=best, best_week=best_week, rounds=rounds,
+                          week=[BoardRow(rank=i + 1, name=names.get(uid, "—"), score=s, me=uid == user.id) for i, (uid, s) in enumerate(rows)])

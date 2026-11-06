@@ -13,6 +13,7 @@ export const mockTests: TestSummary[] = [
 
 const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 let mockPending: { id: string; createdAt: string } | null = null;
+let stressBest = 17;
 // demo «So‘z topish»
 const WORD_ANSWERS = { daily: 'школа', practice: 'песок' } as const;
 const wordGames = new Map<'daily' | 'practice', WordGame>();
@@ -104,6 +105,20 @@ export const mockApi: QuizApi = {
     return { ...g };
   },
   async wordStats() { await wait(); return { played: 12, won: 10, streak: 4, bestStreak: 7, distribution: [0, 1, 3, 4, 2, 0], practiceWon: 23 }; },
+  async stressWords() {
+    await wait();
+    return ['звонИт', 'тОрты', 'красИвее', 'бАнты', 'каталОг', 'щавЕль', 'досУг', 'жалюзИ', 'цемЕнт', 'портфЕль', 'понялА', 'включИт']
+      .map((w) => ({ word: w.toLowerCase(), stress: [...w].findIndex((c) => c !== c.toLowerCase()) }));
+  },
+  async stressScore(score: number) {
+    await wait();
+    stressBest = Math.max(stressBest, score);
+    return { best: stressBest, bestWeek: stressBest, rounds: 3, week: [{ rank: 1, name: 'Мадина Р.', score: 31, me: false }, { rank: 2, name: 'Алексей И.', score: stressBest, me: true }, { rank: 3, name: 'Тимур А.', score: 14, me: false }] };
+  },
+  async stressBoard() {
+    await wait();
+    return { best: stressBest, bestWeek: stressBest, rounds: 2, week: [{ rank: 1, name: 'Мадина Р.', score: 31, me: false }, { rank: 2, name: 'Алексей И.', score: stressBest, me: true }] };
+  },
   async getReview() {
     await wait();
     const qs = (await server.start({ quizId: 'q-noun' })).questions.slice(0, 3);
