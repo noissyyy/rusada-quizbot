@@ -179,3 +179,40 @@ async def test_xp_levels_and_game_results(client, auth):
     hub = (await client.get("/api/games/hub", headers=h)).json()
     assert hub["plays"]["memory"] >= 2 and hub["plays"]["stress"] >= 1 and "test" not in hub["plays"]
     assert hub["xp"]["xp"] == after_test + 72
+
+
+async def test_last_word_chain_and_bot(client, auth):
+    import random
+
+    from app.services import lastword
+
+    h = auth(7501)
+    start = (await client.get("/api/games/lastword/start", headers=h)).json()
+    assert start["bot"] in lastword.nouns() and start["need"] == lastword.last_letter(start["bot"])
+
+    # wrong letter / not a noun / a city / repeated word are refused
+    r = (await client.post("/api/games/lastword/turn", json={"word": "слон", "used": ["кошка"]}, headers=h)).json()
+    assert r == {**r, "ok": False, "error": "wrong_letter", "need": "а"}
+    r = (await client.post("/api/games/lastword/turn", json={"word": "бежать", "used": []}, headers=h)).json()
+    assert r["error"] == "not_noun"
+    r = (await client.post("/api/games/lastword/turn", json={"word": "Москва", "used": []}, headers=h)).json()
+    assert r["error"] == "not_noun"
+    r = (await client.post("/api/games/lastword/turn", json={"word": "арбуз", "used": ["арбуз", "зонт", "танк", "кошка"]}, headers=h)).json()
+    assert r["error"] == "used"
+
+    # a valid move: ё is read as е and the bot answers on the right letter
+    r = (await client.post("/api/games/lastword/turn", json={"word": "Ёлка", "used": ["море"]}, headers=h)).json()
+    assert r["ok"] and r["word"] == "елка"
+    if not r["botGaveUp"]:
+        assert r["bot"][0] == "а" and r["need"] == lastword.last_letter(r["bot"])
+
+    # the bot never gives up early and always gives up sometimes later
+    rng = random.Random(1)
+    assert all(lastword.bot_move(["кошка"], 1, rng) for _ in range(50))
+    assert any(lastword.bot_move(["кошка"], 12, rng) is None for _ in range(50))
+
+
+def test_last_word_skips_soft_sign():
+    from app.services import lastword
+    assert lastword.last_letter("тетрадь") == "д" and lastword.last_letter("сыры") == "р"
+    assert lastword.check("дом", ["тетрадь"]) == ("дом", None)

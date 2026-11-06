@@ -10,3 +10,5 @@ openpyxl==3.1.5
 python-multipart
 pypdfium2==5.13.0
 pillow==12.3.0
+pymorphy3==2.0.6
+pymorphy3-dicts-ru==2.4.417150.4580142

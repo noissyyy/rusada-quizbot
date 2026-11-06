@@ -136,6 +136,7 @@ export interface GamesHub {
   reviewDue: number;
 }
 export interface GameResultOut { best: number; xpEarned: number; xp: XpInfo }
+export interface LastWordMove { ok: boolean; word: string; error: 'not_word' | 'not_noun' | 'wrong_letter' | 'used' | null; bot: string | null; botGaveUp: boolean; need: string | null }
 
 export interface ReviewAnswer {
   correct: boolean;

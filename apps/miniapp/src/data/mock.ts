@@ -134,6 +134,21 @@ export const mockApi: QuizApi = {
     mockXp.xp += earned;
     return { best: Math.max(score, 20), xpEarned: earned, xp: { ...mockXp } };
   },
+  async lastWordStart() {
+    await wait();
+    return { ok: true, word: 'кошка', error: null, bot: 'кошка', botGaveUp: false, need: 'а' };
+  },
+  async lastWordTurn(word: string, used: string[]) {
+    await wait();
+    const w = word.trim().toLowerCase().replace(/ё/g, 'е');
+    const lastOf = (x: string) => [...x].reverse().find((c) => !'ьъы'.includes(c)) ?? x.slice(-1);
+    const need = used.length ? lastOf(used[used.length - 1]!) : null;
+    if (need && w[0] !== need) return { ok: false, word: w, error: 'wrong_letter' as const, bot: null, botGaveUp: false, need };
+    if (used.includes(w)) return { ok: false, word: w, error: 'used' as const, bot: null, botGaveUp: false, need };
+    const bank = ['арбуз', 'зонт', 'танк', 'кран', 'нос', 'сок', 'кот', 'торт', 'тигр', 'рыба', 'автобус', 'слон', 'нота', 'дом', 'море', 'ель', 'лес', 'лук', 'ключ', 'чай', 'йогурт', 'утка', 'окно', 'облако', 'игра', 'ножницы'];
+    const bot = used.length > 8 ? undefined : bank.find((b) => b[0] === lastOf(w) && !used.includes(b) && b !== w);
+    return bot ? { ok: true, word: w, error: null, bot, botGaveUp: false, need: lastOf(bot) } : { ok: true, word: w, error: null, bot: null, botGaveUp: true, need: null };
+  },
   async duelCreate() {
     await wait();
     const d: Duel = { id: `d${Date.now()}`, role: 'creator', questionsCount: 4, topicTitle: null, me: { name: 'Алексей И.', finished: false, correct: null, timeMs: null },

@@ -23,6 +23,7 @@ import { MemoryScreen } from '../screens/MemoryScreen';
 import { MorphScreen } from '../screens/MorphScreen';
 import { GrammarScreen } from '../screens/GrammarScreen';
 import { WordAttackScreen } from '../screens/WordAttackScreen';
+import { LastWordScreen } from '../screens/LastWordScreen';
 import { StressGameScreen } from '../screens/StressGameScreen';
 import { DuelHubScreen, DuelScreen } from '../screens/DuelScreens';
 import { ReviewScreen } from '../screens/ReviewScreen';
@@ -70,6 +71,7 @@ function Shell() {
         <Route path="/games/morph" element={<MorphScreen />} />
         <Route path="/games/grammar" element={<GrammarScreen />} />
         <Route path="/games/attack" element={<WordAttackScreen />} />
+        <Route path="/games/lastword" element={<LastWordScreen />} />
         <Route path="/games/stress" element={<StressGameScreen />} />
         <Route path="/games/duel" element={<DuelHubScreen />} />
         <Route path="/duel/:id" element={<DuelScreen />} />
