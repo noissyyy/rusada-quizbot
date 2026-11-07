@@ -52,7 +52,7 @@ export function WordGameScreen() {
         if (g.status === 'won') { haptic.success(); setStats(await api().wordStats()); }
         else if (g.status === 'lost') { haptic.error(); setStats(await api().wordStats()); }
         else haptic.select();
-      } catch (e) { flash(e instanceof ApiError && e.status === 422 ? t('word.short') : t('error.load')); }
+      } catch (e) { flash(e instanceof ApiError && e.status === 422 ? t(e.detail === 'not_a_word' ? 'word.unknown' : 'word.short') : t('error.load')); }
       finally { setBusy(false); }
       return;
     }

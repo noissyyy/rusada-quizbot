@@ -1,6 +1,7 @@
 import { clsx } from 'clsx';
 import type { GameResultOut } from '@rq/shared-types';
 import { useEffect, useMemo, useState } from 'react';
+import { freshLeft, loadPool, takeFresh } from '../lib/fresh';
 import { api } from '../data/api';
 import { SEARCH_THEMES, type SearchTheme } from '../lib/gameContent';
 import { useI18n } from '../lib/i18n';
@@ -16,15 +17,26 @@ const COLORS = ['bg-[#5BD68A]', 'bg-[#FFC83D]', 'bg-[#8B6BFF]', 'bg-[#FF8A80]', 
 export function WordSearchScreen() {
   const { t, lang } = useI18n();
   const [theme, setTheme] = useState<SearchTheme | null>(null);
+  // 30+ themes from /games/search.json and a «mixed» theme drawn from thousands of nouns
+  const [themes, setThemes] = useState<SearchTheme[]>(SEARCH_THEMES);
+  useEffect(() => {
+    Promise.all([loadPool<SearchTheme[]>('search'), loadPool<string[]>('nouns').catch(() => [] as string[])]).then(([list, nouns]) => {
+      const mix = nouns.filter((w) => w.length >= 4 && w.length <= 8).map((w) => w.toUpperCase());
+      setThemes([...(mix.length ? [{ id: 'mix', title: { ru: 'Случайные слова', uz: 'Aralash so‘zlar' }, words: mix }] : []), ...list]);
+    }, () => undefined);
+  }, []);
   if (!theme) {
     return (
       <Screen className="flex flex-col gap-4">
         <ScreenHeader back="/games" title={t('search.title')} />
         <p className="text-[14px] text-ink-2">{t('search.pick')}</p>
         <div className="grid grid-cols-2 gap-2.5">
-          {SEARCH_THEMES.map((th) => (
+          {themes.map((th) => (
             <button key={th.id} type="button" onClick={() => { haptic.tap(); setTheme(th); }} className="flex h-16 items-center justify-center rounded-[18px] bg-surface px-3 text-center text-[15px] font-bold shadow-card active:scale-[0.98]">
-              {lang === 'ru' ? th.title.ru : th.title.uz}
+              <span className="flex flex-col items-center leading-tight">
+                {lang === 'ru' ? th.title.ru : th.title.uz}
+                <span className="mt-0.5 text-[11px] font-semibold text-muted">{t('game.freshLeft', { n: freshLeft(`search:${th.id}`, th.words, (w) => w) })}</span>
+              </span>
             </button>
           ))}
         </div>
@@ -34,10 +46,22 @@ export function WordSearchScreen() {
   return <SearchRound key={theme.id + Math.random()} theme={theme} onBack={() => setTheme(null)} />;
 }
 
+/** Long words do not always fit together on 8×8: drop the longest one until they do. */
+function buildSafe(words: string[]) {
+  let list = [...words];
+  for (;;) {
+    try { return buildGrid(list); } catch {
+      if (list.length <= 4) throw new Error('grid');
+      list = [...list].sort((a, b) => b.length - a.length).slice(1);
+    }
+  }
+}
+
 function SearchRound({ theme, onBack }: { theme: SearchTheme; onBack: () => void }) {
   const { t, lang } = useI18n();
   const [seed, setSeed] = useState(0);
-  const { grid, placed } = useMemo(() => buildGrid(theme.words), [theme, seed]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 8 words this player has not searched for yet in this theme
+  const { grid, placed } = useMemo(() => buildSafe(takeFresh(`search:${theme.id}`, theme.words, 8, (w) => w)), [theme, seed]); // eslint-disable-line react-hooks/exhaustive-deps
   const [found, setFound] = useState<string[]>([]);
   const [start, setStart] = useState<number | null>(null);
   const [miss, setMiss] = useState<number[] | null>(null);

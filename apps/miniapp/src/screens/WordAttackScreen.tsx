@@ -2,7 +2,8 @@ import { clsx } from 'clsx';
 import type { GameResultOut } from '@rq/shared-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../data/api';
-import { ATTACK_WORDS, shuffle } from '../lib/gameContent';
+import { ATTACK_WORDS } from '../lib/gameContent';
+import { loadPool, takeFresh } from '../lib/fresh';
 import { useI18n } from '../lib/i18n';
 import { haptic } from '../lib/telegram/webapp';
 import { Screen } from '../components/Screen';
@@ -30,8 +31,12 @@ export function WordAttackScreen() {
   const put = (ds: Drop[]) => { dropsRef.current = ds; setDrops(ds); };
   const g = useRef({ next: 0, id: 0, t0: 0, last: 0, bag: [] as string[] });
 
+  const [pool, setPool] = useState<string[]>(ATTACK_WORDS);
+  useEffect(() => { loadPool<string[]>('nouns').then((p) => p.length && setPool(p), () => undefined); }, []);
+  // a fresh bag of words this player has not typed yet (refilled the same way if the round is long)
+  const bag = () => takeFresh('attack', pool, 40, (w) => w).reverse();
   const start = () => {
-    g.current = { next: 0, id: 0, t0: Date.now(), last: Date.now(), bag: shuffle(ATTACK_WORDS) };
+    g.current = { next: 0, id: 0, t0: Date.now(), last: Date.now(), bag: bag() };
     put([]); setInput(''); setLives(LIVES); setScore(0); setHits(0); setResult(null); setPhase('play'); haptic.tap();
   };
 
@@ -47,7 +52,7 @@ export function WordAttackScreen() {
       let landed = 0;
       let next = dropsRef.current.map((d) => ({ ...d, y: d.y + speed * dt })).filter((d) => (d.y >= 100 ? (landed++, false) : true));
       if (now >= s.next) {
-        if (!s.bag.length) s.bag = shuffle(ATTACK_WORDS);
+        if (!s.bag.length) s.bag = bag();
         const word = s.bag.pop()!;
         next = [...next, { id: ++s.id, word, x: 6 + Math.random() * 58, y: 0 }];
         s.next = now + Math.max(900, 2600 - age * 25);

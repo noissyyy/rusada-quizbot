@@ -3,6 +3,7 @@ import type { GameResultOut } from '@rq/shared-types';
 import { useEffect, useState } from 'react';
 import { api } from '../data/api';
 import { MORPH_WORDS, shuffle, type MorphKind } from '../lib/gameContent';
+import { takeFresh } from '../lib/fresh';
 import { useI18n } from '../lib/i18n';
 import type { MessageKey } from '../lib/i18n/dict';
 import { haptic } from '../lib/telegram/webapp';
@@ -11,6 +12,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { GameOver } from '../components/games/GameOver';
 
 const ROUNDS = 8;
+const wordKey = (w: Word) => w.map((m) => m[0]).join('');
 type Word = [string, MorphKind][];
 const KIND: Record<MorphKind, { cls: string; label: MessageKey }> = {
   p: { cls: 'bg-[#E9E4FF] text-[#5B3FD6]', label: 'morph.p' },
@@ -22,7 +24,7 @@ const KIND: Record<MorphKind, { cls: string; label: MessageKey }> = {
 /** «Мастерская слов»: build the word from its shuffled morphemes, then find the root. */
 export function MorphScreen() {
   const { t } = useI18n();
-  const [deck, setDeck] = useState<Word[]>(() => shuffle(MORPH_WORDS).slice(0, ROUNDS));
+  const [deck, setDeck] = useState<Word[]>(() => takeFresh('morph', MORPH_WORDS, ROUNDS, wordKey));
   const [i, setI] = useState(0);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState<GameResultOut | null>(null);
@@ -36,7 +38,7 @@ export function MorphScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
-  const again = () => { setDeck(shuffle(MORPH_WORDS).slice(0, ROUNDS)); setI(0); setScore(0); setResult(null); };
+  const again = () => { setDeck(takeFresh('morph', MORPH_WORDS, ROUNDS, wordKey)); setI(0); setScore(0); setResult(null); };
 
   return (
     <Screen className="flex flex-col gap-4">

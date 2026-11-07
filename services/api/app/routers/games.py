@@ -127,8 +127,7 @@ async def word_practice(user: User = Depends(current_user), db: AsyncSession = D
                                                          WordGame.status == "playing"))).scalars().first()
     if open_game:
         return _word_out(open_game)
-    recent = set((await db.execute(select(WordGame.answer).where(WordGame.user_id == user.id)
-                                   .order_by(WordGame.created_at.desc()).limit(100))).scalars())
+    recent = set((await db.execute(select(WordGame.answer).where(WordGame.user_id == user.id))).scalars())
     g = WordGame(user_id=user.id, mode="practice", answer=words.random_word(recent), guesses=[])
     db.add(g)
     await db.commit()
@@ -149,6 +148,8 @@ async def word_guess(gid: str, body: GuessIn, user: User = Depends(current_user)
     guess = words.normalize(body.word)
     if guess is None:
         raise HTTPException(422, "need_5_letters")
+    if not words.is_word(guess):
+        raise HTTPException(422, "not_a_word")
     g.guesses = [*g.guesses, guess]
     if guess == g.answer:
         g.status, g.finished_at = "won", utcnow()

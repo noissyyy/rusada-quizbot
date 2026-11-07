@@ -9,6 +9,7 @@ import { MorphScreen } from './MorphScreen';
 
 // keep the deck in file order: «под·снеж·ник» (3 parts) is followed by «пере·ход» (2 parts)
 vi.mock('../lib/gameContent', async (orig) => ({ ...(await orig<typeof import('../lib/gameContent')>()), shuffle: <T,>(a: T[]) => [...a] }));
+vi.mock('../lib/fresh', async (orig) => ({ ...(await orig<typeof import('../lib/fresh')>()), takeFresh: <T,>(_key: string, pool: T[], n: number) => pool.slice(0, n) }));
 
 beforeEach(() => setApi(mockApi));
 
