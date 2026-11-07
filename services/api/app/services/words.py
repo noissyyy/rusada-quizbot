@@ -6,6 +6,7 @@ Answers are checked on the server, so the word is never sent to the phone before
 from __future__ import annotations
 
 import random
+from pathlib import Path
 from datetime import date, datetime, timedelta, timezone
 
 LENGTH = 5
@@ -35,6 +36,15 @@ WORDS: list[str] = [
 
 _DAILY_ORDER = WORDS[:]
 random.Random(20261106).shuffle(_DAILY_ORDER)  # fixed order, but not alphabetical
+
+# common 5-letter nouns generated from the dictionary (scripts/gen_game_content.py); they come after the
+# hand-picked words in the daily order, so the days already played keep their word
+_EXTRA = [w for w in (Path(__file__).parent.parent / "data" / "wordle_answers.txt").read_text("utf-8").split()
+          if len(w) == LENGTH and w not in set(WORDS)]
+random.Random(20261107).shuffle(_EXTRA)
+_DAILY_ORDER += _EXTRA
+ANSWERS: list[str] = WORDS + _EXTRA
+_ANSWER_SET = set(ANSWERS)
 _EPOCH = date(2026, 11, 1)
 
 
@@ -51,8 +61,17 @@ def daily_number(day: date) -> int:
 
 
 def random_word(exclude: set[str] | None = None) -> str:
-    pool = [w for w in WORDS if not exclude or w not in exclude] or WORDS
+    """A word this player has not had yet; only after all of them does the list start again."""
+    pool = [w for w in ANSWERS if not exclude or w not in exclude] or ANSWERS
     return random.choice(pool)
+
+
+def is_word(w: str) -> bool:
+    """A real Russian word (any part of speech), so letters cannot be probed with «ааааа»."""
+    if w in _ANSWER_SET:
+        return True
+    from .lastword import _morph
+    return _morph().word_is_known(w)
 
 
 def normalize(guess: str) -> str | None:

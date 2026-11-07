@@ -2,7 +2,8 @@ import { clsx } from 'clsx';
 import type { GameResultOut } from '@rq/shared-types';
 import { useEffect, useState } from 'react';
 import { api } from '../data/api';
-import { GRAMMAR_MODES, shuffle, type GrammarMode } from '../lib/gameContent';
+import { GRAMMAR_MODES, type GrammarMode, type GrammarModeId } from '../lib/gameContent';
+import { freshLeft, loadPool, takeFresh } from '../lib/fresh';
 import { useI18n } from '../lib/i18n';
 import { haptic } from '../lib/telegram/webapp';
 import { Screen } from '../components/Screen';
@@ -33,7 +34,11 @@ export function GrammarScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
-  const start = (m: GrammarMode) => { setMode(m); setDeck(shuffle(m.words).slice(0, ROUNDS)); setI(0); setScore(0); setRight(0); setCombo(0); setMissed([]); setPick(null); setResult(null); haptic.tap(); };
+  // thousands of words from /games/grammar.json; the short built-in lists are only a fallback
+  const [pool, setPool] = useState<Partial<Record<GrammarModeId, [string, string][]>>>({});
+  useEffect(() => { loadPool<Record<GrammarModeId, [string, string][]>>('grammar').then(setPool, () => undefined); }, []);
+  const wordsOf = (m: GrammarMode) => (pool[m.id]?.length ? pool[m.id]! : m.words);
+  const start = (m: GrammarMode) => { setMode(m); setDeck(takeFresh(`grammar:${m.id}`, wordsOf(m), ROUNDS, (w) => w[0])); setI(0); setScore(0); setRight(0); setCombo(0); setMissed([]); setPick(null); setResult(null); haptic.tap(); };
 
   const answer = (g: string) => {
     if (pick || done) return;
@@ -55,10 +60,11 @@ export function GrammarScreen() {
         </section>
         {GRAMMAR_MODES.map((m) => (
           <button key={m.id} type="button" onClick={() => start(m)} className="flex items-center gap-3 rounded-card bg-surface p-4 text-left shadow-card active:scale-[0.99]">
-            <span className="grid size-12 shrink-0 place-items-center rounded-[14px] bg-primary-50 font-display text-[20px] font-extrabold text-primary">{m.id === 'gender' ? 'Р' : 'Ч'}</span>
+            <span className="grid size-12 shrink-0 place-items-center rounded-[14px] bg-primary-50 font-display text-[20px] font-extrabold text-primary">{({ gender: 'Р', pos: 'Ч', aspect: 'В', decl: 'С' } as const)[m.id]}</span>
             <span className="flex flex-1 flex-col">
-              <b className="text-[16px]">{t(m.id === 'gender' ? 'grammar.gender' : 'grammar.pos')}</b>
+              <b className="text-[16px]">{t(`grammar.${m.id}` as const)}</b>
               <span className="text-[13px] text-ink-2">{m.groups.map((g) => (lang === 'ru' ? g.ru : g.uz)).join(' · ')}</span>
+              <span className="text-[12px] font-semibold text-primary">{t('game.freshLeft', { n: freshLeft(`grammar:${m.id}`, wordsOf(m), (w) => w[0]) })}</span>
             </span>
           </button>
         ))}
@@ -90,7 +96,7 @@ export function GrammarScreen() {
           <section className="mt-4 grid min-h-[140px] place-items-center rounded-hero bg-surface p-6 shadow-card">
             <span className="font-display text-[40px] font-extrabold">{deck[i]![0]}</span>
           </section>
-          <div className={clsx('grid gap-2.5', mode.groups.length === 4 ? 'grid-cols-2' : 'grid-cols-3')}>
+          <div className={clsx('grid gap-2.5', mode.groups.length === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
             {mode.groups.map((g) => {
               const isRight = pick !== null && g.id === deck[i]![1];
               const isWrong = pick === g.id && !isRight;

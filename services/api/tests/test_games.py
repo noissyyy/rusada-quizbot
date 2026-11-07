@@ -89,8 +89,8 @@ async def test_word_game_daily_practice_and_stats(client, auth):
     p = (await client.post("/api/games/word/practice", headers=h)).json()
     assert p["mode"] == "practice" and p["number"] is None
     assert (await client.post("/api/games/word/practice", headers=h)).json()["id"] == p["id"]
-    for _ in range(6):
-        last = (await client.post(f"/api/games/word/{p['id']}/guess", json={"word": "ъъъъъ"}, headers=h)).json()
+    for w in ("пятый", "синий", "белый", "сорок", "тихий", "новый"):  # real words, but never an answer (not nouns)
+        last = (await client.post(f"/api/games/word/{p['id']}/guess", json={"word": w}, headers=h)).json()
     assert last["status"] == "lost" and last["answer"]
     assert (await client.post("/api/games/word/practice", headers=h)).json()["id"] != p["id"]
 
@@ -278,3 +278,37 @@ async def test_last_word_match_between_two_people(client, auth):
     m2 = (await client.post("/api/lastword/matches", headers=a)).json()
     r = (await client.post(f"/api/lastword/matches/{m2['id']}/resign", headers=a)).json()
     assert r["endReason"] == "resign"
+
+
+async def test_word_game_real_words_and_no_repeats(client, auth):
+    from app.services import words
+
+    assert len(words.ANSWERS) > 450 and len(set(words.ANSWERS)) == len(words.ANSWERS)
+    assert words.is_word("школа") and words.is_word("пятый") and not words.is_word("ааааа")
+    # the days already played keep their word: the hand-picked list still comes first
+    assert words._DAILY_ORDER[: len(words.WORDS)] == sorted(words.WORDS, key=words._DAILY_ORDER.index)
+
+    h = auth(7801)
+    g = (await client.post("/api/games/word/practice", headers=h)).json()
+    r = await client.post(f"/api/games/word/{g['id']}/guess", json={"word": "ааааа"}, headers=h)
+    assert r.status_code == 422 and r.json()["detail"] == "not_a_word"
+
+    # practice never gives a word this player already had
+    seen = set()
+    for _ in range(5):
+        g = (await client.post("/api/games/word/practice", headers=h)).json()
+        for w in ("пятый", "синий", "белый", "сорок", "тихий", "новый"):
+            g = (await client.post(f"/api/games/word/{g['id']}/guess", json={"word": w}, headers=h)).json()
+            if g["status"] != "playing":
+                break
+        assert g["answer"] not in seen
+        seen.add(g["answer"])
+
+
+def test_stress_list_is_clean():
+    from app.services import stress
+
+    words = dict(stress.WORDS)
+    assert len(words) > 180
+    assert stress._parse("навралА") in stress.WORDS and stress._parse("баловАть") in stress.WORDS
+    assert stress._parse("наврАла") not in stress.WORDS and stress._parse("бАловать") not in stress.WORDS

@@ -2,6 +2,7 @@ import { clsx } from 'clsx';
 import type { StressBoard, StressWord } from '@rq/shared-types';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../data/api';
+import { markSeen, orderFresh } from '../lib/fresh';
 import { useI18n } from '../lib/i18n';
 import { haptic } from '../lib/telegram/webapp';
 import { Screen } from '../components/Screen';
@@ -12,12 +13,6 @@ import { ErrorView } from '../components/states/StateViews';
 const ROUND_MS = 60_000;
 const VOWELS = new Set('аеиоуыэюя');
 const marked = (w: StressWord) => [...w.word].map((c, i) => (i === w.stress ? c.toUpperCase() : c)).join('');
-
-function shuffle<T>(a: T[]): T[] {
-  const b = [...a];
-  for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j]!, b[i]!]; }
-  return b;
-}
 
 /** «Urg‘u»: 60 seconds — tap the stressed vowel in as many words as you can. */
 export function StressGameScreen() {
@@ -62,7 +57,7 @@ export function StressGameScreen() {
 
   const start = () => {
     if (!words) return;
-    setDeck(shuffle(words)); setI(0); setScore(0); setAnswered(0); setMissed([]); setPick(null); setRecord(false);
+    setDeck(orderFresh('stress', words, (w) => w.word)); setI(0); setScore(0); setAnswered(0); setMissed([]); setPick(null); setRecord(false);
     endAt.current = Date.now() + ROUND_MS; setLeft(ROUND_MS); setPhase('play'); haptic.tap();
   };
 
@@ -71,6 +66,7 @@ export function StressGameScreen() {
     const w = deck[i % deck.length]!;
     const ok = idx === w.stress;
     setPick(idx); setAnswered((n) => n + 1);
+    markSeen('stress', [w.word], words?.length ?? 0);
     if (ok) { setScore((s) => s + 1); haptic.success(); } else { setMissed((m) => [...m, w]); haptic.error(); }
     setTimeout(() => { setPick(null); setI((n) => n + 1); }, ok ? 300 : 900);
   };
